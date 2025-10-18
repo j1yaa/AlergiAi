@@ -1,50 +1,114 @@
-# Welcome to your Expo app 👋
+# AllergyAI – Intelligent Food & Allergy Tracker
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native demo app for tracking meals and allergen exposure with real-time analysis.
 
-## Get started
+## Quick Start
 
-1. Install dependencies
+### Backend Server
 
+1. Install backend dependencies:
+   ```bash
+   cd server
+   npm install
+   ```
+
+2. Start the backend server:
+   ```bash
+   npm run dev
+   ```
+   Server runs at `http://localhost:8080/api`
+
+### Frontend App
+
+1. Install frontend dependencies:
    ```bash
    npm install
    ```
 
-2. Start the app
-
+2. Start the Expo app:
    ```bash
-   npx expo start
+   npm start
    ```
 
-In the output, you'll find options to open the app in a
+## Environment Setup
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+### Backend (.env)
+```
+PORT=8080
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Frontend (.env)
+```
+API_BASE_URL=http://localhost:8080/api
+```
 
-## Learn more
+## Demo Mode
 
-To learn more about developing your project with Expo, look at the following resources:
+The app includes a **Demo Mode** feature:
+- When `DEMO_MODE = true` in `src/config/demo.ts`
+- If API calls fail, the app automatically falls back to local mock data
+- Shows "Demo data" toast when using fallback
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Demo Flow
 
-## Join the community
+1. **Login** → Use pre-filled credentials (john@example.com / password)
+2. **Dashboard** → View analytics with charts and stats
+3. **Add Meal** → Enter meal description → Get allergen analysis
+4. **Alerts** → Browse alerts with filtering (All/Flagged)
+5. **Alert Details** → Tap any alert for detailed view
 
-Join our community of developers creating universal apps.
+## API Routes
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- `POST /api/auth/login` → Authentication
+- `GET /api/meals` → Recent meals list
+- `POST /api/meals/analyze` → Meal analysis (text/image)
+- `GET /api/alerts` → Paginated alerts with filtering
+- `GET /api/analytics/summary` → Dashboard statistics
+- `GET /api/user/settings` → User preferences
+- `PUT /api/user/settings` → Update preferences
+- `GET /api/health` → Health check
+
+## Testing
+
+### Backend Tests
+```bash
+cd server
+npm test
+```
+
+### Frontend Tests
+```bash
+npm test
+```
+
+## Project Structure
+
+```
+├── server/                 # Backend API
+│   ├── src/
+│   │   ├── index.ts       # Express server
+│   │   ├── routes.ts      # API routes
+│   │   ├── data.ts        # Mock data
+│   │   └── types.ts       # TypeScript types
+│   └── tests/             # Backend tests
+├── src/                   # Frontend source
+│   ├── api/               # API client & mocks
+│   ├── screens/           # App screens
+│   ├── navigation/        # Navigation setup
+│   ├── types/             # TypeScript types
+│   └── config/            # App configuration
+└── __tests__/             # Frontend tests
+```
+
+## Branches
+
+- `main` → Stable release
+- `dev` → Development sprint
+- `feature/*` → Feature branches
+
+## Technologies
+
+- **Frontend**: React Native, Expo, TypeScript, Victory Charts
+- **Backend**: Node.js, Express, TypeScript
+- **Storage**: Expo SecureStore
+- **Testing**: Jest, React Native Testing Library
