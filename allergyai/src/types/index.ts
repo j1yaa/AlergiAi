@@ -38,6 +38,7 @@ export interface AnalyzeResponse {
   advice: string;
 }
 
+
 export interface UserSettings {
   allergens: string[];
   diet: string;
