@@ -1,15 +1,57 @@
 import { Router } from 'express';
-import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings } from './data';
-import { AnalyzeRequest, AnalyzeResponse, AlertsResponse } from './types';
+import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, validateUser, createUser, analyzeWithAI } from './data';
+import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse } from './types';
 
 const router = Router();
 
 // Auth routes
+router.post('/auth/register', (req, res) => {
+  const { name, email, password, allergens = [] }: RegisterRequest = req.body;
+  
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Name, email, and password are required' });
+  }
+  
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: 'Invalid email format' });
+  }
+  
+  const newUser = createUser(name, email, password, allergens);
+  if (!newUser) {
+    return res.status(409).json({ error: 'User already exists' });
+  }
+  
+  const response: AuthResponse = {
+    token: `jwt.${newUser.id}.${Date.now()}`,
+    user: { id: newUser.id, name: newUser.name, email: newUser.email }
+  };
+  
+  res.status(201).json(response);
+});
+
 router.post('/auth/login', (req, res) => {
-  res.json({
-    token: 'demo.jwt.token',
-    user: mockUser
-  });
+  const { email, password }: LoginRequest = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+  
+  const user = validateUser(email, password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password' });
+  }
+  
+  const response: AuthResponse = {
+    token: `jwt.${user.id}.${Date.now()}`,
+    user: { id: user.id, name: user.name, email: user.email }
+  };
+  
+  res.json(response);
 });
 
 // Meals routes
@@ -20,14 +62,23 @@ router.get('/meals', (req, res) => {
 router.post('/meals/analyze', (req, res) => {
   const { description, imageBase64 }: AnalyzeRequest = req.body;
   
-  const response: AnalyzeResponse = {
-    ingredients: ['chicken', 'lettuce', 'tomatoes'],
-    allergens: description?.toLowerCase().includes('peanut') ? ['peanuts'] : [],
-    riskScore: description?.toLowerCase().includes('peanut') ? 85 : 15,
-    advice: description?.toLowerCase().includes('peanut') 
-      ? 'High allergen risk detected. Avoid this meal.' 
-      : 'This meal appears safe for your dietary restrictions.'
-  };
+  if (!description && !imageBase64) {
+    return res.status(400).json({ error: 'Description or image is required' });
+  }
+  
+  // Use AI analysis for description
+  let response: AnalyzeResponse;
+  if (description) {
+    response = analyzeWithAI(description);
+  } else {
+    // Simulate image analysis
+    response = {
+      ingredients: ['mixed ingredients'],
+      allergens: ['unknown'],
+      riskScore: 50,
+      advice: 'Image analysis not fully implemented. Please provide a text description for accurate results.'
+    };
+  }
   
   res.json(response);
 });

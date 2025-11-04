@@ -15,19 +15,40 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { login } from '../api/client';
 
-export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
-  const [email, setEmail] = useState('john@example.com');
-  const [password, setPassword] = useState('password');
+export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const validateForm = () => {
+    if (!email.trim()) {
+      Alert.alert('Validation Error', 'Email is required');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address');
+      return false;
+    }
+    if (!password.trim()) {
+      Alert.alert('Validation Error', 'Password is required');
+      return false;
+    }
+    return true;
+  };
+
   const handleLogin = async () => {
+    if (!validateForm()) return;
+    
     setLoading(true);
     try {
       const response = await login({ email, password });
       await SecureStore.setItemAsync('auth_token', response.token);
+      await SecureStore.setItemAsync('user_data', JSON.stringify(response.user));
       onLogin();
-    } catch (error) {
-      Alert.alert('Login Failed', 'Please check your credentials and try again.');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Invalid email or password';
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -87,7 +108,7 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
                 <Text style={styles.link}>Forgot password?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={() => Alert.alert('Sign Up', 'Sign up flow placeholder')}>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                 <Text style={styles.link}>Create account</Text>
               </TouchableOpacity>
             </View>
@@ -108,6 +129,15 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
             </View>
           </View>
 
+          <View style={styles.demoSection}>
+            <Text style={styles.demoTitle}>Demo Accounts:</Text>
+            <TouchableOpacity onPress={() => { setEmail('john@example.com'); setPassword('password'); }}>
+              <Text style={styles.demoText}>john@example.com / password</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setEmail('jane@example.com'); setPassword('password123'); }}>
+              <Text style={styles.demoText}>jane@example.com / password123</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.footer}>Privacy-first allergy insights • Data stored securely</Text>
         </View>
       </TouchableWithoutFeedback>
@@ -261,5 +291,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#9CA9B8',
     fontSize: 12,
+  },
+  demoSection: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 8,
+  },
+  demoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#666',
+  },
+  demoText: {
+    fontSize: 14,
+    color: '#2196F3',
+    marginBottom: 5,
   },
 });
