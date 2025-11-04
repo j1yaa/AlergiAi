@@ -1,7 +1,7 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
+import { storage } from '../utils/storage';
 import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
 
 import { 
@@ -28,7 +28,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('auth_token');
+  const token = await storage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
