@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
-import { UserProfile, AllergenReponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
+import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
 
 import { 
   User, 
@@ -118,10 +118,46 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
   );
 };
 
-// Add an allergen
+// Get user profile
+export const getProfile = async (): Promise<UserProfile> => {
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`${API_BASE_URL}/profile`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch the profile');
+    }
+
+    return response.json();
+}; 
+
+// Get the users allergens
+export const getAllergens = async (): Promise<AllergensResponse> => {
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`${API_BASE_URL}/allergens`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch allergens');
+    }
+
+    return response.json();
+}; 
+
+// Add a new allergen
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
     const token = await SecureStore.getItemAsync('auth_token');
-    const response = await fetch('${API_BASE_URL}/user/allergens', {
+    const response = await fetch(`${API_BASE_URL}/allergens`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -138,7 +174,7 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
 // Remove an allergen
 export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
     const token = await SecureStore.getItemAsync('auth_token');
-    const response = await fetch(`&{API_BASE_URL}/user/allergens`, {
+    const response = await fetch(`${API_BASE_URL}/allergens`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',

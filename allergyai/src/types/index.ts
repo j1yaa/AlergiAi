@@ -61,7 +61,7 @@ export interface UserProfile {
     createdAt: string;
 }
 
-export interface AllergenReponse {
+export interface AllergensResponse {
     allergens: string[];
 }
 
