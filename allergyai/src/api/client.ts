@@ -118,8 +118,28 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
   );
 };
 
-// Get user profile
+// Get user profile 
 export const getProfile = async (): Promise<UserProfile> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/profile');
+            return response.data;
+        },
+        {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+            totalMeals: 127,
+            totalAlerrts: 8,
+            createdAt: '2022-01-15T10:00:00Z',
+        }
+    );
+
+
+    /*
     const token = await SecureStore.getItemAsync('auth_token');
     const response = await fetch(`${API_BASE_URL}/profile`, {
         method: 'GET',
@@ -134,28 +154,53 @@ export const getProfile = async (): Promise<UserProfile> => {
     }
 
     return response.json();
+    */
 }; 
 
 // Get the users allergens
 export const getAllergens = async (): Promise<AllergensResponse> => {
-    const token = await SecureStore.getItemAsync('auth_token');
-    const response = await fetch(`${API_BASE_URL}/allergens`, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/allergens');
+            return response.data;
         },
-    });
+        {
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+        }
 
-    if (!response.ok) {
-        throw new Error('Failed to fetch allergens');
-    }
-
-    return response.json();
-}; 
+        /*
+        const token = await SecureStore.getItemAsync('auth_token');
+        const response = await fetch(`${API_BASE_URL}/allergens`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+    
+        if (!response.ok) {
+            throw new Error('Failed to fetch allergens');
+        }
+    
+        return response.json();
+        */
+    );
+};
 
 // Add a new allergen
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.post('/allergens', data);
+            return response.data;
+        },
+        undefined as void
+    );
+    /*
     const token = await SecureStore.getItemAsync('auth_token');
     const response = await fetch(`${API_BASE_URL}/allergens`, {
         method: 'POST',
@@ -169,10 +214,22 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
     if (!response.ok) {
         throw new Error('Failed to add allergen');
     }
+    */
 };
 
 // Remove an allergen
 export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.delete('/allergens', { data });
+            return response.data;
+        },
+        undefined as void
+    );
+
+    /*
     const token = await SecureStore.getItemAsync('auth_token');
     const response = await fetch(`${API_BASE_URL}/allergens`, {
         method: 'DELETE',
@@ -186,4 +243,5 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
     if (!response.ok) {
         throw new Error('Failed to remove allergen');
     }
+    */
 };
