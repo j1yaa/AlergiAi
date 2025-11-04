@@ -52,7 +52,7 @@ export interface AlertsResponse {
 }
 
 export interface UserProfile {
-    id: String;
+    id: string;
     name: string;
     email: string;
     allergens: string[];
@@ -66,9 +66,9 @@ export interface AllergensResponse {
 }
 
 export interface AddAllergenRequest {
-    allergen: string[];
+    allergen: string;
 }
 
 export interface RemoveAllergenRequest {
-    allergen: string[];
+    allergen: string;
 }
