@@ -11,10 +11,17 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const handleLogin = async () => {
     setLoading(true);
     try {
+      console.log('Attempting login...')
       const response = await login({ email, password });
+      console.log('Login response:', response);
+
       await SecureStore.setItemAsync('auth_token', response.token);
+      console.log('Token saved');
+
       onLogin();
-    } catch (error) {
+      console.log('onLogin Called');
+      } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Login Failed', 'Please try again');
     } finally {
       setLoading(false);
