@@ -117,3 +117,37 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
     settings
   );
 };
+
+// Add an allergen
+export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch('${API_BASE_URL}/user/allergens', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to add allergen');
+    }
+};
+
+// Remove an allergen
+export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`&{API_BASE_URL}/user/allergens`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to remove allergen');
+    }
+};
