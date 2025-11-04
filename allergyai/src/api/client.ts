@@ -1,7 +1,9 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
+import { storage } from '../utils/storage';
+import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
+
 import { 
   User, 
   Meal, 
@@ -26,7 +28,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('auth_token');
+  const token = await storage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -114,4 +116,132 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
     },
     settings
   );
+};
+
+// Get user profile 
+export const getProfile = async (): Promise<UserProfile> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/profile');
+            return response.data;
+        },
+        {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+            totalMeals: 127,
+            totalAlerrts: 8,
+            createdAt: '2022-01-15T10:00:00Z',
+        }
+    );
+
+
+    /*
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`${API_BASE_URL}/profile`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch the profile');
+    }
+
+    return response.json();
+    */
+}; 
+
+// Get the users allergens
+export const getAllergens = async (): Promise<AllergensResponse> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/allergens');
+            return response.data;
+        },
+        {
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+        }
+
+        /*
+        const token = await SecureStore.getItemAsync('auth_token');
+        const response = await fetch(`${API_BASE_URL}/allergens`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+    
+        if (!response.ok) {
+            throw new Error('Failed to fetch allergens');
+        }
+    
+        return response.json();
+        */
+    );
+};
+
+// Add a new allergen
+export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.post('/allergens', data);
+            return response.data;
+        },
+        undefined as void
+    );
+    /*
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`${API_BASE_URL}/allergens`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to add allergen');
+    }
+    */
+};
+
+// Remove an allergen
+export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
+
+    // DEMO MODE
+    return handleApiCall(
+        async () => {
+            const response = await api.delete('/allergens', { data });
+            return response.data;
+        },
+        undefined as void
+    );
+
+    /*
+    const token = await SecureStore.getItemAsync('auth_token');
+    const response = await fetch(`${API_BASE_URL}/allergens`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to remove allergen');
+    }
+    */
 };

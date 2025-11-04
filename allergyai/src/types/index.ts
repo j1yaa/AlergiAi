@@ -51,3 +51,25 @@ export interface AlertsResponse {
   pageSize: number;
   total: number;
 }
+
+export interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    allergens: string[];
+    totalMeals: number;
+    totalAlerts: number;
+    createdAt: string;
+}
+
+export interface AllergensResponse {
+    allergens: string[];
+}
+
+export interface AddAllergenRequest {
+    allergen: string;
+}
+
+export interface RemoveAllergenRequest {
+    allergen: string;
+}
