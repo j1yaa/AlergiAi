@@ -2,6 +2,8 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
+import { UserProfile, AllergenReponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
+
 import { 
   User, 
   Meal, 
