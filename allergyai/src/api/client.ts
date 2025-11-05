@@ -217,3 +217,24 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
         undefined as void
     );
 };
+
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const MEALS_KEY = "meals";
+
+// Save a new meal
+export async function createMeal(payload: { items: string[]; note?: string }): Promise<Meal> {
+  const newMeal: Meal = {
+    id: `meal-${Date.now()}`,
+    items: payload.items,
+    note: payload.note,
+    createdAt: new Date().toISOString(),
+  };
+
+  const existingRaw = await AsyncStorage.getItem(MEALS_KEY);
+  const existing: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+
+  await AsyncStorage.setItem(MEALS_KEY, JSON.stringify([newMeal, ...existing]));
+  return newMeal;
+}
