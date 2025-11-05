@@ -81,7 +81,7 @@ router.get('/meals', async (req, res) => {
     }
     
     const meals = await getUserMeals(userId);
-    const formattedMeals = meals.map(meal => ({
+    const formattedMeals = meals.map((meal: any) => ({
       id: meal.id,
       dateISO: meal.createdAt.toISOString(),
       description: meal.description,
@@ -157,7 +157,7 @@ router.get('/alerts', async (req, res) => {
     
     const { alerts, total } = await getUserAlerts(userId, status, page, pageSize);
     
-    const formattedAlerts = alerts.map(alert => ({
+    const formattedAlerts = alerts.map((alert: any) => ({
       id: alert.id,
       mealId: alert.mealId,
       dateISO: alert.createdAt.toISOString(),
