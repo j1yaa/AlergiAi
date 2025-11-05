@@ -38,6 +38,7 @@ export interface AnalyzeResponse {
   advice: string;
 }
 
+
 export interface UserSettings {
   allergens: string[];
   diet: string;
@@ -66,4 +67,45 @@ export interface LoginRequest {
 export interface AuthResponse {
   token: string;
   user: User;
+}
+export interface Symptom {
+  id: string;
+  dateISO: string;
+  description: string;
+  severity: number;  // 1-5 scale
+}
+
+export interface SymptomsResponse {
+  items: Symptom[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface SymptomAnalytics {
+  avgSeverity: number;
+  weeklySymptoms: { week: string; count: number; avgSeverity: number }[];
+  commonSymptoms: { description: string; count: number }[];
+}
+
+export interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    allergens: string[];
+    totalMeals: number;
+    totalAlerts: number;
+    createdAt: string;
+}
+
+export interface AllergensResponse {
+    allergens: string[];
+}
+
+export interface AddAllergenRequest {
+    allergen: string;
+}
+
+export interface RemoveAllergenRequest {
+    allergen: string;
 }

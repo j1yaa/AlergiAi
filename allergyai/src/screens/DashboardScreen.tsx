@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-import { getAnalytics } from '../api/client';
-import { AnalyticsSummary } from '../types';
+import { getAnalytics, getSymptomAnalytics } from '../api/client';
+import { AnalyticsSummary, SymptomAnalytics } from '../types';
 
 export default function DashboardScreen() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [symptomAnalytics, setSymptomAnalytics] = useState<SymptomAnalytics | null>(null);
 
   useEffect(() => {
     loadAnalytics();
@@ -13,14 +14,18 @@ export default function DashboardScreen() {
 
   const loadAnalytics = async () => {
     try {
-      const data = await getAnalytics();
-      setAnalytics(data);
+      const [analyticsData, symptomData] = await Promise.all([
+        getAnalytics(),
+        getSymptomAnalytics()
+      ]);
+      setAnalytics(analyticsData);
+      setSymptomAnalytics(symptomData);
     } catch (error) {
       console.error('Failed to load analytics:', error);
     }
   };
 
-  if (!analytics) {
+  if (!analytics || !symptomAnalytics) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -41,6 +46,10 @@ export default function DashboardScreen() {
           <Text style={styles.statValue}>{analytics.weeklyExposure.reduce((sum, w) => sum + w.count, 0)}</Text>
           <Text style={styles.statLabel}>Weekly Alerts</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{symptomAnalytics.avgSeverity.toFixed(1)}</Text>
+          <Text style={styles.statLabel}>Avg Severity</Text>
+        </View>
       </View>
 
       <View style={styles.chartContainer}>
@@ -50,6 +59,19 @@ export default function DashboardScreen() {
             <View key={index} style={styles.barItem}>
               <Text style={styles.barLabel}>{item.week}</Text>
               <View style={[styles.bar, { height: item.count * 20 }]} />
+              <Text style={styles.barValue}>{item.count}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>Weekly Symptoms</Text>
+        <View style={styles.chartPlaceholder}>
+          {symptomAnalytics.weeklySymptoms.map((item, index) => (
+            <View key={index} style={styles.barItem}>
+              <Text style={styles.barLabel}>{item.week}</Text>
+              <View style={[styles.bar, { height: item.count * 25, backgroundColor: '#4CAF50' }]} />
               <Text style={styles.barValue}>{item.count}</Text>
             </View>
           ))}
@@ -74,13 +96,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 30,
+    flexWrap: 'wrap',
   },
   statCard: {
     backgroundColor: '#f5f5f5',
     padding: 20,
     borderRadius: 8,
     alignItems: 'center',
-    flex: 0.48,
+    flex: 0.31,
+    marginBottom: 10,
   },
   statValue: {
     fontSize: 32,

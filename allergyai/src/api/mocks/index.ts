@@ -1,4 +1,4 @@
-import { User, Meal, Alert, AnalyticsSummary, UserSettings, AlertsResponse, AnalyzeResponse } from '../../types';
+import { User, Meal, Alert, AnalyticsSummary, UserSettings, AlertsResponse, AnalyzeResponse, Symptom, SymptomsResponse, SymptomAnalytics } from '../../types';
 
 export const mockUser: User = {
   id: 'user-123',
@@ -75,4 +75,47 @@ export const getMockAnalyzeResponse = (description?: string): AnalyzeResponse =>
   advice: description?.toLowerCase().includes('peanut') 
     ? 'High allergen risk detected. Avoid this meal.' 
     : 'This meal appears safe for your dietary restrictions.'
+});
+
+export const mockSymptoms: Symptom[] = [
+  {
+    id: 'symptom-1',
+    dateISO: '2024-01-15T14:30:00Z',
+    description: 'Mild stomach discomfort after lunch',
+    severity: 2
+  },
+  {
+    id: 'symptom-2',
+    dateISO: '2024-01-14T09:15:00Z',
+    description: 'Skin rash on arms',
+    severity: 4
+  },
+  {
+    id: 'symptom-3',
+    dateISO: '2024-01-13T16:45:00Z',
+    description: 'Headache and nausea',
+    severity: 3
+  }
+];
+
+export const mockSymptomAnalytics: SymptomAnalytics = {
+  avgSeverity: 3.0,
+  weeklySymptoms: [
+    { week: 'Week 1', count: 1, avgSeverity: 2.0 },
+    { week: 'Week 2', count: 3, avgSeverity: 3.5 },
+    { week: 'Week 3', count: 2, avgSeverity: 2.5 },
+    { week: 'Week 4', count: 1, avgSeverity: 4.0 }
+  ],
+  commonSymptoms: [
+    { description: 'stomach discomfort', count: 5 },
+    { description: 'skin rash', count: 3 },
+    { description: 'headache', count: 2 }
+  ]
+};
+
+export const getMockSymptomsResponse = (): SymptomsResponse => ({
+  items: mockSymptoms,
+  page: 1,
+  pageSize: 20,
+  total: mockSymptoms.length
 });
