@@ -71,3 +71,25 @@ export interface SymptomAnalytics {
   weeklySymptoms: { week: string; count: number; avgSeverity: number }[];
   commonSymptoms: { description: string; count: number }[];
 }
+
+export interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    allergens: string[];
+    totalMeals: number;
+    totalAlerts: number;
+    createdAt: string;
+}
+
+export interface AllergensResponse {
+    allergens: string[];
+}
+
+export interface AddAllergenRequest {
+    allergen: string;
+}
+
+export interface RemoveAllergenRequest {
+    allergen: string;
+}

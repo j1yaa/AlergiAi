@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
+import { storage } from '../utils/storage';
 import { login } from '../api/client';
 
 export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
@@ -11,10 +11,17 @@ export default function LoginScreen({ onLogin }: { onLogin: () => void }) {
   const handleLogin = async () => {
     setLoading(true);
     try {
+      console.log('Attempting login...');
       const response = await login({ email, password });
-      await SecureStore.setItemAsync('auth_token', response.token);
+      console.log('Login response:', response);
+
+      await storage.setItem('auth_token', response.token);
+      console.log('Token saved');
+
       onLogin();
-    } catch (error) {
+      console.log('onLogin Called');
+      } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Login Failed', 'Please try again');
     } finally {
       setLoading(false);

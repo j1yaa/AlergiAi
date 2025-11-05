@@ -1,7 +1,9 @@
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
+import { storage } from '../utils/storage';
+import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
+
 import { 
   User, 
   Meal, 
@@ -31,7 +33,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync('auth_token');
+  const token = await storage.getItem('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -149,4 +151,54 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
     },
     mockSymptomAnalytics
   );
+};
+
+export const getProfile = async (): Promise<UserProfile> => {
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/profile');
+            return response.data;
+        },
+        {
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+            totalMeals: 127,
+            totalAlerts: 8,
+            createdAt: '2022-01-15T10:00:00Z',
+        }
+    );
+}; 
+
+export const getAllergens = async (): Promise<AllergensResponse> => {
+    return handleApiCall(
+        async () => {
+            const response = await api.get('/allergens');
+            return response.data;
+        },
+        {
+            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+        }
+    );
+};
+
+export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
+    return handleApiCall(
+        async () => {
+            const response = await api.post('/allergens', data);
+            return response.data;
+        },
+        undefined as void
+    );
+};
+
+export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
+    return handleApiCall(
+        async () => {
+            const response = await api.delete('/allergens', { data });
+            return response.data;
+        },
+        undefined as void
+    );
 };
