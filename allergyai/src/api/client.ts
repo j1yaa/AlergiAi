@@ -219,7 +219,7 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
 };
 
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MEALS_KEY = "meals";
 
