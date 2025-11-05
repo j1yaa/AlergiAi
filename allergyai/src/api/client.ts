@@ -2,8 +2,6 @@ import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
 import { storage } from '../utils/storage';
-import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
-
 import { 
   User, 
   Meal, 
@@ -14,10 +12,14 @@ import {
   UserSettings,
   RegisterRequest,
   LoginRequest,
-  AuthResponse
+  AuthResponse,
   Symptom,
   SymptomsResponse,
-  SymptomAnalytics
+  SymptomAnalytics,
+  UserProfile,
+  AllergensResponse,
+  AddAllergenRequest,
+  RemoveAllergenRequest
 } from '../types';
 import { 
   mockUser, 

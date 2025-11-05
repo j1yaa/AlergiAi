@@ -40,6 +40,8 @@ export interface AnalyzeResponse {
 
 
 export interface UserSettings {
+  name: string;
+  email: string;
   allergens: string[];
   diet: string;
   notifications: boolean;
