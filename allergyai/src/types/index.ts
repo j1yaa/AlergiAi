@@ -51,3 +51,23 @@ export interface AlertsResponse {
   pageSize: number;
   total: number;
 }
+
+export interface Symptom {
+  id: string;
+  dateISO: string;
+  description: string;
+  severity: number;  // 1-5 scale
+}
+
+export interface SymptomsResponse {
+  items: Symptom[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface SymptomAnalytics {
+  avgSeverity: number;
+  weeklySymptoms: { week: string; count: number; avgSeverity: number }[];
+  commonSymptoms: { description: string; count: number }[];
+}

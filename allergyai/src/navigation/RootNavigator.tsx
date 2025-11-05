@@ -10,6 +10,8 @@ import DashboardScreen from '../screens/DashboardScreen';
 import AddMealScreen from '../screens/AddMealScreen';
 import AlertsScreen from '../screens/AlertsScreen';
 import AlertDetailScreen from '../screens/AlertDetailScreen';
+import AddSymptomScreen from '../screens/AddSymptomScreen';
+import SymptomHistoryScreen from '../screens/SymptomHistoryScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -27,6 +29,8 @@ function MainTabs() {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
           } else if (route.name === 'Alerts') {
             iconName = focused ? 'warning' : 'warning-outline';
+          } else if (route.name === 'Symptoms') {
+            iconName = focused ? 'medical' : 'medical-outline';
           } else {
             iconName = 'help-outline';
           }
@@ -40,6 +44,7 @@ function MainTabs() {
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Add Meal' }} />
       <Tab.Screen name="Alerts" component={AlertsScreen} />
+      <Tab.Screen name="Symptoms" component={SymptomsStack} />
     </Tab.Navigator>
   );
 }
@@ -56,6 +61,23 @@ function AlertsStack() {
         name="AlertDetail" 
         component={AlertDetailScreen}
         options={{ title: 'Alert Details' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function SymptomsStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="SymptomHistory" 
+        component={SymptomHistoryScreen} 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="AddSymptom" 
+        component={AddSymptomScreen}
+        options={{ title: 'Log Symptom' }}
       />
     </Stack.Navigator>
   );

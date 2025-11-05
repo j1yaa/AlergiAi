@@ -9,7 +9,10 @@ import {
   AnalyzeResponse, 
   AlertsResponse, 
   AnalyticsSummary, 
-  UserSettings 
+  UserSettings,
+  Symptom,
+  SymptomsResponse,
+  SymptomAnalytics
 } from '../types';
 import { 
   mockUser, 
@@ -17,7 +20,9 @@ import {
   mockAnalytics, 
   mockUserSettings, 
   getMockAlertsResponse, 
-  getMockAnalyzeResponse 
+  getMockAnalyzeResponse,
+  getMockSymptomsResponse,
+  mockSymptomAnalytics
 } from './mocks';
 
 const api = axios.create({
@@ -113,5 +118,35 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
       return response.data;
     },
     settings
+  );
+};
+
+export const saveSymptom = async (symptom: Omit<Symptom, 'id'>): Promise<Symptom> => {
+  return handleApiCall(
+    async () => {
+      const response = await api.post('/symptoms', symptom);
+      return response.data;
+    },
+    { ...symptom, id: `symptom-${Date.now()}` }
+  );
+};
+
+export const getSymptoms = async (): Promise<SymptomsResponse> => {
+  return handleApiCall(
+    async () => {
+      const response = await api.get('/symptoms');
+      return response.data;
+    },
+    getMockSymptomsResponse()
+  );
+};
+
+export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
+  return handleApiCall(
+    async () => {
+      const response = await api.get('/analytics/symptoms');
+      return response.data;
+    },
+    mockSymptomAnalytics
   );
 };
