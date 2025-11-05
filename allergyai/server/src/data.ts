@@ -228,6 +228,8 @@ export const analyzeWithAI = (description: string) => {
     riskScore: Math.round(riskScore),
     advice
   };
+};
+
 export const mockSymptoms: Symptom[] = [
   {
     id: 'symptom-1',
