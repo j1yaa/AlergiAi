@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { storage } from '../utils/storage';
 
 import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import AddMealScreen from '../screens/AddMealScreen';
 import AlertsScreen from '../screens/AlertsScreen';
@@ -124,6 +125,9 @@ export default function RootNavigator() {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login">
             {(props) => <LoginScreen {...props} onLogin={handleLogin} />}
+          </Stack.Screen>
+          <Stack.Screen name="Register">
+            {(props) => <RegisterScreen {...props} onLogin={handleLogin} />}
           </Stack.Screen>
         </Stack.Navigator>
       )}

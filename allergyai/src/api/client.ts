@@ -12,6 +12,9 @@ import {
   AlertsResponse, 
   AnalyticsSummary, 
   UserSettings,
+  RegisterRequest,
+  LoginRequest,
+  AuthResponse
   Symptom,
   SymptomsResponse,
   SymptomAnalytics
@@ -53,7 +56,17 @@ const handleApiCall = async <T>(apiCall: () => Promise<T>, mockData: T): Promise
   }
 };
 
-export const login = async (credentials: { email: string; password: string }) => {
+export const register = async (userData: RegisterRequest): Promise<AuthResponse> => {
+  return handleApiCall(
+    async () => {
+      const response = await api.post('/auth/register', userData);
+      return response.data;
+    },
+    { token: 'demo.jwt.token', user: { ...mockUser, name: userData.name, email: userData.email } }
+  );
+};
+
+export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
   return handleApiCall(
     async () => {
       const response = await api.post('/auth/login', credentials);

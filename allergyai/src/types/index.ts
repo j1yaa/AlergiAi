@@ -52,6 +52,22 @@ export interface AlertsResponse {
   total: number;
 }
 
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  allergens?: string[];
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
 export interface Symptom {
   id: string;
   dateISO: string;

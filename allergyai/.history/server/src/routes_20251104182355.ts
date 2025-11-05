@@ -3,8 +3,6 @@ import { analyzeWithAI } from './data';
 import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse } from './types';
 import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
 import jwt from 'jsonwebtoken';
-import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
-import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, SymptomsResponse, Symptom } from './types';
 
 const router = Router();
 
@@ -83,7 +81,7 @@ router.get('/meals', async (req, res) => {
     }
     
     const meals = await getUserMeals(userId);
-    const formattedMeals = meals.map((meal: any) => ({
+    const formattedMeals = meals.map(meal => ({
       id: meal.id,
       dateISO: meal.createdAt.toISOString(),
       description: meal.description,
@@ -159,7 +157,7 @@ router.get('/alerts', async (req, res) => {
     
     const { alerts, total } = await getUserAlerts(userId, status, page, pageSize);
     
-    const formattedAlerts = alerts.map((alert: any) => ({
+    const formattedAlerts = alerts.map(alert => ({
       id: alert.id,
       mealId: alert.mealId,
       dateISO: alert.createdAt.toISOString(),
@@ -252,43 +250,6 @@ router.put('/user/settings', async (req, res) => {
     console.error('Update settings error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-});
-
-// Symptoms routes
-router.get('/symptoms', (req, res) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 20;
-  
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedSymptoms = mockSymptoms.slice(startIndex, endIndex);
-  
-  const response: SymptomsResponse = {
-    items: paginatedSymptoms,
-    page,
-    pageSize,
-    total: mockSymptoms.length
-  };
-  
-  res.json(response);
-});
-
-router.post('/symptoms', (req, res) => {
-  const { description, severity, dateISO } = req.body;
-  
-  const newSymptom: Symptom = {
-    id: `symptom-${Date.now()}`,
-    description,
-    severity,
-    dateISO
-  };
-  
-  mockSymptoms.unshift(newSymptom);
-  res.json(newSymptom);
-});
-
-router.get('/analytics/symptoms', (req, res) => {
-  res.json(mockSymptomAnalytics);
 });
 
 // Health check
