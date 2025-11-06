@@ -7,6 +7,7 @@ export default function AddMealScreen() {
   const [description, setDescription] = useState('');
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleAnalyze = async () => {
     if (!description.trim()) return;
@@ -22,6 +23,31 @@ export default function AddMealScreen() {
     }
   };
 
+const handleSave = async () => {
+  const items = description
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (items.length === 0) {
+    Alert.alert('Add meal info', 'Please enter at least one item.');
+    return;
+  }
+
+  setSaving(true);
+  try {
+    await createMeal({ items, note: undefined });
+    Alert.alert('Saved', 'Your meal was logged.');
+    setDescription('');
+  } catch (e) {
+    console.error('Save failed:', e);
+    Alert.alert('Error', 'Could not save the meal.');
+  } finally {
+    setSaving(false);
+  }
+};
+
+  
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Add Meal</Text>
@@ -44,6 +70,17 @@ export default function AddMealScreen() {
           {loading ? 'Analyzing...' : 'Analyze Meal'}
         </Text>
       </TouchableOpacity>
+
+<TouchableOpacity
+  style={[styles.saveBtn]}
+  onPress={handleSave}
+  disabled={saving || !description.trim()}
+>
+  <Text style={styles.saveBtnText}>
+    {saving ? 'Saving...' : 'Save Meal'}
+  </Text>
+</TouchableOpacity>
+
 
       {result && (
         <View style={styles.resultCard}>
@@ -117,6 +154,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+    saveBtn: {
+    backgroundColor: '#2e7d32',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  saveBtnText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
