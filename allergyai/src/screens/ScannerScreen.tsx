@@ -31,7 +31,7 @@ export default function ScannerScreen() {
         // Simulate scanning delay (will be replaced with actual AI analysis later)
         setTimeout(() => {
             setIsScanning(false);
-            Alert.alert('Scan Complete', 'Feature coming in Sprint 2!');
+            Alert.alert('Scan Complete', 'AI analysis coming soon!');
         }, 2000);
     };
 
@@ -53,7 +53,7 @@ export default function ScannerScreen() {
             setIsScanning(true);
             setTimeout(() => {
                 setIsScanning(false);
-                Alert.alert('Image Selected', 'AI analysis coming in Sprint 2!');
+                Alert.alert('Image Selected', 'AI analysis coming soon!');
             }, 1500);
         }
     };
