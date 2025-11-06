@@ -6,9 +6,12 @@ export interface User {
 
 export interface Meal {
   id: string;
-  dateISO: string;
-  description: string;
-  ingredients: string[];
+  dateISO?: string;
+  description?: string;
+  ingredients?: string[];
+  createdAt?: string;
+  items?: string[];
+  note?: string;
 }
 
 export interface Alert {
@@ -40,6 +43,8 @@ export interface AnalyzeResponse {
 
 
 export interface UserSettings {
+  name: string;
+  email: string;
   allergens: string[];
   diet: string;
   notifications: boolean;

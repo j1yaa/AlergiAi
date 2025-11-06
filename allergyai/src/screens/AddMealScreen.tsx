@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { analyzeMeal } from '../api/client';
+import { useNavigation } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { analyzeMeal, createMeal } from '../api/client';
 import { AnalyzeResponse } from '../types';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AddMealScreen() {
+  const navigation = useNavigation();
   const [description, setDescription] = useState('');
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const handleAnalyze = async () => {
     if (!description.trim()) return;
-    
+
     setLoading(true);
     try {
       const response = await analyzeMeal({ description });
@@ -22,10 +26,56 @@ export default function AddMealScreen() {
     }
   };
 
+  const handleSave = async () => {
+    const items = description
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    if (items.length === 0) {
+      Alert.alert('Add meal info', 'Please enter at least one item.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await createMeal({ items, note: undefined });
+      Alert.alert('Saved', 'Your meal was logged.');
+      setDescription('');
+    } catch (e) {
+      console.error('Save failed:', e);
+      Alert.alert('Error', 'Could not save the meal.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Add Meal</Text>
-      
+
+      {/* Scan Button Card */}
+      <TouchableOpacity
+        style={styles.scanCard}
+        onPress={() => navigation.navigate('Scanner' as never)}
+      >
+        <View style={styles.scanIconContainer}>
+          <Ionicons name="scan" size={32} color="#2196F3" />
+        </View>
+        <View style={styles.scanTextContainer}>
+          <Text style={styles.scanTitle}>📷 Scan Food Label</Text>
+          <Text style={styles.scanSubtitle}>Quick allergen detection with camera</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#999" />
+      </TouchableOpacity>
+
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>OR</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
       <TextInput
         style={styles.input}
         placeholder="Describe your meal..."
@@ -34,9 +84,9 @@ export default function AddMealScreen() {
         multiline
         numberOfLines={4}
       />
-      
-      <TouchableOpacity 
-        style={styles.button} 
+
+      <TouchableOpacity
+        style={styles.button}
         onPress={handleAnalyze}
         disabled={loading || !description.trim()}
       >
@@ -45,10 +95,21 @@ export default function AddMealScreen() {
         </Text>
       </TouchableOpacity>
 
+      <TouchableOpacity
+        style={[styles.saveBtn]}
+        onPress={handleSave}
+        disabled={saving || !description.trim()}
+      >
+        <Text style={styles.saveBtnText}>
+          {saving ? 'Saving...' : 'Save Meal'}
+        </Text>
+      </TouchableOpacity>
+
+
       {result && (
         <View style={styles.resultCard}>
           <Text style={styles.resultTitle}>Analysis Result</Text>
-          
+
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Ingredients:</Text>
             <View style={styles.pillContainer}>
@@ -121,6 +182,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  saveBtn: {
+    backgroundColor: '#2e7d32',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   resultCard: {
     backgroundColor: '#f5f5f5',
     padding: 20,
@@ -180,5 +253,49 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#666',
     marginTop: 10,
+  },
+
+
+  scanCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f8ff',
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#2196F3',
+  },
+  scanIconContainer: {
+    marginRight: 15,
+  },
+  scanTextContainer: {
+    flex: 1,
+  },
+  scanTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  scanSubtitle: {
+    fontSize: 13,
+    color: '#666',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  dividerText: {
+    marginHorizontal: 15,
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });

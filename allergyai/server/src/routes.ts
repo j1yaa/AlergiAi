@@ -4,6 +4,8 @@ import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, Login
 import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
 import jwt from 'jsonwebtoken';
 
+import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
+import { SymptomsResponse, Symptom } from './types';
 
 const router = Router();
 

@@ -230,3 +230,38 @@ export const analyzeWithAI = (description: string) => {
   };
 };
 
+export const mockSymptoms: Symptom[] = [
+  {
+    id: 'symptom-1',
+    dateISO: '2024-01-15T14:30:00Z',
+    description: 'Mild stomach discomfort after lunch',
+    severity: 2
+  },
+  {
+    id: 'symptom-2',
+    dateISO: '2024-01-14T09:15:00Z',
+    description: 'Skin rash on arms',
+    severity: 4
+  },
+  {
+    id: 'symptom-3',
+    dateISO: '2024-01-13T16:45:00Z',
+    description: 'Headache and nausea',
+    severity: 3
+  },
+  {
+    id: 'symptom-4',
+    dateISO: '2024-01-12T11:20:00Z',
+    description: 'Itchy throat after eating',
+    severity: 3
+  },
+  {
+    id: 'symptom-5',
+    dateISO: '2024-01-11T18:00:00Z',
+    description: 'Mild bloating',
+    severity: 1
+  }
+];
+
+let symptomIdCounter = mockSymptoms.length + 1;
+

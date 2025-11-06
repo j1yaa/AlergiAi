@@ -23,10 +23,18 @@ const getProfile = async (): Promise<UserProfile> => {
     createdAt: '2022-01-15T10:00:00Z',
   };
 };
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { getProfile, updateUserSettings } from '../api/client'; 
+import { UserProfile } from '../types';
 
 export default function ProfileScreen({ navigation }: any) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedName, setEditedName] = useState('');
+    const [editedEmail, setEditedEmail] = useState('');
+
     useEffect(() => { loadProfile(); }, []);
 
     const loadProfile = async () => {
@@ -34,6 +42,8 @@ export default function ProfileScreen({ navigation }: any) {
         try {
             const data = await getProfile();
             setProfile(data);
+            setEditedName(data.name);
+            setEditedEmail(data.email);
         } catch (error) {
             console.error('Failed to load the profile:', error);
         } finally {
@@ -41,28 +51,125 @@ export default function ProfileScreen({ navigation }: any) {
         }
     };
 
+    const handleSave = async () => {
+        if (!profile) return;
+
+        try {
+            // Update profile data locally
+            const updatedProfile = {
+                ...profile,
+                name: editedName,
+                email: editedEmail
+            };
+            setProfile(updatedProfile);
+
+            // Call API to update the user settings
+            await updateUserSettings({
+                name: editedName,
+                email: editedEmail,
+                allergens: profile.allergens,
+                diet: '',
+                notifications: true,
+            });
+            
+            setIsEditing(false);
+            Alert.alert('Success', 'Profile was successfully updated!');
+        } catch (error) {
+            console.error('Failed to update the profile:', error);
+            Alert.alert('Error', 'Failed to update the profile. Please try again.');
+            
+            // Revert the changes when theres an error
+            setEditedName(profile.name);
+            setEditedEmail(profile.email);
+        }
+    };
+    
+    const handleCancel = () => {
+        if (profile) {
+            setEditedName(profile.name);
+            setEditedEmail(profile.email);
+        }
+        setIsEditing(false);
+    };
+
     if (loading || !profile) {
         return (
             <View style={styles.container}>
-                <Text>Loading...</Text>
+            <Text>Loading...</Text>
             </View>
         );
-    }
+    }  
 
     return (
         <ScrollView style={styles.container}>
             <Text style={styles.title}>Profile</Text>
 
+            {/* PROFILE ICON SECTIOn*/}
+            <View style={styles.profileIconContainer}>
+                <View style={styles.profileIcon}>
+                    <Ionicons name="person" size={60} color="#666" />
+                </View>
+                <Text style={styles.profileInitials}>
+                    {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </Text>
+            </View>
+
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Personal Information</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Personal Information</Text>
+                    {!isEditing ? (
+                        <TouchableOpacity
+                            style={styles.editButton}
+                            onPress={() => setIsEditing(true)}
+                        >
+                            <Ionicons name="create-outline" size={20} color="#2196F3" />
+                            <Text style={styles.editButtonText}>Edit</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <View style={styles.editActions}>
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.cancelButton]}
+                                onPress={handleCancel}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.actionButton, styles.saveButton]}
+                                onPress={handleSave}
+                            >
+                                <Text style={styles.saveButtonText}>Save</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
                 <View style={styles.infoCard}>
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Name</Text>
-                        <Text style={styles.value}>{profile.name}</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.textInput}
+                                value={editedName}
+                                onChangeText={setEditedName}
+                                placeholder="Enter your name"
+                            />
+                        ) : (
+                            <Text style={styles.value}>{profile.name}</Text>
+                        )}
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Email</Text>
-                        <Text style={styles.value}>{profile.email}</Text>
+                        {isEditing ? (
+                            <TextInput
+                                style={styles.textInput}
+                                value={editedEmail}
+                                onChangeText={setEditedEmail}
+                                placeholder="Enter your email"
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
+                        ) : (
+                            <Text style={styles.value}>{profile.email}</Text>
+                        )}
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.label}>Member Since</Text>
@@ -123,6 +230,28 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+        textAlign: 'center',
+    },
+    profileIconContainer: {
+        alignItems: 'center',
+        marginBottom: 30,
+        position: 'relative',
+    },
+    profileIcon: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#e0e0e0',
+    },
+    profileInitials: {
+        position: 'absolute',
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#666',
     },
     section: {
         marginBottom: 25,
@@ -138,6 +267,48 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 10,
     },
+    editButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#2196F3',
+    },
+    editButtonText: {
+        color: '#2196F3',
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginLeft: 4,
+    },
+    editActions: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    actionButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 16,
+        minWidth: 70,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: '#f5f5f5',
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    saveButton: {
+        backgroundColor: '#2196F3',
+    },
+    cancelButtonText: {
+        color: '#666',
+        fontWeight: 'bold',
+    },
+    saveButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+    },
     infoCard: {
         backgroundColor: '#f5f5f5',
         padding: 15,
@@ -146,18 +317,35 @@ const styles = StyleSheet.create({
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingVertical: 10,
+        alignItems: 'center',
+        paddingVertical: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
     label: {
         fontSize: 14,
         color: '#666',
+        flex: 1,
     },
     value: {
         fontSize: 14,
         fontWeight: 'bold',
         color: '#333',
+        flex: 2,
+        textAlign: 'right',
+    },
+    textInput: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#333',
+        flex: 2,
+        textAlign: 'right',
+        backgroundColor: '#fff',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: '#ddd',
     },
     manageButton: {
         backgroundColor: '#2196F3',
@@ -191,6 +379,8 @@ const styles = StyleSheet.create({
         color: '#999',
         fontSize: 16,
         fontStyle: 'italic',
+        textAlign: 'center',
+        paddingVertical: 20,
     },
     statsContainer: {
         flexDirection: 'row',
