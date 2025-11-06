@@ -13,8 +13,6 @@ import {
   Keyboard,
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { storage } from '../utils/storage';
 import { login } from '../api/client';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
@@ -44,7 +42,6 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     
     setLoading(true);
     try {
-      console.log('Attempting login...');
       const response = await login({ email, password });
       await SecureStore.setItemAsync('auth_token', response.token);
       await SecureStore.setItemAsync('user_data', JSON.stringify(response.user));
@@ -52,16 +49,6 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     } catch (error: any) {
       const errorMessage = error.response?.data?.error || 'Invalid email or password';
       Alert.alert('Login Failed', errorMessage);
-      console.log('Login response:', response);
-
-      await storage.setItem('auth_token', response.token);
-      console.log('Token saved');
-
-      onLogin();
-      console.log('onLogin Called');
-      } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Login Failed', 'Please try again');
     } finally {
       setLoading(false);
     }
@@ -91,7 +78,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              autoCompleteType="email"
+              autoComplete="email"
               textContentType="emailAddress"
             />
             <TextInput

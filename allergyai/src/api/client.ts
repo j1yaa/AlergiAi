@@ -1,9 +1,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
-import { storage } from '../utils/storage';
-import { UserProfile, AllergensResponse, AddAllergenRequest, RemoveAllergenRequest } from '../types';
-
+import * as SecureStore from 'expo-secure-store';
 import { 
   User, 
   Meal, 
@@ -15,9 +13,6 @@ import {
   RegisterRequest,
   LoginRequest,
   AuthResponse
-  Symptom,
-  SymptomsResponse,
-  SymptomAnalytics
 } from '../types';
 import { 
   mockUser, 
@@ -25,9 +20,7 @@ import {
   mockAnalytics, 
   mockUserSettings, 
   getMockAlertsResponse, 
-  getMockAnalyzeResponse,
-  getMockSymptomsResponse,
-  mockSymptomAnalytics
+  getMockAnalyzeResponse
 } from './mocks';
 
 const api = axios.create({
@@ -36,7 +29,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await storage.getItem('auth_token');
+  const token = await SecureStore.getItemAsync('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -136,82 +129,3 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
   );
 };
 
-export const saveSymptom = async (symptom: Omit<Symptom, 'id'>): Promise<Symptom> => {
-  return handleApiCall(
-    async () => {
-      const response = await api.post('/symptoms', symptom);
-      return response.data;
-    },
-    { ...symptom, id: `symptom-${Date.now()}` }
-  );
-};
-
-export const getSymptoms = async (): Promise<SymptomsResponse> => {
-  return handleApiCall(
-    async () => {
-      const response = await api.get('/symptoms');
-      return response.data;
-    },
-    getMockSymptomsResponse()
-  );
-};
-
-export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
-  return handleApiCall(
-    async () => {
-      const response = await api.get('/analytics/symptoms');
-      return response.data;
-    },
-    mockSymptomAnalytics
-  );
-};
-
-export const getProfile = async (): Promise<UserProfile> => {
-    return handleApiCall(
-        async () => {
-            const response = await api.get('/profile');
-            return response.data;
-        },
-        {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-            totalMeals: 127,
-            totalAlerts: 8,
-            createdAt: '2022-01-15T10:00:00Z',
-        }
-    );
-}; 
-
-export const getAllergens = async (): Promise<AllergensResponse> => {
-    return handleApiCall(
-        async () => {
-            const response = await api.get('/allergens');
-            return response.data;
-        },
-        {
-            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-        }
-    );
-};
-
-export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
-    return handleApiCall(
-        async () => {
-            const response = await api.post('/allergens', data);
-            return response.data;
-        },
-        undefined as void
-    );
-};
-
-export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
-    return handleApiCall(
-        async () => {
-            const response = await api.delete('/allergens', { data });
-            return response.data;
-        },
-        undefined as void
-    );
-};
