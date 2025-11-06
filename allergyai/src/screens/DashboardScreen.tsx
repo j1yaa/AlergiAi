@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { getAnalytics, getSymptomAnalytics } from '../api/client';
 import { AnalyticsSummary, SymptomAnalytics } from '../types';
@@ -8,9 +9,11 @@ export default function DashboardScreen() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [symptomAnalytics, setSymptomAnalytics] = useState<SymptomAnalytics | null>(null);
 
-  useEffect(() => {
-    loadAnalytics();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadAnalytics();
+    }, [])
+  );
 
   const loadAnalytics = async () => {
     try {

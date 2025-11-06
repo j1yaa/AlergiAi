@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
 import { storage } from '../utils/storage';
@@ -29,7 +30,7 @@ import {
   getMockAlertsResponse, 
   getMockAnalyzeResponse,
   getMockSymptomsResponse,
-  mockSymptomAnalytics
+  mockSymptoms
 } from './mocks';
 
 const api = axios.create({
@@ -139,16 +140,47 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
 };
 
 export const saveSymptom = async (symptom: Omit<Symptom, 'id'>): Promise<Symptom> => {
+  const newSymptom = { ...symptom, id: `symptom-${Date.now()}` };
+  
+  if (DEMO_MODE) {
+    // In demo mode, save to AsyncStorage
+    try {
+      const existingSymptoms = await AsyncStorage.getItem('symptoms');
+      const symptoms = existingSymptoms ? JSON.parse(existingSymptoms) : [];
+      symptoms.unshift(newSymptom);
+      await AsyncStorage.setItem('symptoms', JSON.stringify(symptoms));
+    } catch (error) {
+      console.warn('Failed to save symptom to storage:', error);
+    }
+    return newSymptom;
+  }
+  
   return handleApiCall(
     async () => {
       const response = await api.post('/symptoms', symptom);
       return response.data;
     },
-    { ...symptom, id: `symptom-${Date.now()}` }
+    newSymptom
   );
 };
 
 export const getSymptoms = async (): Promise<SymptomsResponse> => {
+  if (DEMO_MODE) {
+    try {
+      const storedSymptoms = await AsyncStorage.getItem('symptoms');
+      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : mockSymptoms;
+      return {
+        items: symptoms,
+        page: 1,
+        pageSize: 20,
+        total: symptoms.length
+      };
+    } catch (error) {
+      console.warn('Failed to load symptoms from storage:', error);
+      return getMockSymptomsResponse();
+    }
+  }
+  
   return handleApiCall(
     async () => {
       const response = await api.get('/symptoms');
@@ -159,12 +191,50 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
 };
 
 export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
+  if (DEMO_MODE) {
+    try {
+      const storedSymptoms = await AsyncStorage.getItem('symptoms');
+      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : mockSymptoms;
+      const avgSeverity = symptoms.length > 0 ? Number((symptoms.reduce((sum: number, s: Symptom) => sum + s.severity, 0) / symptoms.length).toFixed(1)) : 0;
+      
+      return {
+        avgSeverity,
+        weeklySymptoms: [
+          { week: 'Week 1', count: 1, avgSeverity: 2.0 },
+          { week: 'Week 2', count: 3, avgSeverity: 3.5 },
+          { week: 'Week 3', count: 2, avgSeverity: 2.5 },
+          { week: 'Week 4', count: symptoms.length, avgSeverity }
+        ],
+        commonSymptoms: [
+          { description: 'stomach discomfort', count: 5 },
+          { description: 'skin rash', count: 3 },
+          { description: 'headache', count: 2 }
+        ]
+      };
+    } catch (error) {
+      console.warn('Failed to load symptom analytics from storage:', error);
+    }
+  }
+  
   return handleApiCall(
     async () => {
       const response = await api.get('/analytics/symptoms');
       return response.data;
     },
-    mockSymptomAnalytics
+    {
+      avgSeverity: 3.0,
+      weeklySymptoms: [
+        { week: 'Week 1', count: 1, avgSeverity: 2.0 },
+        { week: 'Week 2', count: 3, avgSeverity: 3.5 },
+        { week: 'Week 3', count: 2, avgSeverity: 2.5 },
+        { week: 'Week 4', count: 1, avgSeverity: 4.0 }
+      ],
+      commonSymptoms: [
+        { description: 'stomach discomfort', count: 5 },
+        { description: 'skin rash', count: 3 },
+        { description: 'headache', count: 2 }
+      ]
+    }
   );
 };
 
