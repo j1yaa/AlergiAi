@@ -2,6 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 import { DEMO_MODE } from '../config/demo';
+import * as SecureStore from 'expo-secure-store';
 import { storage } from '../utils/storage';
 import { 
   User, 
@@ -13,6 +14,7 @@ import {
   UserSettings,
   RegisterRequest,
   LoginRequest,
+  AuthResponse
   AuthResponse,
   Symptom,
   SymptomsResponse,
@@ -28,6 +30,7 @@ import {
   mockAnalytics, 
   mockUserSettings, 
   getMockAlertsResponse, 
+  getMockAnalyzeResponse
   getMockAnalyzeResponse,
   getMockSymptomsResponse,
   mockSymptoms
@@ -39,7 +42,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
-  const token = await storage.getItem('auth_token');
+  const token = await SecureStore.getItemAsync('auth_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }

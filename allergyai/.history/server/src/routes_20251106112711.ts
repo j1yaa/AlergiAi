@@ -3,14 +3,13 @@ import { analyzeWithAI } from './data';
 import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse } from './types';
 import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
 import jwt from 'jsonwebtoken';
-
 import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
-import { SymptomsResponse, Symptom } from './types';
+import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, SymptomsResponse, Symptom } from './types';
 
 const router = Router();
 
 // Auth routes
-router.post('/auth/register', async (req, res) => {
+router.post('/auth/register', async (req, res) => 
   try {
     const { name, email, password, allergens = [] }: RegisterRequest = req.body;
     
@@ -255,7 +254,42 @@ router.put('/user/settings', async (req, res) => {
   }
 });
 
+// Symptoms routes
+router.get('/symptoms', (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const pageSize = parseInt(req.query.pageSize as string) || 20;
+  
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedSymptoms = mockSymptoms.slice(startIndex, endIndex);
+  
+  const response: SymptomsResponse = {
+    items: paginatedSymptoms,
+    page,
+    pageSize,
+    total: mockSymptoms.length
+  };
+  
+  res.json(response);
+});
 
+router.post('/symptoms', (req, res) => {
+  const { description, severity, dateISO } = req.body;
+  
+  const newSymptom: Symptom = {
+    id: `symptom-${Date.now()}`,
+    description,
+    severity,
+    dateISO
+  };
+  
+  mockSymptoms.unshift(newSymptom);
+  res.json(newSymptom);
+});
+
+router.get('/analytics/symptoms', (req, res) => {
+  res.json(mockSymptomAnalytics);
+});
 
 // Health check
 router.get('/health', (req, res) => {

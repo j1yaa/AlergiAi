@@ -43,11 +43,13 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     
     setLoading(true);
     try {
-      console.log('Attempting login...');
       const response = await login({ email, password });
       await SecureStore.setItemAsync('auth_token', response.token);
       await storage.setItem('auth_token', response.token);
       await SecureStore.setItemAsync('user_data', JSON.stringify(response.user));
+      onLogin();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error || 'Invalid email or password';
       
       console.log('Login response:', response);
 

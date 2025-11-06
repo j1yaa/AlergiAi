@@ -3,7 +3,12 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert 
 import Slider from '@react-native-community/slider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { saveSymptom } from '../api/client';
+// Placeholder function for symptom saving
+const saveSymptom = async (symptom: any) => {
+  console.log('Symptom saved locally:', symptom);
+  // This would normally save to the backend
+  return { ...symptom, id: `symptom-${Date.now()}` };
+};
 
 export default function AddSymptomScreen() {
   const [description, setDescription] = useState('');

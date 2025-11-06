@@ -1,4 +1,4 @@
-import { User, Meal, Alert, AnalyticsSummary, UserSettings, Symptom, SymptomAnalytics } from './types';
+import { User, Meal, Alert, AnalyticsSummary, UserSettings } from './types';
 
 export const mockUser: User = {
   id: 'user-123',
@@ -265,18 +265,3 @@ export const mockSymptoms: Symptom[] = [
 
 let symptomIdCounter = mockSymptoms.length + 1;
 
-export const mockSymptomAnalytics: SymptomAnalytics = {
-  avgSeverity: 2.6,
-  weeklySymptoms: [
-    { week: 'Week 1', count: 1, avgSeverity: 2.0 },
-    { week: 'Week 2', count: 3, avgSeverity: 3.3 },
-    { week: 'Week 3', count: 2, avgSeverity: 2.5 },
-    { week: 'Week 4', count: 1, avgSeverity: 4.0 }
-  ],
-  commonSymptoms: [
-    { description: 'stomach discomfort', count: 5 },
-    { description: 'skin rash', count: 3 },
-    { description: 'headache', count: 2 },
-    { description: 'itchy throat', count: 2 }
-  ]
-};

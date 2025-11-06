@@ -12,9 +12,10 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Apply auth middleware to all /api routes except login
+// Apply auth middleware to all /api routes except login, register, and health
 app.use('/api', (req, res, next) => {
-  if (req.path === '/auth/login') {
+  const publicPaths = ['/auth/login', '/auth/register', '/health'];
+  if (publicPaths.includes(req.path)) {
     return next();
   }
   authMiddleware(req, res, next);
@@ -24,4 +25,5 @@ app.use('/api', routes);
 
 app.listen(PORT, () => {
   console.log(`AllergyAI Server running on http://localhost:${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/api/health`);
 });
