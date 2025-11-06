@@ -6,9 +6,12 @@ export interface User {
 
 export interface Meal {
   id: string;
-  dateISO: string;
-  description: string;
-  ingredients: string[];
+  dateISO?: string;
+  description?: string;
+  ingredients?: string[];
+  createdAt?: string;
+  items?: string[];
+  note?: string;
 }
 
 export interface Alert {
