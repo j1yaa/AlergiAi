@@ -3,33 +3,8 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-// Mock symptom type and data
-interface Symptom {
-  id: string;
-  dateISO: string;
-  description: string;
-  severity: number;
-}
-
-// Placeholder function for getting symptoms
-const getSymptoms = async () => {
-  return {
-    items: [
-      {
-        id: 'symptom-1',
-        dateISO: '2024-01-15T14:30:00Z',
-        description: 'Mild stomach discomfort after lunch',
-        severity: 2
-      },
-      {
-        id: 'symptom-2',
-        dateISO: '2024-01-14T09:15:00Z',
-        description: 'Skin rash on arms',
-        severity: 4
-      }
-    ] as Symptom[]
-  };
-};
+import { getSymptoms } from '../api/client';
+import { Symptom } from '../types';
 
 export default function SymptomHistoryScreen() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);

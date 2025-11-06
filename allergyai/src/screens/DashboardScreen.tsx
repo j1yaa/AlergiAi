@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-import { getAnalytics, getSymptomAnalytics } from '../api/client';
-import { AnalyticsSummary, SymptomAnalytics } from '../types';
+import { getAnalytics } from '../api/client';
+import { AnalyticsSummary } from '../types';
 
 export default function DashboardScreen() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
-  const [symptomAnalytics, setSymptomAnalytics] = useState<SymptomAnalytics | null>(null);
 
   useEffect(() => {
     loadAnalytics();
@@ -14,18 +13,14 @@ export default function DashboardScreen() {
 
   const loadAnalytics = async () => {
     try {
-      const [analyticsData, symptomData] = await Promise.all([
-        getAnalytics(),
-        getSymptomAnalytics()
-      ]);
+      const analyticsData = await getAnalytics();
       setAnalytics(analyticsData);
-      setSymptomAnalytics(symptomData);
     } catch (error) {
       console.error('Failed to load analytics:', error);
     }
   };
 
-  if (!analytics || !symptomAnalytics) {
+  if (!analytics) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -47,8 +42,8 @@ export default function DashboardScreen() {
           <Text style={styles.statLabel}>Weekly Alerts</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{symptomAnalytics.avgSeverity.toFixed(1)}</Text>
-          <Text style={styles.statLabel}>Avg Severity</Text>
+          <Text style={styles.statValue}>{analytics.topAllergens.length}</Text>
+          <Text style={styles.statLabel}>Top Allergens</Text>
         </View>
       </View>
 
@@ -66,13 +61,12 @@ export default function DashboardScreen() {
       </View>
 
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Weekly Symptoms</Text>
-        <View style={styles.chartPlaceholder}>
-          {symptomAnalytics.weeklySymptoms.map((item, index) => (
-            <View key={index} style={styles.barItem}>
-              <Text style={styles.barLabel}>{item.week}</Text>
-              <View style={[styles.bar, { height: item.count * 25, backgroundColor: '#4CAF50' }]} />
-              <Text style={styles.barValue}>{item.count}</Text>
+        <Text style={styles.chartTitle}>Top Allergens</Text>
+        <View style={styles.allergenList}>
+          {analytics.topAllergens.map((item, index) => (
+            <View key={index} style={styles.allergenItem}>
+              <Text style={styles.allergenName}>{item.name}</Text>
+              <Text style={styles.allergenCount}>{item.count}</Text>
             </View>
           ))}
         </View>
@@ -150,5 +144,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#333',
+  },
+  allergenList: {
+    paddingVertical: 10,
+  },
+  allergenItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  allergenName: {
+    fontSize: 16,
+    color: '#333',
+  },
+  allergenCount: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
 });
