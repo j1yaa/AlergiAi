@@ -15,6 +15,8 @@ import AddSymptomScreen from '../screens/AddSymptomScreen';
 import SymptomHistoryScreen from '../screens/SymptomHistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AllergenScreen from '../screens/AllergenScreen';
+import ScannerScreen from '../screens/ScannerScreen';
+import ScanResultScreen from '../screens/ScanResultScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -58,13 +60,13 @@ function MainTabs() {
 function AlertsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="AlertsList" 
-        component={AlertsScreen} 
+      <Stack.Screen
+        name="AlertsList"
+        component={AlertsScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="AlertDetail" 
+      <Stack.Screen
+        name="AlertDetail"
         component={AlertDetailScreen}
         options={{ title: 'Alert Details' }}
       />
@@ -75,13 +77,13 @@ function AlertsStack() {
 function SymptomsStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="SymptomHistory" 
-        component={SymptomHistoryScreen} 
+      <Stack.Screen
+        name="SymptomHistory"
+        component={SymptomHistoryScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="AddSymptom" 
+      <Stack.Screen
+        name="AddSymptom"
         component={AddSymptomScreen}
         options={{ title: 'Log Symptom' }}
       />
@@ -118,8 +120,10 @@ export default function RootNavigator() {
       {isAuthenticated ? (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="AlertDetail" component={AlertDetailScreen} options={{ title: 'Alert Details', headerShown: true }}/>
+          <Stack.Screen name="AlertDetail" component={AlertDetailScreen} options={{ title: 'Alert Details', headerShown: true }} />
           <Stack.Screen name="Allergens" component={AllergenScreen} options={{ title: 'Manage Allergens', headerShown: true }} />
+          <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
