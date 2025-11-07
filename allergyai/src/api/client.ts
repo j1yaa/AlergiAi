@@ -14,7 +14,6 @@ import {
   UserSettings,
   RegisterRequest,
   LoginRequest,
-  AuthResponse
   AuthResponse,
   Symptom,
   SymptomsResponse,
@@ -30,7 +29,6 @@ import {
   mockAnalytics, 
   mockUserSettings, 
   getMockAlertsResponse, 
-  getMockAnalyzeResponse
   getMockAnalyzeResponse,
   getMockSymptomsResponse,
   mockSymptoms
