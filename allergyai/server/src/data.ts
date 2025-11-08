@@ -1,4 +1,4 @@
-import { User, Meal, Alert, AnalyticsSummary, UserSettings } from './types';
+import { User, Meal, Alert, AnalyticsSummary, UserSettings, Symptom } from './types';
 
 export const mockUser: User = {
   id: 'user-123',

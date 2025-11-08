@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { analyzeWithAI } from './data';
-import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse } from './types';
+import {
+    AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse,
+    SymptomsResponse, Symptom
+} from './types';
 import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
 import jwt from 'jsonwebtoken';
 
-import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
-import { SymptomsResponse, Symptom } from './types';
+// import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms } from './data';
 
 const router = Router();
 
@@ -212,6 +214,65 @@ router.get('/analytics/summary', async (req, res) => {
     console.error('Analytics error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Allergen routes
+router.get('/allergens', async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const user = await findUserByEmail((req as any).userEmail);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const allergens = JSON.parse(user.allergens || '[]');
+    res.json(allergens);
+  } catch (error) {
+      console.error('Get allergens error:', error);
+      res.status(500).json({ error: 'Internal server error'});
+  } 
+});
+
+router.post('/allergens', async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const {allergen} = req.body;
+    if (!allergen) {
+      return res.status(400).json({ error: 'Allergen is required' });
+    }
+
+    res.json({success: true});
+  } catch (error) {
+      console.error('Add allergen error:', error);
+      res.status(500).json({ error: 'Internal server error'});
+  } 
+});
+
+router.delete('/allergens', async (req, res) => {
+    try {
+        const userId = (req as any).userId;
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const { allergen } = req.body;
+        if (!allergen) {
+            return res.status(400).json({ error: 'Allergen is required' });
+        }
+
+        res.json({ success: true, allergen });
+    } catch (error) {
+        console.error('Remove allergen error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // User settings routes

@@ -1,28 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-// Mock user profile type and data
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  allergens: string[];
-  totalMeals: number;
-  totalAlerts: number;
-  createdAt: string;
-}
-
-// Placeholder function for getting profile
-const getProfile = async (): Promise<UserProfile> => {
-  return {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-    totalMeals: 127,
-    totalAlerts: 8,
-    createdAt: '2022-01-15T10:00:00Z',
-  };
-};
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, updateUserSettings } from '../api/client'; 

@@ -47,18 +47,12 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
       await SecureStore.setItemAsync('auth_token', response.token);
       await storage.setItem('auth_token', response.token);
       await SecureStore.setItemAsync('user_data', JSON.stringify(response.user));
+
+      console.log('Login response:', response);
+      console.log('Token saved');
       onLogin();
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Invalid email or password';
-      
-      console.log('Login response:', response);
-
-      console.log('Token saved');
-
-      onLogin();
-      console.log('onLogin Called');
-      } catch (error: any) {
-          console.error('Login error:', error);
+      console.error('Login error:', error);
           const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
       Alert.alert('Login Failed', errorMessage);
     } finally {
