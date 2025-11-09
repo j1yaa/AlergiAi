@@ -1,34 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-// Mock symptom type and data
-interface Symptom {
-  id: string;
-  dateISO: string;
-  description: string;
-  severity: number;
-}
+import { getSymptoms } from '../api/client';
+import { Symptom } from '../types';
 
-// Placeholder function for getting symptoms
-const getSymptoms = async () => {
-  return {
-    items: [
-      {
-        id: 'symptom-1',
-        dateISO: '2024-01-15T14:30:00Z',
-        description: 'Mild stomach discomfort after lunch',
-        severity: 2
-      },
-      {
-        id: 'symptom-2',
-        dateISO: '2024-01-14T09:15:00Z',
-        description: 'Skin rash on arms',
-        severity: 4
-      }
-    ] as Symptom[]
-  };
+// Placeholder function for deleting symptoms
+const deleteSymptom = async (id: string) => {
+  console.log('Deleting symptom:', id);
+  // This would normally delete from the backend
+  return true;
 };
 
 export default function SymptomHistoryScreen() {
@@ -44,13 +26,39 @@ export default function SymptomHistoryScreen() {
 
   const loadSymptoms = async () => {
     try {
+      console.log('Loading symptoms...');
       const response = await getSymptoms();
+      console.log('Loaded symptoms:', response.items);
       setSymptoms(response.items);
     } catch (error) {
       console.error('Failed to load symptoms:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteSymptom = (symptom: Symptom) => {
+    Alert.alert(
+      'Delete Symptom',
+      `Are you sure you want to delete this symptom?\n\n"${symptom.description}"`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSymptom(symptom.id);
+              setSymptoms(prev => prev.filter(s => s.id !== symptom.id));
+              Alert.alert('Success', 'Symptom deleted successfully');
+            } catch (error) {
+              console.error('Failed to delete symptom:', error);
+              Alert.alert('Error', 'Failed to delete symptom. Please try again.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const getSeverityColor = (severity: number) => {
@@ -75,15 +83,23 @@ export default function SymptomHistoryScreen() {
   };
 
   const renderSymptom = ({ item }: { item: Symptom }) => (
-    <TouchableOpacity style={styles.symptomCard}>
+    <View style={styles.symptomCard}>
       <View style={styles.symptomHeader}>
         <Text style={styles.date}>{formatDate(item.dateISO)}</Text>
-        <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
-          <Text style={styles.severityText}>{getSeverityLabel(item.severity)}</Text>
+        <View style={styles.headerRight}>
+          <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
+            <Text style={styles.severityText}>{getSeverityLabel(item.severity)}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.deleteButton}
+            onPress={() => handleDeleteSymptom(item)}
+          >
+            <Text style={styles.deleteButtonText}>×</Text>
+          </TouchableOpacity>
         </View>
       </View>
       <ThemedText style={styles.description}>{item.description}</ThemedText>
-    </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -161,6 +177,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   date: {
     fontSize: 14,
     color: '#666',
@@ -187,5 +208,19 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  deleteButton: {
+    backgroundColor: '#F44336',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 20,
   },
 });
