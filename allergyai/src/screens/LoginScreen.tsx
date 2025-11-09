@@ -53,11 +53,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
       onLogin();
     } catch (error: any) {
       console.error('Login error:', error);
-<<<<<<< HEAD
-          const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
-=======
       const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
->>>>>>> e1dde2b9 (feat(meal-logging): added meal logging screens, storage utils, and integration with dashboard)
       Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
