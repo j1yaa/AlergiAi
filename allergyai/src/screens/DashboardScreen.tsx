@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { getAnalytics } from '../api/client';
 import { AnalyticsSummary } from '../types';
+import { getMealAnalytics, MealAnalytics } from '../utils/mealAnalytics';
 
 export default function DashboardScreen() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [mealAnalytics, setMealAnalytics] = useState<MealAnalytics | null>(null);
+  const navigation = useNavigation();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -16,14 +20,18 @@ export default function DashboardScreen() {
 
   const loadAnalytics = async () => {
     try {
-      const analyticsData = await getAnalytics();
+      const [analyticsData, mealData] = await Promise.all([
+        getAnalytics(),
+        getMealAnalytics()
+      ]);
       setAnalytics(analyticsData);
+      setMealAnalytics(mealData);
     } catch (error) {
       console.error('Failed to load analytics:', error);
     }
   };
 
-  if (!analytics) {
+  if (!analytics || !mealAnalytics) {
     return (
       <View style={styles.container}>
         <Text>Loading...</Text>
@@ -33,35 +41,46 @@ export default function DashboardScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Dashboard</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Dashboard</Text>
+        <TouchableOpacity 
+          style={styles.quickLogButton}
+          onPress={() => navigation.navigate('MealLog' as never)}
+        >
+          <Ionicons name="add" size={20} color="#fff" />
+          <Text style={styles.quickLogText}>Log Meal</Text>
+        </TouchableOpacity>
+      </View>
       
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.safeMealsPct}%</Text>
+          <Text style={styles.statValue}>{mealAnalytics.safePercentage}%</Text>
           <Text style={styles.statLabel}>Safe Meals</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.weeklyExposure.reduce((sum, w) => sum + w.count, 0)}</Text>
-          <Text style={styles.statLabel}>Weekly Alerts</Text>
+          <Text style={styles.statValue}>{mealAnalytics.totalMeals}</Text>
+          <Text style={styles.statLabel}>Total Meals</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.topAllergens.length}</Text>
-          <Text style={styles.statLabel}>Top Allergens</Text>
+          <Text style={styles.statValue}>{mealAnalytics.riskMeals}</Text>
+          <Text style={styles.statLabel}>Risk Meals</Text>
         </View>
       </View>
 
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Weekly Exposure</Text>
+        <Text style={styles.chartTitle}>Weekly Risk Exposure</Text>
         <View style={styles.chartPlaceholder}>
-          {analytics.weeklyExposure.map((item, index) => (
+          {mealAnalytics.weeklyExposure.map((item, index) => (
             <View key={index} style={styles.barItem}>
               <Text style={styles.barLabel}>{item.week}</Text>
-              <View style={[styles.bar, { height: item.count * 20 }]} />
-              <Text style={styles.barValue}>{item.count}</Text>
+              <View style={[styles.bar, { height: Math.max(item.riskCount * 20, 5), backgroundColor: item.riskCount > 0 ? '#E53935' : '#4CAF50' }]} />
+              <Text style={styles.barValue}>{item.riskCount}</Text>
             </View>
           ))}
         </View>
       </View>
+
+
 
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Top Allergens</Text>
@@ -84,10 +103,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
   },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+  },
+  quickLogButton: {
+    backgroundColor: '#1E88E5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  quickLogText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 4,
   },
   statsContainer: {
     flexDirection: 'row',

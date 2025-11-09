@@ -9,6 +9,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import AddMealScreen from '../screens/AddMealScreen';
+import MealStack from './MealStack';
 import AlertsScreen from '../screens/AlertsScreen';
 import AlertDetailScreen from '../screens/AlertDetailScreen';
 import AddSymptomScreen from '../screens/AddSymptomScreen';
@@ -32,6 +33,8 @@ function MainTabs() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'AddMeal') {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
+          } else if (route.name === 'MealLog') {
+            iconName = focused ? 'restaurant' : 'restaurant-outline';
           } else if (route.name === 'Alerts') {
             iconName = focused ? 'warning' : 'warning-outline';
           } else if (route.name === 'Symptoms') {
@@ -50,6 +53,7 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
       <Tab.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Add Meal' }} />
+      <Tab.Screen name="MealLog" component={MealStack} options={{ title: 'Meal Log' }} />
       <Tab.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
       <Tab.Screen name="Symptoms" component={SymptomsStack} />
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />

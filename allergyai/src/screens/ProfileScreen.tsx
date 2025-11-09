@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert} from 'react-native';
+=======
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+>>>>>>> e1dde2b9 (feat(meal-logging): added meal logging screens, storage utils, and integration with dashboard)
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, updateUserSettings } from '../api/client'; 
 import { UserProfile } from '../types';
