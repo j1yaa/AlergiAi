@@ -3,12 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert 
 import Slider from '@react-native-community/slider';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-// Placeholder function for symptom saving
-const saveSymptom = async (symptom: any) => {
-  console.log('Symptom saved locally:', symptom);
-  // This would normally save to the backend
-  return { ...symptom, id: `symptom-${Date.now()}` };
-};
+import { saveSymptom } from '../api/client';
 
 export default function AddSymptomScreen() {
   const [description, setDescription] = useState('');
@@ -29,7 +24,9 @@ export default function AddSymptomScreen() {
         dateISO: new Date().toISOString()
       };
       
-      await saveSymptom(symptom);
+      console.log('Saving symptom:', symptom);
+      const savedSymptom = await saveSymptom(symptom);
+      console.log('Saved symptom:', savedSymptom);
       setDescription('');
       setSeverity(3);
       Alert.alert('Success', 'Symptom logged successfully');
@@ -39,6 +36,24 @@ export default function AddSymptomScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClear = () => {
+    Alert.alert(
+      'Clear Form',
+      'Are you sure you want to clear all entered data?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          style: 'destructive',
+          onPress: () => {
+            setDescription('');
+            setSeverity(3);
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -74,15 +89,25 @@ export default function AddSymptomScreen() {
         </View>
       </View>
 
-      <TouchableOpacity 
-        style={[styles.button, loading && styles.buttonDisabled]} 
-        onPress={handleSave}
-        disabled={loading || description.trim().length === 0}
-      >
-        <Text style={styles.buttonText}>
-          {loading ? 'Saving...' : 'Save Symptom'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[styles.button, loading && styles.buttonDisabled]} 
+          onPress={handleSave}
+          disabled={loading || description.trim().length === 0}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Saving...' : 'Save Symptom'}
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.clearButton}
+          onPress={handleClear}
+          disabled={loading}
+        >
+          <Text style={styles.clearButtonText}>Clear</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -130,17 +155,35 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2196F3',
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 10,
+  },
   button: {
     backgroundColor: '#2196F3',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 10,
+    flex: 1,
   },
   buttonDisabled: {
     backgroundColor: '#B0BEC5',
   },
   buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  clearButton: {
+    backgroundColor: '#F44336',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    flex: 0.4,
+  },
+  clearButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
