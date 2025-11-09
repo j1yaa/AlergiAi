@@ -4,6 +4,8 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { storage } from '../utils/storage';
+import { onAuthStateChange } from '../api/client';
+import { DEMO_MODE } from '../config/demo';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -103,11 +105,19 @@ export default function RootNavigator() {
   }, []);
 
   const checkAuthStatus = async () => {
-    try {
-      const token = await storage.getItem('auth_token');
-      setIsAuthenticated(!!token);
-    } catch (error) {
-      setIsAuthenticated(false);
+    if (DEMO_MODE) {
+      try {
+        const token = await storage.getItem('auth_token');
+        setIsAuthenticated(!!token);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
+    } else {
+      // Firebase auth state listener
+      const unsubscribe = onAuthStateChange((user) => {
+        setIsAuthenticated(!!user);
+      });
+      return unsubscribe;
     }
   };
 

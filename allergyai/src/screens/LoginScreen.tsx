@@ -15,6 +15,7 @@ import {
 import * as SecureStore from 'expo-secure-store';
 import { storage } from '../utils/storage';
 import { login } from '../api/client';
+import { testFirebaseAuth, testFirestore } from '../utils/firebaseTest';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
   const [email, setEmail] = useState('');
@@ -53,11 +54,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
       onLogin();
     } catch (error: any) {
       console.error('Login error:', error);
-<<<<<<< HEAD
-          const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
-=======
       const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
->>>>>>> e1dde2b9 (feat(meal-logging): added meal logging screens, storage utils, and integration with dashboard)
       Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
@@ -146,6 +143,20 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
             </TouchableOpacity>
             <TouchableOpacity onPress={() => { setEmail('jane@example.com'); setPassword('password123'); }}>
               <Text style={styles.demoText}>jane@example.com / password123</Text>
+            </TouchableOpacity>
+            
+            <Text style={styles.demoTitle}>Firebase Tests:</Text>
+            <TouchableOpacity onPress={async () => {
+              const result = await testFirebaseAuth();
+              Alert.alert('Auth Test', result.message);
+            }}>
+              <Text style={styles.demoText}>Test Firebase Auth</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={async () => {
+              const result = await testFirestore();
+              Alert.alert('Firestore Test', result.message);
+            }}>
+              <Text style={styles.demoText}>Test Firestore</Text>
             </TouchableOpacity>
           </View>
           <Text style={styles.footer}>Privacy-first allergy insights • Data stored securely</Text>
