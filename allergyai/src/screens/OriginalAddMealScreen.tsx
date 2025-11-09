@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeMeal, createMeal } from '../api/client';
 import { AnalyzeResponse } from '../types';
 import { Ionicons } from '@expo/vector-icons';
-import { MEALS_KEY, MealEntry } from '../utils/mealStorage';
 
-export default function AddMealScreen() {
+export default function OriginalAddMealScreen() {
   const navigation = useNavigation();
-  const [mealName, setMealName] = useState<string>('');
   const [description, setDescription] = useState('');
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,7 +19,6 @@ export default function AddMealScreen() {
     try {
       const response = await analyzeMeal({ description });
       setResult(response);
-      console.log('Analysis complete, mealName still:', mealName);
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -31,39 +27,21 @@ export default function AddMealScreen() {
   };
 
   const handleSave = async () => {
-    const nameFromName = (mealName ?? '').trim();
-    const nameFromDesc = (description ?? '').trim();
-    const finalName = nameFromName || nameFromDesc;
-    
-    const ing = Array.isArray(result?.ingredients)
-      ? result.ingredients
-      : (description ?? '').split(',').map(i => i.trim()).filter(Boolean);
+    const items = description
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
 
-    if (!finalName && ing.length === 0) {
-      Alert.alert('Missing Information', 'Please enter a meal name, description, or at least one ingredient.');
+    if (items.length === 0) {
+      Alert.alert('Add meal info', 'Please enter at least one item.');
       return;
     }
 
     setSaving(true);
     try {
-      const mealEntry: MealEntry = {
-        id: `meal-${Date.now()}`,
-        name: finalName || 'Unnamed Meal',
-        ingredients: ing,
-        riskScore: result?.riskScore || 25,
-        createdAt: new Date().toISOString()
-      };
-
-      const existingRaw = await AsyncStorage.getItem(MEALS_KEY);
-      const existing: MealEntry[] = existingRaw ? JSON.parse(existingRaw) : [];
-      existing.unshift(mealEntry);
-      await AsyncStorage.setItem(MEALS_KEY, JSON.stringify(existing));
-
+      await createMeal({ items, note: undefined });
       Alert.alert('Saved', 'Your meal was logged.');
-      setMealName('');
       setDescription('');
-      setResult(null);
-      navigation.navigate('MealLog' as never);
     } catch (e) {
       console.error('Save failed:', e);
       Alert.alert('Error', 'Could not save the meal.');
@@ -75,18 +53,6 @@ export default function AddMealScreen() {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Add Meal</Text>
-
-      <Text style={styles.label}>Meal Name</Text>
-      <TextInput
-        style={styles.input}
-        value={mealName}
-        onChangeText={(text) => {
-          console.log('TextInput onChange:', `"${text}"`);
-          setMealName(text);
-        }}
-        placeholder="Enter meal name..."
-        testID="mealNameInput"
-      />
 
       {/* Scan Button Card */}
       <TouchableOpacity
@@ -131,7 +97,7 @@ export default function AddMealScreen() {
       <TouchableOpacity
         style={[styles.saveBtn]}
         onPress={handleSave}
-        disabled={saving}
+        disabled={saving || !description.trim()}
       >
         <Text style={styles.saveBtnText}>
           {saving ? 'Saving...' : 'Save Meal'}
@@ -192,12 +158,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
-    marginBottom: 8,
   },
   input: {
     borderWidth: 1,
