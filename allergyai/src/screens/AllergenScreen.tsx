@@ -46,23 +46,28 @@ export default function AllergenScreen() {
     const handleRemoveAllergen = async (allergen: string) => {
         Alert.alert(
             'Remove Allergen',
-            `Are you sure that you want to remove "${allergen}" from the allergen list?`,
+            `WARNING: Removing "${allergen}" from your allergen list means the app will no longer alert you about this ingredient in food products.\n\nThis could put you at risk of accidental exposure. Are you absolutely sure you want to proceed?`,
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: 'Cancel', style: 'cancel', onPress: () => console.log('Cancel') },
                 {
-                    text: 'Remove',
+                    text: 'Remove Anyway',
                     style: 'destructive',
                     onPress: async () => {
                         try {
                             await removeAllergen({ allergen });
                             setAllergens(allergens.filter(a => a !== allergen));
+                            Alert.alert('Success', 'Allergen successfully removed!');
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to remove  allergen');
+                            Alert.alert('Error', 'Failed to remove allergen');
                             console.error('Failed to remove allergen:', error);
                         }
                     },
                 },
-            ]
+            ],
+            {
+                cancelable: true,
+                onDismiss: () => console.log('Alert dismissed'),
+            }
         );
     };
 

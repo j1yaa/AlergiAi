@@ -16,6 +16,12 @@ export const Colors = {
     icon: '#687076',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    primary: Platform.OS === 'android' ? '#1976D2' : '#0a7ea4',
+    secondary: '#FFC107',
+    error: '#F44336',
+    success: '#4CAF50',
+    warning: '#FF9800',
+    surface: '#F5F5F5',
   },
   dark: {
     text: '#ECEDEE',
@@ -24,6 +30,32 @@ export const Colors = {
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
+    primary: Platform.OS === 'android' ? '#2196F3' : '#0a7ea4',
+    secondary: '#FFD54F',
+    error: '#EF5350',
+    success: '#66BB6A',
+    warning: '#FFA726',
+    surface: '#2C2C2C',
+  },
+};
+
+export const AndroidTheme = {
+  elevation: {
+    low: 2,
+    medium: 4,
+    high: 8,
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
   },
 };
 

@@ -12,6 +12,11 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.allergyai.app",
+      "versionCode": 1,
+      "compileSdkVersion": 34,
+      "targetSdkVersion": 34,
+      "minSdkVersion": 23,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -19,7 +24,21 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "allowBackup": false,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
+      "permissionsPolicy": {
+        "CAMERA": "This app uses the camera to scan food labels and identify potential allergens in your meals.",
+        "READ_EXTERNAL_STORAGE": "This app needs to access your photos to help you upload images of food labels for allergen detection.",
+        "WRITE_EXTERNAL_STORAGE": "This app saves scanned food images to help you track your meal history and allergen exposure."
+      },
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "single",
