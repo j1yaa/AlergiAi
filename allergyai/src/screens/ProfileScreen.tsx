@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, updateUserSettings } from '../api/client'; 
 import { UserProfile } from '../types';
+import {isWeb} from '../utils/platform';
 
 export default function ProfileScreen({ navigation }: any) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -10,10 +11,9 @@ export default function ProfileScreen({ navigation }: any) {
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState('');
     const [editedEmail, setEditedEmail] = useState('');
+    const [saving, setSaving] = useState(false);
 
-    useEffect(() => { loadProfile(); }, []);
-
-    const loadProfile = async () => {
+    const loadProfile = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getProfile();
@@ -22,41 +22,67 @@ export default function ProfileScreen({ navigation }: any) {
             setEditedEmail(data.email);
         } catch (error) {
             console.error('Failed to load the profile:', error);
+            showAlert('Error', 'Failed to load the profile. Please try again.');
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadProfile();
+    }, [loadProfile]);
+
+    const showAlert = (title: string, message: string) => {
+        if (isWeb) {
+            window.alert(`${title}: ${message}`);
+        } else {
+            Alert.alert(title, message);
         }
     };
 
     const handleSave = async () => {
         if (!profile) return;
 
-        try {
-            // Update profile data locally
-            const updatedProfile = {
-                ...profile,
-                name: editedName,
-                email: editedEmail
-            };
-            setProfile(updatedProfile);
+        if (!editedName.trim()) {
+            showAlert('Validation Error', 'Name cannot be empty');
+            return;
+        }
 
+        if (!editedEmail.trim() || !editedEmail.includes('@')) {
+            showAlert('Validation Error', 'Please enter a valid email address');
+            return;
+        }
+
+        setSaving(true);
+        try {
             // Call API to update the user settings
             await updateUserSettings({
-                name: editedName,
-                email: editedEmail,
+                name: editedName.trim(),
+                email: editedEmail.trim(),
                 allergens: profile.allergens,
                 diet: '',
                 notifications: true,
             });
-            
+
+            // Update the profile data locally after the API call
+            const updatedProfile = {
+                ...profile,
+                name: editedName.trim(),
+                email: editedEmail.trim()
+            };
+            setProfile(updatedProfile);
+
             setIsEditing(false);
-            Alert.alert('Success', 'Profile was successfully updated!');
+            showAlert('Success', 'Profile was successfully updated!');
         } catch (error) {
             console.error('Failed to update the profile:', error);
-            Alert.alert('Error', 'Failed to update the profile. Please try again.');
-            
+            showAlert('Error', 'Failed to update the profile. Please try again.');
+
             // Revert the changes when theres an error
             setEditedName(profile.name);
             setEditedEmail(profile.email);
+        } finally {
+            setSaving(false);
         }
     };
     
@@ -68,25 +94,40 @@ export default function ProfileScreen({ navigation }: any) {
         setIsEditing(false);
     };
 
-    if (loading || !profile) {
+    if (loading) {
         return (
-            <View style={styles.container}>
-            <Text>Loading...</Text>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#2196F3" />
+                <Text style={styles.loadingText}>Loading the profile...</Text>
+            </View>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle-outline" size={64} color="#E53935" />
+                <Text style={styles.errorText}>Failed to load the profile.</Text>
+                <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={loadProfile}>
+                    <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
             </View>
         );
     }  
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
             <Text style={styles.title}>Profile</Text>
 
-            {/* PROFILE ICON SECTIOn*/}
+            {/* PROFILE ICON SECTION */}
             <View style={styles.profileIconContainer}>
                 <View style={styles.profileIcon}>
                     <Ionicons name="person" size={60} color="#666" />
                 </View>
                 <Text style={styles.profileInitials}>
-                    {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                 </Text>
             </View>
 
@@ -104,16 +145,22 @@ export default function ProfileScreen({ navigation }: any) {
                     ) : (
                         <View style={styles.editActions}>
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.cancelButton]}
-                                onPress={handleCancel}
+                                    style={[styles.actionButton, styles.cancelButton]}
+                                    onPress={handleCancel}
+                                    disabled={saving}
                             >
                                 <Text style={styles.cancelButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.actionButton, styles.saveButton]}
+                                style={[styles.actionButton, styles.saveButton, saving && styles.saveButtonDisabled]}
                                 onPress={handleSave}
+                                disabled={saving}
                             >
-                                <Text style={styles.saveButtonText}>Save</Text>
+                                    {saving ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.saveButtonText}>Save</Text>
+                                    )}
                             </TouchableOpacity>
                         </View>
                     )}
@@ -127,6 +174,7 @@ export default function ProfileScreen({ navigation }: any) {
                                 value={editedName}
                                 onChangeText={setEditedName}
                                 placeholder="Enter your name"
+                                editable={!saving}
                             />
                         ) : (
                             <Text style={styles.value}>{profile.name}</Text>
@@ -142,6 +190,7 @@ export default function ProfileScreen({ navigation }: any) {
                                 placeholder="Enter your email"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
+                                editable={!saving}
                             />
                         ) : (
                             <Text style={styles.value}>{profile.email}</Text>
@@ -168,14 +217,20 @@ export default function ProfileScreen({ navigation }: any) {
                 </View>
                 {profile.allergens.length > 0 ? (
                     <View style={styles.allergenContainer}>
-                        {profile.allergens.map((allergen, index) => (
+                        {profile.allergens.map((allergen: string, index: number) => (
                             <View key={index} style={styles.allergenPill}>
                                 <Text style={styles.allergenText}>{allergen}</Text>
                             </View>
                         ))}
                     </View>
                 ) : (
+                    <View style={styles.emptyState}>
+                        <Ionicons name="medical-outline" size={48} color="#ccc" />
                     <Text style={styles.noAllergens}>No allergens added yet</Text>
+                    <Text style={styles.emptyStateSubtext}>
+                         Tap <b>Manage</b> to add allergens
+                    </Text>
+                    </View>
                 )}
             </View>
 
@@ -183,10 +238,12 @@ export default function ProfileScreen({ navigation }: any) {
                 <Text style={styles.sectionTitle}>Statistics</Text>
                 <View style={styles.statsContainer}>
                     <View style={styles.statCard}>
+                        <Ionicons name="restaurant-outline" size={32} color="#2196F3" />
                         <Text style={styles.statValue}>{profile.totalMeals}</Text>
                         <Text style={styles.statLabel}>Total Meals</Text>
                     </View>
                     <View style={styles.statCard}>
+                        <Ionicons name="warning-outline" size={32} color="#E53935" />
                         <Text style={styles.statValue}>{profile.totalAlerts}</Text>
                         <Text style={styles.statLabel}>Alerts Triggered</Text>
                     </View>
@@ -200,18 +257,56 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+    contentContainer: {
+        padding: 20,
+        paddingBottom: 40,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
         padding: 20,
     },
+    errorText: {
+        marginTop: 16,
+        fontSize: 18,
+        color: '#E53935',
+        fontWeight: '600',
+    },
+    retryButton: {
+        marginTop: 20,
+        backgroundColor: '#2196F3',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 20,
-        textAlign: 'center',
+        marginBottom: 24,
+        color: '#333',
     },
     profileIconContainer: {
         alignItems: 'center',
-        marginBottom: 30,
-        position: 'relative',
+        marginBottom: 32,
     },
     profileIcon: {
         width: 120,
@@ -220,43 +315,40 @@ const styles = StyleSheet.create({
         backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 3,
-        borderColor: '#e0e0e0',
+        marginBottom: 12,
     },
     profileInitials: {
-        position: 'absolute',
-        fontSize: 24,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '600',
         color: '#666',
     },
     section: {
-        marginBottom: 25,
+        marginBottom: 24,
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
+        fontWeight: '600',
+        color: '#333',
     },
     editButton: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: '#2196F3',
+        borderRadius: 6,
+        backgroundColor: '#E3F2FD',
     },
     editButtonText: {
+        marginLeft: 4,
         color: '#2196F3',
         fontSize: 14,
-        fontWeight: 'bold',
-        marginLeft: 4,
+        fontWeight: '600',
     },
     editActions: {
         flexDirection: 'row',
@@ -265,98 +357,108 @@ const styles = StyleSheet.create({
     actionButton: {
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 16,
+        borderRadius: 6,
         minWidth: 70,
         alignItems: 'center',
     },
     cancelButton: {
         backgroundColor: '#f5f5f5',
-        borderWidth: 1,
-        borderColor: '#ddd',
+    },
+    cancelButtonText: {
+        color: '#666',
+        fontSize: 14,
+        fontWeight: '600',
     },
     saveButton: {
         backgroundColor: '#2196F3',
     },
-    cancelButtonText: {
-        color: '#666',
-        fontWeight: 'bold',
+    saveButtonDisabled: {
+        backgroundColor: '#90CAF9',
     },
     saveButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
+        fontSize: 14,
+        fontWeight: '600',
     },
     infoCard: {
-        backgroundColor: '#f5f5f5',
-        padding: 15,
-        borderRadius: 8,
+        backgroundColor: '#f9f9f9',
+        padding: 16,
+        borderRadius: 12,
     },
     infoRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        marginBottom: 16,
     },
     label: {
         fontSize: 14,
         color: '#666',
-        flex: 1,
+        marginBottom: 6,
+        fontWeight: '500',
     },
     value: {
-        fontSize: 14,
-        fontWeight: 'bold',
+        fontSize: 16,
+        fontWeight: '400',
         color: '#333',
-        flex: 2,
-        textAlign: 'right',
     },
     textInput: {
-        fontSize: 14,
-        fontWeight: 'bold',
+        fontSize: 16,
         color: '#333',
-        flex: 2,
-        textAlign: 'right',
-        backgroundColor: '#fff',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 8,
         borderWidth: 1,
         borderColor: '#ddd',
+        padding: 12,
+        backgroundColor: '#fff',
+        ...Platform.select({
+            web: {
+                outlineStyle: 'none' as any,
+            },
+        }),
     },
     manageButton: {
-        backgroundColor: '#2196F3',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 16,
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 6,
     },
     manageButtonText: {
-        color: '#fff',
+        color: '#2196F3',
         fontSize: 14,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
     allergenContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        gap: 8,
     },
     allergenPill: {
-        backgroundColor: '#ffebee',
-        paddingHorizontal: 12,
+        backgroundColor: '#FFEBEE',
+        paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 16,
-        marginRight: 8,
-        marginBottom: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#FFCDD2',
     },
     allergenText: {
-        color: '#d32f2f',
+        color: '#C62828',
         fontSize: 14,
-        fontWeight: 'bold',
+        fontWeight: '500',
+    },
+    emptyState: {
+        alignItems: 'center',
+        paddingVertical: 32,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 12,
     },
     noAllergens: {
         color: '#999',
         fontSize: 16,
         fontStyle: 'italic',
+        fontWeight: '500',
+    },
+    emptyStateSubtext: {
+        fontSize: 14,
+        color: '#bbb',
+        marginTop: 4,
         textAlign: 'center',
-        paddingVertical: 20,
     },
     statsContainer: {
         flexDirection: 'row',

@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { getAllergens, addAllergen, removeAllergen } from '../api/client';
+import {isWeb } from '../utils/platform';   
 
 export default function AllergenScreen() {
     const [allergens, setAllergens] = useState<string[]>([]);
@@ -10,6 +11,17 @@ export default function AllergenScreen() {
     useEffect(() => {
         loadAllergens();
     }, []);
+
+    const showAlert = (title: string, message: string, buttons?: any[]) => {
+        if (isWeb) {
+            const confirmed = window.confirm(`${title}\n\n${message}`);
+            if (confirmed && buttons && buttons[1]?.onPress) {
+                buttons[1].onPress();
+            }
+        } else {
+            Alert.alert(title, message, buttons);
+        }
+    };
 
     const loadAllergens = async () => {
         setLoading(true);
@@ -28,8 +40,8 @@ export default function AllergenScreen() {
 
         const allergenName = newAllergen.trim();
 
-        if (allergens.some(a => a.toLowerCase() === allergenName.toLowerCase())) {
-            Alert.alert('Duplicate', 'This allergen is already in your list');
+        if (allergens.some((a: string) => a.toLowerCase() === allergenName.toLowerCase())) {
+            showAlert('Duplicate', 'This allergen is already in your list');
             return;
         }
 
@@ -38,13 +50,13 @@ export default function AllergenScreen() {
             setAllergens([...allergens, allergenName]);
             setNewAllergen('');
         } catch (error) {
-            Alert.alert('Error', 'Failed to add  allergen');
+            showAlert('Error', 'Failed to add  allergen');
             console.error('Failed to add allergen:', error);
         }
     };
 
     const handleRemoveAllergen = async (allergen: string) => {
-        Alert.alert(
+        showAlert(
             'Remove Allergen',
             `WARNING: Removing "${allergen}" from your allergen list means the app will no longer alert you about this ingredient in food products.\n\nThis could put you at risk of accidental exposure. Are you absolutely sure you want to proceed?`,
             [
@@ -55,19 +67,15 @@ export default function AllergenScreen() {
                     onPress: async () => {
                         try {
                             await removeAllergen({ allergen });
-                            setAllergens(allergens.filter(a => a !== allergen));
-                            Alert.alert('Success', 'Allergen successfully removed!');
+                            setAllergens(allergens.filter((a: string) => a !== allergen));
+                            showAlert('Success', 'Allergen successfully removed!');
                         } catch (error) {
-                            Alert.alert('Error', 'Failed to remove allergen');
+                            showAlert('Error', 'Failed to remove allergen');
                             console.error('Failed to remove allergen:', error);
                         }
                     },
                 },
-            ],
-            {
-                cancelable: true,
-                onDismiss: () => console.log('Alert dismissed'),
-            }
+            ]
         );
     };
 
@@ -103,7 +111,7 @@ export default function AllergenScreen() {
                     <Text style={styles.loadingText}>Loading..</Text>
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
-                        {allergens.map((allergen, index) => (
+                        {allergens.map((allergen: string, index: number) => (
                         <View key={index} style={styles.allergenItem}>
                             <View style={styles.allergenPill}>
                                 <Text style={styles.allergenText}>{allergen}</Text>
@@ -152,55 +160,65 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     title: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
-        marginBottom: 20,
+        marginBottom: 24,
+        color: '#333',
     },
     inputSection: {
-        marginBottom: 30,
+        marginBottom: 32,
     },
     sectionTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
+        fontWeight: '600',
+        marginBottom: 12,
+        color: '#333',
     },
     inputContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
+        gap: 8,
     },
     input: {
         flex: 1,
         borderWidth: 1,
         borderColor: '#ddd',
-        padding: 15,
         borderRadius: 8,
+        padding: 12,
         fontSize: 16,
-        marginRight: 10,
+        backgroundColor: '#fff',
+        ...Platform.select({
+            web: {outlineStyle: 'none' as any,
+            },
+        }),
     },
     addButton: {
         backgroundColor: '#2196F3',
         paddingHorizontal: 20,
-        paddingVertical: 15,
+        paddingVertical: 12,
         borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     addButtonDisabled: {
-        backgroundColor: '#ccc',
+        backgroundColor: '#90CAF9',
+        opacity: 0.6,
     },
     addButtonText: {
         color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
     listSection: {
-        marginBottom: 30,
+        marginBottom: 32,
     },
     loadingText: {
+        fontSize: 16,
         color: '#666',
         textAlign: 'center',
-        padding: 20,
+        paddingVertical: 20,
     },
     allergenList: {
-        gap: 10,
+        gap: 12,
     },
     allergenItem: {
         flexDirection: 'row',
@@ -209,75 +227,76 @@ const styles = StyleSheet.create({
         backgroundColor: '#f9f9f9',
         padding: 12,
         borderRadius: 8,
-        marginBottom: 10,
     },
     allergenPill: {
-        backgroundColor: '#ffebee',
-        paddingHorizontal: 12,
+        backgroundColor: '#FFEBEE',
+        paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#FFCDD2',
     },
     allergenText: {
-        color: '#d32f2f',
-        fontSize: 14,
-        fontWeight: 'bold',
+        color: '#C62828',
+        fontSize: 16,
+        fontWeight: '500',
     },
     removeButton: {
-        backgroundColor: '#ff6b6b',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
+        backgroundColor: '#FFCDD2',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
     removeButtonText: {
-        color: '#fff',
+        color: '#C62828',
         fontSize: 18,
         fontWeight: 'bold',
     },
     emptyState: {
         alignItems: 'center',
-        padding: 40,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 8,
+        paddingVertical: 40,
+        backgroundColor: '#f9f9f9',
+        borderRadius: 12,
     },
     emptyStateText: {
         fontSize: 16,
-        color: '#666',
-        marginBottom: 5,
+        color: '#999',
+        fontWeight: '500',
     },
     emptyStateSubtext: {
         fontSize: 14,
-        color: '#999',
+        color: '#bbb',
+        marginTop: 8,
+        textAlign: 'center',
     },
     infoSection: {
-        backgroundColor: '#e3f2fd',
-        padding: 15,
-        borderRadius: 8,
+        marginBottom: 32,
     },
     infoTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        color: '#1976d2',
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 12,
+        color: '#333',
     },
     commonAllergens: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+        gap: 8,
     },
     commonPill: {
-        backgroundColor: '#fff',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 16,
-        marginRight: 8,
-        marginBottom: 8,
+        backgroundColor: '#E3F2FD',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#2196F3',
+        borderColor: '#BBDEFB',
     },
     commonText: {
-        color: '#2196F3',
+        color: '#1976D2',
         fontSize: 14,
+        fontWeight: '500',
     },
 });
                   
