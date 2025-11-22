@@ -2,15 +2,22 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  passwordHash: string;
+  createdAt: Date;
+  allergens: string[];
 }
 
 export interface Meal {
   id: string;
+  userId?: string;
+  timeStamp?: Date;
+  notes?: string;
+  photoURL?: string;
+  items: string[];
   dateISO?: string;
   description?: string;
   ingredients?: string[];
   createdAt?: string;
-  items?: string[];
   note?: string;
 }
 
@@ -21,9 +28,19 @@ export interface Alert {
   allergens: string[];
   severity: 'low' | 'medium' | 'high';
   note: string;
+  userId?: string;
+  message?: string;
+  type?: string;
+  timestamp?: Date;
+  read?: boolean;
+  triggered?: boolean;
 }
 
 export interface AnalyticsSummary {
+  totalMeals?: number;
+  totalAlerts?: number;
+  riskScore?: number;
+  weeklyTrend?: number[];
   safeMealsPct: number;
   weeklyExposure: { week: string; count: number }[];
   topAllergens: { name: string; count: number }[];
@@ -41,13 +58,17 @@ export interface AnalyzeResponse {
   advice: string;
 }
 
-
 export interface UserSettings {
+  userId?: string;
   name: string;
   email: string;
   allergens: string[];
   diet: string;
   notifications: boolean;
+  notificationTimes?: any[];
+  reminderEnabled?: boolean;
+  theme?: string;
+  language?: string;
 }
 
 export interface AlertsResponse {
@@ -73,6 +94,7 @@ export interface AuthResponse {
   token: string;
   user: User;
 }
+
 export interface Symptom {
   id: string;
   dateISO: string;

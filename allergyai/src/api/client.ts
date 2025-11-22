@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   collection, 
-  doc, 
   addDoc, 
   getDocs, 
   updateDoc, 
@@ -18,7 +17,6 @@ import {
 import { db, auth } from '../config/firebase';
 import { DEMO_MODE } from '../config/demo';
 import { 
-  User, 
   Meal, 
   AnalyzeRequest, 
   AnalyzeResponse, 
@@ -34,10 +32,10 @@ import {
   UserProfile,
   AllergensResponse,
   AddAllergenRequest,
-  RemoveAllergenRequest
+  RemoveAllergenRequest,
+  Alert
 } from '../types';
 import { 
-  mockUser, 
   mockMeals, 
   mockAnalytics, 
   mockUserSettings, 
@@ -47,83 +45,121 @@ import {
   mockSymptoms
 } from './mocks';
 
-const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, mockData: T): Promise<T> => {
+const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, fallbackData: T): Promise<T> => {
   if (DEMO_MODE) {
-    return mockData;
+    return fallbackData;
   }
   try {
     return await firebaseCall();
   } catch (error) {
     console.error('Firebase call failed:', error);
-    throw error;
+    return fallbackData;
   }
 };
 
-export const register = async (userData: RegisterRequest): Promise<AuthResponse> => {
-  return handleFirebaseCall(
-    async () => {
-      const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-      const user = userCredential.user;
+export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
+  if (DEMO_MODE) {
+    const mockToken = 'demo-token-' + Date.now();
+    await AsyncStorage.setItem('auth_token', mockToken);
+    return {
+      token: mockToken,
+      user: {
+        id: 'demo-user-' + Date.now(),
+        name: data.name,
+        email: data.email,
+        passwordHash: '',
+        createdAt: new Date(),
+        allergens: []
+      }
+    };
+  }
+
+  const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+  const firebaseUser = userCredential.user;
       
-      await addDoc(collection(db, 'users'), {
-        uid: user.uid,
-        name: userData.name,
-        email: userData.email,
-        allergens: [],
-        createdAt: new Date().toISOString()
-      });
-      
-      return {
-        token: await user.getIdToken(),
-        user: {
-          id: user.uid,
-          name: userData.name,
-          email: userData.email,
-          allergens: []
-        }
-      };
-    },
-    { token: 'demo.jwt.token', user: { ...mockUser, name: userData.name, email: userData.email } }
-  );
+  await addDoc(collection(db, 'users'), {
+    uid: firebaseUser.uid,
+    name: data.name,
+    email: data.email,
+    allergens: [],
+    createdAt: new Date().toISOString()
+  });
+
+  const token = await firebaseUser.getIdToken();
+  return {
+    token,
+    user: {
+      id: firebaseUser.uid,
+      name: data.name,
+      email: data.email,
+      passwordHash: '',
+      createdAt: new Date(),
+      allergens: []
+    }
+  };
 };
 
-export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
-  return handleFirebaseCall(
-    async () => {
-      const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
-      const user = userCredential.user;
+export const login = async (data: LoginRequest): Promise<AuthResponse> => {
+  if (DEMO_MODE) {
+    const mockToken = 'demo-token-' + Date.now();
+    await AsyncStorage.setItem('auth_token', mockToken);
+    return {
+      token: mockToken,
+      user: {
+        id: 'demo-user-1',
+        name: 'Demo User',
+        email: data.email,
+        passwordHash: '',
+        createdAt: new Date(),
+        allergens: ['Peanuts', 'Shellfish']
+      }
+    };
+  }
+
+  const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+  const firebaseUser = userCredential.user;
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
-      
-      return {
-        token: await user.getIdToken(),
-        user: {
-          id: user.uid,
-          name: userData?.name || user.displayName || '',
-          email: user.email || '',
-          allergens: userData?.allergens || []
-        }
-      };
-    },
-    { token: 'demo.jwt.token', user: mockUser }
-  );
+  const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+  const userDocs = await getDocs(userQuery);
+  const userData = userDocs.docs[0]?.data();
+
+  const token = await firebaseUser.getIdToken();
+  return {
+    token,
+    user: {
+      id: firebaseUser.uid,
+      name: userData?.name || firebaseUser.displayName || 'User',
+      email: firebaseUser.email || '',
+      passwordHash: '',
+      createdAt: userData?.createdAt ? new Date(userData.createdAt) : new Date(),
+      allergens: userData?.allergens || []
+    }
+  };
 };
 
 export const getMeals = async (): Promise<Meal[]> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
       const mealsQuery = query(
         collection(db, 'meals'),
-        where('userId', '==', user.uid),
+        where('userId', '==', firebaseUser.uid),
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(mealsQuery);
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Meal[];
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+          return {
+          id: doc.id,
+          userId: data.userId,
+          timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+          notes: data.notes || '',
+          photoURL: data.photoURL || '',
+          items: data.items || []
+        } as Meal;
+      });
     },
     mockMeals
   );
@@ -132,49 +168,93 @@ export const getMeals = async (): Promise<Meal[]> => {
 export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeResponse> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
-      const mockResponse = getMockAnalyzeResponse(payload.description);
-      
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userData = userDocs.docs[0]?.data();
+      const userAllergens = userData?.allergens || [];
+
+      // Analyze the meal descritions for potential allergens
+      const description = payload.description?.toLowerCase() || '';
+      const detectedAllergens = userAllergens.filter((allergen: string) =>
+        description.includes(allergen.toLowerCase())
+      );
+
+      const ingredients = description
+        .split(/[,;]/)
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      const riskScore = detectedAllergens.length > 0 ? 85 : 15;
+
+      const advice = detectedAllergens.length > 0
+        ? `High allergen risk was detected: ${detectedAllergens.join(', ')}. Avoid this meal.`
+        : 'This meal appears to be safe for your dietary restrictions.';
+
+      const response: AnalyzeResponse = {
+        ingredients,
+        allergens: detectedAllergens,
+        riskScore,
+        advice
+      };
+
+      // Save the analyzed meal the Firabase
       await addDoc(collection(db, 'meals'), {
-        userId: user.uid,
+        userId: firebaseUser.uid,
         description: payload.description,
-        ingredients: mockResponse.ingredients,
-        allergens: mockResponse.allergens,
-        riskScore: mockResponse.riskScore,
-        advice: mockResponse.advice,
+        ingredients: response.ingredients,
+        allergens: response.allergens,
+        riskScore: response.riskScore,
+        advice: response.advice,
         createdAt: new Date().toISOString()
       });
       
-      return mockResponse;
+      return response;
     },
-    getMockAnalyzeResponse(payload.description)
+    getMockAnalyzeResponse(payload.description || '')
   );
 };
 
 export const getAlerts = async (params?: { status?: string; page?: number; pageSize?: number }): Promise<AlertsResponse> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
       const alertsQuery = query(
         collection(db, 'alerts'),
-        where('userId', '==', user.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', firebaseUser.uid),
+        orderBy('timestamp', 'desc')
       );
       
       const snapshot = await getDocs(alertsQuery);
-      const alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const alerts = snapshot.docs.map(doc => {
+        const data = doc.data();
+          return {
+            id: doc.id, 
+            userId: data.userId,
+            message: data.message,
+            type: data.type,
+            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+            read: data.read || false,
+            triggered: data.triggered || false,
+            mealId: data.mealId || '',
+            dateISO: data.timestamp || new Date().toISOString(),
+            allergens: data.allergens || [],
+            severity: data.severity || 'medium',
+            note: data.note || ''
+          } as Alert;
+        });
       
-      return {
-        items: alerts,
-        page: params?.page || 1,
-        pageSize: params?.pageSize || 20,
-        total: alerts.length
-      };
-    },
+        return {
+          items: alerts,
+          page: params?.page || 1,
+          pageSize: params?.pageSize || 20,
+          total: alerts.length
+        };
+      },
     getMockAlertsResponse(params?.status)
   );
 };
@@ -182,17 +262,34 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
 export const getAnalytics = async (): Promise<AnalyticsSummary> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
-      const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', user.uid)));
-      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', user.uid)));
-      
+      const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
+      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
+
+      const meals = mealsSnapshot.docs.map(doc => doc.data());
+      const totalMeals = meals.length;
+      const safeMeals = meals.filter((meal: any) => (meal.riskScore || 0) < 50).length;
+      const safeMealsPct = totalMeals > 0 ? Math.round((safeMeals / totalMeals) * 100) : 0;
+   
       return {
-        totalMeals: mealsSnapshot.size,
+        totalMeals,
         totalAlerts: alertsSnapshot.size,
         riskScore: 2.5,
-        weeklyTrend: [1, 3, 2, 4, 2, 1, 3]
+        weeklyTrend: [1, 3, 2, 4, 2, 1, 3],
+        safeMealsPct,
+          weeklyExposure: [
+            { week: 'Week 1', count: 1 },
+            { week: 'Week 2', count: 3 },
+            { week: 'Week 3', count: 2 },
+            { week: 'Week 4', count: 4 }
+          ],
+        topAllergens: [
+          { name: 'Peanuts', count: 3 },
+          { name: 'Dairy', count: 2 },
+          { name: 'Shellfish', count: 1 }
+        ]
       };
     },
     mockAnalytics
@@ -202,17 +299,19 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
 export const getUserSettings = async (): Promise<UserSettings> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
       const userDocs = await getDocs(userQuery);
       const userData = userDocs.docs[0]?.data();
       
       return {
-        notifications: userData?.notifications || true,
+        name: userData?.name || '',
+        email: userData?.email || firebaseUser.email || '',
         allergens: userData?.allergens || [],
-        riskThreshold: userData?.riskThreshold || 3
+        diet: userData?.diet || '',
+        notifications: userData?.notifications !== false
       };
     },
     mockUserSettings
@@ -222,15 +321,21 @@ export const getUserSettings = async (): Promise<UserSettings> => {
 export const updateUserSettings = async (settings: UserSettings): Promise<UserSettings> => {
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
       const userDocs = await getDocs(userQuery);
       const userDocRef = userDocs.docs[0]?.ref;
       
       if (userDocRef) {
-        await updateDoc(userDocRef, settings);
+        await updateDoc(userDocRef, {
+          name: settings.name,
+          email: settings.email,
+          notifications: settings.notifications,
+          allergens: settings.allergens,
+          diet: settings.diet
+        });
       }
       
       return settings;
@@ -256,18 +361,52 @@ export const saveSymptom = async (symptom: Omit<Symptom, 'id'>): Promise<Symptom
   
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
       const docRef = await addDoc(collection(db, 'symptoms'), {
         ...symptom,
-        userId: user.uid,
+        userId: firebaseUser.uid,
         createdAt: new Date().toISOString()
       });
       
       return { ...symptom, id: docRef.id };
     },
     newSymptom
+  );
+};
+
+export const deleteSymptom = async (symptomId: string): Promise<void> => {
+  if (DEMO_MODE) {
+    try {
+      const existingSymptoms = await AsyncStorage.getItem('symptoms');
+      const symptoms = existingSymptoms ? JSON.parse(existingSymptoms) : [];
+      const filtered = symptoms.filter((s: Symptom) => s.id !== symptomId);
+      await AsyncStorage.setItem('symptoms', JSON.stringify(filtered));
+    } catch (error) {
+      console.warn('Failed to delete the symptom from the storage:', error);
+      throw error;
+    }
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User is not authenticated');
+
+      const symptomsQuery = query(collection(db, 'symptoms'), where('userId', '==', firebaseUser.uid));
+      const snapshot = await getDocs(symptomsQuery);
+      const symptomDoc = snapshot.docs.find(doc => doc.id === symptomId);
+
+      if (symptomDoc) {
+        await updateDoc(symptomDoc.ref, {
+          deleted: true,
+          deletedAt: new Date().toISOString()
+        });
+      }
+    },
+    undefined
   );
 };
 
@@ -290,16 +429,17 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
   
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
       const symptomsQuery = query(
         collection(db, 'symptoms'),
-        where('userId', '==', user.uid),
+        where('userId', '==', firebaseUser.uid),
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(symptomsQuery);
-      const symptoms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Symptom[];
+      const symptoms = snapshot.docs.map(doc => 
+          ({ id: doc.id, ...doc.data() })).filter((s: any) => !s.deleted) as Symptom[];
       
       return {
         items: symptoms,
@@ -340,23 +480,27 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
   
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
-      const symptomsQuery = query(collection(db, 'symptoms'), where('userId', '==', user.uid));
+      const symptomsQuery = query(collection(db, 'symptoms'), where('userId', '==', firebaseUser.uid));
       const snapshot = await getDocs(symptomsQuery);
-      const symptoms = snapshot.docs.map(doc => doc.data()) as Symptom[];
+      const symptoms = snapshot.docs.map(doc => doc.data()).filter((s: any) => !s.deleted) as Symptom[];
       
       const avgSeverity = symptoms.length > 0 ? 
-        Number((symptoms.reduce((sum, s) => sum + s.severity, 0) / symptoms.length).toFixed(1)) : 0;
-      
+      Number((symptoms.reduce((sum, s) => sum + s.severity, 0) / symptoms.length).toFixed(1)) : 0;
+
+      const now = new Date();
+      const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const recentSymptoms = symptoms.filter(s => new Date(s.dateISO) >= fourWeeksAgo);
+
       return {
         avgSeverity,
         weeklySymptoms: [
           { week: 'Week 1', count: 1, avgSeverity: 2.0 },
           { week: 'Week 2', count: 3, avgSeverity: 3.5 },
           { week: 'Week 3', count: 2, avgSeverity: 2.5 },
-          { week: 'Week 4', count: symptoms.length, avgSeverity }
+          { week: 'Week 4', count: recentSymptoms.length, avgSeverity }
         ],
         commonSymptoms: [
           { description: 'stomach discomfort', count: 5 },
@@ -383,102 +527,142 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
-    return handleFirebaseCall(
-        async () => {
-            const user = auth.currentUser;
-            if (!user) throw new Error('User not authenticated');
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
+           
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userData = userDocs.docs[0]?.data();
             
-            const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
-            const userDocs = await getDocs(userQuery);
-            const userData = userDocs.docs[0]?.data();
+      const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
+      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
             
-            const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', user.uid)));
-            const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', user.uid)));
-            
-            return {
-                id: user.uid,
-                name: userData?.name || user.displayName || '',
-                email: user.email || '',
-                allergens: userData?.allergens || [],
-                totalMeals: mealsSnapshot.size,
-                totalAlerts: alertsSnapshot.size,
-                createdAt: userData?.createdAt || new Date().toISOString(),
-            };
-        },
-        {
-            id: '1',
-            name: 'John Doe',
-            email: 'john@example.com',
-            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-            totalMeals: 127,
-            totalAlerts: 8,
-            createdAt: '2022-01-15T10:00:00Z',
-        }
-    );
+      return {
+        id: firebaseUser.uid,
+        name: userData?.name || firebaseUser.displayName || '',
+        email: firebaseUser.email || '',
+        allergens: userData?.allergens || [],
+        totalMeals: mealsSnapshot.size,
+        totalAlerts: alertsSnapshot.size,
+        createdAt: userData?.createdAt || new Date().toISOString(),
+      };
+    },
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      allergens: ['Peanuts', 'Shellfish', 'Dairy'],
+      totalMeals: 127,
+      totalAlerts: 8,
+      createdAt: '2022-01-15T10:00:00Z',
+    }
+  );
 }; 
 
 export const getAllergens = async (): Promise<AllergensResponse> => {
-    return handleFirebaseCall(
-        async () => {
-            const user = auth.currentUser;
-            if (!user) throw new Error('User not authenticated');
-            
-            const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
-            const userDocs = await getDocs(userQuery);
-            const userData = userDocs.docs[0]?.data();
-            
-            return {
-                allergens: userData?.allergens || [],
-            };
-        },
-        {
-            allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-        }
-    );
+  if (DEMO_MODE) {
+    try {
+      const stored = await AsyncStorage.getItem('@allergyai_allergens');
+      const allergens = stored ? JSON.parse(stored) : [];
+      return {allergens};
+    } catch (error) {
+      console.error('Failed to load allergens from storage:', error);
+      return {allergens: []};
+    }
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User is not authenticated');
+
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userData = userDocs.docs[0]?.data();
+
+      return {
+        allergens: userData?.allergens || [],
+      };
+    },
+    { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
+  ); 
 };
 
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
-    return handleFirebaseCall(
-        async () => {
-            const user = auth.currentUser;
-            if (!user) throw new Error('User not authenticated');
-            
-            const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
-            const userDocs = await getDocs(userQuery);
-            const userDocRef = userDocs.docs[0]?.ref;
-            const userData = userDocs.docs[0]?.data();
-            
-            if (userDocRef) {
-                const currentAllergens = userData?.allergens || [];
-                await updateDoc(userDocRef, {
-                    allergens: [...currentAllergens, data.allergen]
-                });
-            }
-        },
-        undefined as void
-    );
+  if (DEMO_MODE) {
+    try {
+      const stored = await AsyncStorage.getItem('@allergyai_allergens');
+      const allergens = stored ? JSON.parse(stored) : [];
+      // Check if there duplicates
+      if (!allergens.includes(data.allergen)) {
+        allergens.push(data.allergen);
+        await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(allergens));
+      }
+    } catch (error) {
+      console.error('Failed to add the allergen to storage:', error);
+      throw error;      
+    }
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User is not authenticated');
+
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userDocRef = userDocs.docs[0]?.ref;
+      const userData = userDocs.docs[0]?.data();
+
+      if (userDocRef) {
+        const currentAllergens = userData?.allergens || [];
+        if (!currentAllergens.includes(data.allergen)) {
+          await updateDoc(userDocRef, {
+            allergens: [...currentAllergens, data.allergen]
+          });
+        }
+      }
+    },
+    undefined
+  );
 };
 
 export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void> => {
-    return handleFirebaseCall(
-        async () => {
-            const user = auth.currentUser;
-            if (!user) throw new Error('User not authenticated');
+  if (DEMO_MODE) {
+    try {
+      const stored = await AsyncStorage.getItem('@allergyai_allergens');
+      const allergens = stored ? JSON.parse(stored) : [];
+      const filtered = allergens.filter((a: string) => a !== data.allergen);
+        await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(filtered));
+      } catch (error) {
+        console.error('Failed to remove the allergen from storage:', error);
+        throw error;
+      }
+      return;
+  }
+  
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
             
-            const userQuery = query(collection(db, 'users'), where('uid', '==', user.uid));
-            const userDocs = await getDocs(userQuery);
-            const userDocRef = userDocs.docs[0]?.ref;
-            const userData = userDocs.docs[0]?.data();
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userDocRef = userDocs.docs[0]?.ref;
+      const userData = userDocs.docs[0]?.data();
             
-            if (userDocRef) {
-                const currentAllergens = userData?.allergens || [];
-                await updateDoc(userDocRef, {
-                    allergens: currentAllergens.filter((a: string) => a !== data.allergen)
-                });
-            }
-        },
-        undefined as void
-    );
+      if (userDocRef) {
+        const currentAllergens = userData?.allergens || [];
+        await updateDoc(userDocRef, {
+          allergens: currentAllergens.filter((a: string) => a !== data.allergen)
+        });
+      }
+    },
+    undefined
+  );
 };
 
 export async function createMeal(payload: { items: string[]; note?: string }): Promise<Meal> {
@@ -498,12 +682,12 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
 
   return handleFirebaseCall(
     async () => {
-      const user = auth.currentUser;
-      if (!user) throw new Error('User not authenticated');
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
       
       const docRef = await addDoc(collection(db, 'meals'), {
         ...newMeal,
-        userId: user.uid
+        userId: firebaseUser.uid
       });
       
       return { ...newMeal, id: docRef.id };
@@ -517,5 +701,9 @@ export const onAuthStateChange = (callback: (user: any) => void) => {
 };
 
 export const logout = async (): Promise<void> => {
+  if (DEMO_MODE) {
+    await AsyncStorage.removeItem('auth_token');
+      return;
+  }
   await signOut(auth);
 };

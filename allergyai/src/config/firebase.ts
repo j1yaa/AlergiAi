@@ -1,14 +1,14 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+import {initializeAuth} from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   FIREBASE_API_KEY,
   FIREBASE_AUTH_DOMAIN,
   FIREBASE_PROJECT_ID,
   FIREBASE_STORAGE_BUCKET,
   FIREBASE_MESSAGING_SENDER_ID,
-  FIREBASE_APP_ID
+    FIREBASE_APP_ID
 } from '@env';
 
 const firebaseConfig = {
@@ -20,21 +20,57 @@ const firebaseConfig = {
   appId: FIREBASE_APP_ID
 };
 
+// DEBUg config
+console.log('Firebase config loaded:', {
+  projectId: FIREBASE_PROJECT_ID,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  hasApiKey: !!FIREBASE_API_KEY
+});
+
 let app;
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
+  console.log('Firebase app initialized');
 } else {
   app = getApps()[0];
+  console.log('Using an existing Firebase app');
 }
 
 export const db = getFirestore(app);
+console.log('Firestore initialized');
 
-let auth;
-try {
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-  });
-} catch {
-  auth = getAuth(app);
+export const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+function getReactNativePersistence(storage: typeof AsyncStorage) {
+  return {
+    type: 'LOCAL' as const,
+    async getItem(key: string): Promise<string | null> {
+      try {
+        return await storage.getItem(key);
+      } catch (error) {
+        console.error('Error gettomg the item from storage:', error);
+        return null;
+      }
+    },
+    async setItem(key: string, value: string): Promise<void> {
+      try {
+        await storage.setItem(key, value);
+      } catch (error) {
+        console.error('Error setting the item in storage:', error);
+      }
+    },
+    async removeItem(key: string): Promise<void> {
+      try {
+        await storage.removeItem(key);
+      } catch (error) {
+        console.error('Error removing the item from storage:', error);
+      }
+    },
+  };
 }
-export { auth };
+
+console.log('Firebase Auth initialized with AsyncStorage persistence');
+
+export default app;
