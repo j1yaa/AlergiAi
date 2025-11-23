@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import {initializeAuth} from 'firebase/auth';
+import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
   FIREBASE_API_KEY,
@@ -42,34 +42,6 @@ console.log('Firestore initialized');
 export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage)
 });
-
-function getReactNativePersistence(storage: typeof AsyncStorage) {
-  return {
-    type: 'LOCAL' as const,
-    async getItem(key: string): Promise<string | null> {
-      try {
-        return await storage.getItem(key);
-      } catch (error) {
-        console.error('Error gettomg the item from storage:', error);
-        return null;
-      }
-    },
-    async setItem(key: string, value: string): Promise<void> {
-      try {
-        await storage.setItem(key, value);
-      } catch (error) {
-        console.error('Error setting the item in storage:', error);
-      }
-    },
-    async removeItem(key: string): Promise<void> {
-      try {
-        await storage.removeItem(key);
-      } catch (error) {
-        console.error('Error removing the item from storage:', error);
-      }
-    },
-  };
-}
 
 console.log('Firebase Auth initialized with AsyncStorage persistence');
 
