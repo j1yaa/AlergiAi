@@ -23,6 +23,13 @@ export default function ScanResultScreen() {
 
     const hasAllergens = params.allergenWarnings.length > 0;
 
+    const handleDone = () => {
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainTabs' as never }],
+        });
+    };
+
     return (
         <View style={styles.container}>
             {/* Header */}
@@ -100,7 +107,7 @@ export default function ScanResultScreen() {
                 <View style={styles.noteCard}>
                     <Ionicons name="information-circle-outline" size={20} color="#666" />
                     <Text style={styles.noteText}>
-                        This is a demo for Sprint 2. AI analysis will be integrated in the next sprint.
+                        Powered by Gemini AI. Results are based on ingredient detection and food.
                     </Text>
                 </View>
             </ScrollView>
@@ -117,7 +124,7 @@ export default function ScanResultScreen() {
 
                 <TouchableOpacity
                     style={styles.doneButton}
-                    onPress={() => navigation.navigate('Dashboard' as never)}
+                    onPress={handleDone}
                 >
                     <Text style={styles.doneButtonText}>Done</Text>
                 </TouchableOpacity>

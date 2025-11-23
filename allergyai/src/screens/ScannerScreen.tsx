@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -10,10 +10,22 @@ import {
 import { CameraView, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { analyzeImg } from '../utils/geminiService';
+import { getAllergens } from '../api/client';
+
+type RootStackParamList = {
+    ScanResult: {
+        productName: string;
+        detectedIngredients: string[];
+        allergenWarnings: string[];
+        safeIngredients: string[];
+    };
+};
 
 export default function ScannerScreen() {
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+    const cameraRef = useRef<CameraView>(null);
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [flashOn, setFlashOn] = useState(false);
@@ -25,14 +37,82 @@ export default function ScannerScreen() {
         })();
     }, []);
 
-    const handleScan = async () => {
-        setIsScanning(true);
+    const convertImgToBase64 = async (imageUri: string): Promise<string> => {
+        try {
+            const response = await fetch(imageUri);
+            const blob = await response.blob();
+            const reader = new FileReader();
 
-        // Simulate scanning delay (will be replaced with actual AI analysis later)
-        setTimeout(() => {
+            return new Promise((resolve, reject) => {
+                reader.onloadend = () => {
+                    const base64String = reader.result as string;
+                    const base64Data = base64String.split(',')[1];
+                    resolve(base64Data);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.error('Error converting image to base64:', error);
+            throw error;
+        }
+    };
+
+    const processImage = async (imageUri: string) => {
+        try {
+            setIsScanning(true);
+
+            // Convert image to base64
+            const base64Img = await convertImgToBase64(imageUri);
+
+            // Analyze the image
+            const geminiResult = await analyzeImg(base64Img);
+
+            // Get users allergens
+            const allergenResponse = await getAllergens();
+            const userAllergens = allergenResponse.allergens || [];
+
+            // Compare ingredients with user allergens
+            const allergenWarnings = geminiResult.detectedIngredients.filter(ingredient =>
+                userAllergens.some(allergen =>
+                    ingredient.toLowerCase().includes(allergen.toLowerCase()) ||
+                    allergen.toLowerCase().includes(ingredient.toLowerCase())
+                )
+            );
+
+            const safeIngredients = geminiResult.detectedIngredients.filter(
+                ingredient => !allergenWarnings.includes(ingredient)
+            );
+
+            // Go to the result screen
+            navigation.navigate('ScanResult', {
+                productName: geminiResult.productName || 'Unknown Product',
+                detectedIngredients: geminiResult.detectedIngredients,
+                allergenWarnings: allergenWarnings,
+                safeIngredients: safeIngredients,
+            });
+            
             setIsScanning(false);
-            Alert.alert('Scan Complete', 'AI analysis coming soon!');
-        }, 2000);
+        } catch (error) {
+            setIsScanning(false);
+            const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+            Alert.alert('Analysis Failed', errorMessage, [{ text: 'OK' }]);
+        }
+    };
+
+    const handleScan = async () => {
+        if (!cameraRef.current) {
+            Alert.alert('Error', 'Camera not available');
+            return;
+        }
+
+        try {
+            const photo = await cameraRef.current.takePictureAsync({ base64: false });
+            await processImage(photo.uri);
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            Alert.alert('Error', 'Failed to take the photo');
+        }
     };
 
     const pickImageFromGallery = async () => {
@@ -44,17 +124,13 @@ export default function ScannerScreen() {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-            allowsEditing: true,
-            quality: 1,
+            mediaTypes: ['images'],
+            allowsEditing: false,
+            quality: 0.8,
         });
 
-        if (!result.canceled) {
-            setIsScanning(true);
-            setTimeout(() => {
-                setIsScanning(false);
-                Alert.alert('Image Selected', 'AI analysis coming soon!');
-            }, 1500);
+        if (!result.canceled && result.assets.length > 0) {
+            await processImage(result.assets[0].uri);
         }
     };
 
@@ -69,7 +145,7 @@ export default function ScannerScreen() {
     if (hasPermission === false) {
         return (
             <View style={styles.container}>
-                <Ionicons name="camera-off" size={64} color="#999" />
+                <Ionicons name="eye-off" size={64} color="#999" />
                 <Text style={styles.noPermissionText}>No access to camera</Text>
                 <TouchableOpacity
                     style={styles.permissionButton}
@@ -84,6 +160,7 @@ export default function ScannerScreen() {
     return (
         <View style={styles.container}>
             <CameraView
+                ref={cameraRef}
                 style={styles.camera}
                 enableTorch={flashOn}
             >
@@ -135,13 +212,14 @@ export default function ScannerScreen() {
                     <TouchableOpacity
                         style={styles.galleryButton}
                         onPress={pickImageFromGallery}
+                        disabled={isScanning}
                     >
                         <Ionicons name="images" size={30} color="#fff" />
                         <Text style={styles.galleryButtonText}>Gallery</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        style={styles.scanButton}
+                        style={[styles.scanButton, isScanning && styles.scanButtonDisabled]}
                         onPress={handleScan}
                         disabled={isScanning}
                     >
@@ -271,6 +349,9 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 5,
         elevation: 8,
+    },
+    scanButtonDisabled: {
+        opacity: 0.6,
     },
     scanButtonInner: {
         width: 70,

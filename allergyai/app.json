@@ -14,9 +14,6 @@
     "android": {
       "package": "com.allergyai.app",
       "versionCode": 1,
-      "compileSdkVersion": 34,
-      "targetSdkVersion": 34,
-      "minSdkVersion": 23,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,30 +30,46 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ],
-      "permissionsPolicy": {
-        "CAMERA": "This app uses the camera to scan food labels and identify potential allergens in your meals.",
-        "READ_EXTERNAL_STORAGE": "This app needs to access your photos to help you upload images of food labels for allergen detection.",
-        "WRITE_EXTERNAL_STORAGE": "This app saves scanned food images to help you track your meal history and allergen exposure."
-      },
+      //"permissionsPolicy": {
+      //  "CAMERA": "This app uses the camera to scan food labels and identify potential allergens in your meals.",
+      //  "READ_EXTERNAL_STORAGE": "This app needs to access your photos to help you upload images of food labels for allergen detection.",
+      //  "WRITE_EXTERNAL_STORAGE": "This app saves scanned food images to help you track your meal history and allergen exposure."
+      //},
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
-    "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
+     "plugins": [
+          [
+               "expo-splash-screen",
+               {
+                    "backgroundColor": "#ffffff",
+                    "image": "./assets/images/splash-icon.png",
+                    "imageWidth": 200
+               }
+          ],
+          [
+               "expo-font",
+               {
+                    "fonts": [
+                         "./assets/fonts/SpaceMono-Regular.ttf"
+                    ]
+               }
+          ],
+          [
+               "expo-camera",
+               {
+                    "cameraPermission": "Allow AllergyAI to access your camera to scna food label for allergens.",
+                    "microphonePermission": "Allow AllergyAI to access your microphone."
+               }
+          ]
+     ],
+     "extra": {
+          "eas": {
+               "projectId": "allergyai"
           }
-        }
-      ]
-    ]
+     }
   }
 }
