@@ -527,6 +527,42 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
 };
 
 export const getProfile = async (): Promise<UserProfile> => {
+  if (DEMO_MODE) {
+    try {
+      const storedAllergensData = await AsyncStorage.getItem('@allergyai_allergens');
+        const userAllergens = storedAllergensData ? JSON.parse(storedAllergensData) : [];
+
+        const storedUserData = await AsyncStorage.getItem('@allergyai_user');
+        const userData = storedUserData ? JSON.parse(storedUserData) : {
+          id: '1',
+          name: 'Demo User',
+          email: 'demo@example.com',
+          createdAt: new Date().toISOString(),
+        };
+
+        return {
+          id: userData.id || '1',
+          name: userData.name || 'Demo User',
+          email: userData.email || 'demo@example.com',
+          allergens: userAllergens,
+          totalMeals: userData.totalMeals || 0,
+          totalAlerts: userData.totalAlerts || 0,
+          createdAt: userData.createdAt || new Date().toISOString(),
+        };
+      } catch (error) {
+        console.error('Failed to load the profile from storage:', error);
+        return {
+          id: '1',
+          name: 'Demo User',
+          email: 'demo@example.com',
+          allergens: [],
+          totalMeals: 0,
+          totalAlerts: 0,
+          createdAt: new Date().toISOString(),
+        };
+      }
+  }
+
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
@@ -551,12 +587,12 @@ export const getProfile = async (): Promise<UserProfile> => {
     },
     {
       id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      allergens: ['Peanuts', 'Shellfish', 'Dairy'],
-      totalMeals: 127,
-      totalAlerts: 8,
-      createdAt: '2022-01-15T10:00:00Z',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      allergens: [],
+      totalMeals: 0,
+      totalAlerts: 0,
+      createdAt: new Date().toISOString(),
     }
   );
 }; 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Platform} from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, updateUserSettings } from '../api/client'; 
+import { getProfile, updateUserSettings, logout } from '../api/client'; 
 import { UserProfile } from '../types';
-import {isWeb} from '../utils/platform';
+import { isWeb } from '../utils/platform';
+import { useFocusEffect } from '@react-navigation/native'
 
 export default function ProfileScreen({ navigation }: any) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -12,6 +13,7 @@ export default function ProfileScreen({ navigation }: any) {
     const [editedName, setEditedName] = useState('');
     const [editedEmail, setEditedEmail] = useState('');
     const [saving, setSaving] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const loadProfile = useCallback(async () => {
         setLoading(true);
@@ -28,9 +30,11 @@ export default function ProfileScreen({ navigation }: any) {
         }
     }, []);
 
-    useEffect(() => {
-        loadProfile();
-    }, [loadProfile]);
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [loadProfile])
+    );
 
     const showAlert = (title: string, message: string) => {
         if (isWeb) {
@@ -94,6 +98,26 @@ export default function ProfileScreen({ navigation }: any) {
         setIsEditing(false);
     };
 
+    const handleLogout = () => {
+        Alert.alert('Logout',
+            'Are you sure you want to logout?', [{ text: 'Cancel', onPress: () => { }, style: 'cancel' },
+                {
+                    text: 'Logout', onPress: async () => {
+                        setIsLoggingOut(true);
+                        try {
+                            await logout();
+                        } catch (error) {
+                            console.error('Logout failed:', error);
+                            showAlert('Error', 'Failed to logout. Please try again.');
+                            setIsLoggingOut(false);
+                        }
+                    },
+                    style: 'destructive'
+                }
+            ]
+        );
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -118,126 +142,133 @@ export default function ProfileScreen({ navigation }: any) {
     }  
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-            <Text style={styles.title}>Profile</Text>
+        <View style={styles.container}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={true}
+            >
+                <Text style={styles.title}>Profile</Text>
 
-            {/* PROFILE ICON SECTION */}
-            <View style={styles.profileIconContainer}>
-                <View style={styles.profileIcon}>
-                    <Ionicons name="person" size={60} color="#666" />
-                </View>
-                <Text style={styles.profileInitials}>
-                    {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
-                </Text>
-            </View>
-
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Personal Information</Text>
-                    {!isEditing ? (
-                        <TouchableOpacity
-                            style={styles.editButton}
-                            onPress={() => setIsEditing(true)}
-                        >
-                            <Ionicons name="create-outline" size={20} color="#2196F3" />
-                            <Text style={styles.editButtonText}>Edit</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={styles.editActions}>
-                            <TouchableOpacity
-                                    style={[styles.actionButton, styles.cancelButton]}
-                                    onPress={handleCancel}
-                                    disabled={saving}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.actionButton, styles.saveButton, saving && styles.saveButtonDisabled]}
-                                onPress={handleSave}
-                                disabled={saving}
-                            >
-                                    {saving ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <Text style={styles.saveButtonText}>Save</Text>
-                                    )}
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
-                <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Name</Text>
-                        {isEditing ? (
-                            <TextInput
-                                style={styles.textInput}
-                                value={editedName}
-                                onChangeText={setEditedName}
-                                placeholder="Enter your name"
-                                editable={!saving}
-                            />
-                        ) : (
-                            <Text style={styles.value}>{profile.name}</Text>
-                        )}
+                {/* PROFILE ICON SECTION */}
+                <View style={styles.profileIconContainer}>
+                    <View style={styles.profileIcon}>
+                        <Ionicons name="person" size={60} color="#666" />
                     </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Email</Text>
-                        {isEditing ? (
-                            <TextInput
-                                style={styles.textInput}
-                                value={editedEmail}
-                                onChangeText={setEditedEmail}
-                                placeholder="Enter your email"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                editable={!saving}
-                            />
-                        ) : (
-                            <Text style={styles.value}>{profile.email}</Text>
-                        )}
-                    </View>
-                    <View style={styles.infoRow}>
-                        <Text style={styles.label}>Member Since</Text>
-                        <Text style={styles.value}>
-                            {new Date(profile.createdAt).toLocaleDateString()}
-                        </Text>
-                    </View>
-                </View>
-            </View>
-
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>My Allergens</Text>
-                    <TouchableOpacity
-                        style={styles.manageButton}
-                        onPress={() => navigation.navigate('Allergens')}
-                    >
-                        <Text style={styles.manageButtonText}>Manage</Text>
-                    </TouchableOpacity>
-                </View>
-                {profile.allergens.length > 0 ? (
-                    <View style={styles.allergenContainer}>
-                        {profile.allergens.map((allergen: string, index: number) => (
-                            <View key={index} style={styles.allergenPill}>
-                                <Text style={styles.allergenText}>{allergen}</Text>
-                            </View>
-                        ))}
-                    </View>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Ionicons name="medical-outline" size={48} color="#ccc" />
-                    <Text style={styles.noAllergens}>No allergens added yet</Text>
-                    <Text style={styles.emptyStateSubtext}>
-                         Tap <b>Manage</b> to add allergens
+                    <Text style={styles.profileInitials}>
+                        {profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
                     </Text>
-                    </View>
-                )}
-            </View>
+                </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Statistics</Text>
-                <View style={styles.statsContainer}>
-                    <View style={styles.statCard}>
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Personal Information</Text>
+                        {!isEditing ? (
+                            <TouchableOpacity
+                                style={styles.editButton}
+                                onPress={() => setIsEditing(true)}
+                            >
+                                <Ionicons name="create-outline" size={20} color="#2196F3" />
+                                <Text style={styles.editButtonText}>Edit</Text>
+                            </TouchableOpacity>
+                        ) : (
+                                <View style={styles.editActions}>
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, styles.cancelButton]}
+                                        onPress={handleCancel}
+                                        disabled={saving}
+                                    >
+                                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.actionButton, styles.saveButton, saving && styles.saveButtonDisabled]}
+                                        onPress={handleSave}
+                                        disabled={saving}
+                                    >
+                                        {saving ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Text style={styles.saveButtonText}>Save</Text>
+                                        )}
+                                    </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                    <View style={styles.infoCard}>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.label}>Name</Text>
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.textInput}
+                                    value={editedName}
+                                    onChangeText={setEditedName}
+                                    placeholder="Enter your name"
+                                    editable={!saving}
+                                />
+                            ) : (
+                                <Text style={styles.value}>{profile.name}</Text>
+                            )}
+                        </View>
+                        <View style={styles.infoRow}>
+                            <Text style={styles.label}>Email</Text>
+                            {isEditing ? (
+                                <TextInput
+                                    style={styles.textInput}
+                                    value={editedEmail}
+                                    onChangeText={setEditedEmail}
+                                    placeholder="Enter your email"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    editable={!saving}
+                                />
+                            ) : (
+                                <Text style={styles.value}>{profile.email}</Text>
+                            )}
+                        </View>
+                        <View style={[styles.infoRow, styles.infoRowLast]}>
+                            <Text style={styles.label}>Member Since</Text>
+                            <Text style={styles.value}>
+                                {new Date(profile.createdAt).toLocaleDateString()}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* ALLERGENS SECTION */}
+                {/*<View style={styles.section}>*/}
+                {/*    <View style={styles.sectionHeader}>*/}
+                {/*        <Text style={styles.sectionTitle}>My Allergens</Text>*/}
+                {/*        <TouchableOpacity*/}
+                {/*            style={styles.manageButton}*/}
+                {/*            onPress={() => navigation.navigate('Allergens')}*/}
+                {/*    >*/}
+                {/*        <Text style={styles.manageButtonText}>Manage</Text>*/}
+                {/*    </TouchableOpacity>*/}
+                {/*</View>*/}
+                {/*{profile.allergens.length > 0 ? (*/}
+                {/*    <View style={styles.allergenContainer}>*/}
+                {/*        {profile.allergens.map((allergen: string, index: number) => (*/}
+                {/*            <View key={index} style={styles.allergenPill}>*/}
+                {/*                <Text style={styles.allergenText}>{allergen}</Text>*/}
+                {/*            </View>*/}
+                {/*        ))}*/}
+                {/*    </View>*/}
+                {/*) : (*/}
+                {/*    <View style={styles.emptyState}>*/}
+                {/*                <Ionicons name="medical-outline" size={48} color="#ccc" />*/}
+                {/*                <Text style={styles.noAllergens}>No allergens added yet</Text>*/}
+                {/*                <Text style={styles.emptyStateSubtext}>*/}
+                {/*                    Tap <Text style={{ fontWeight: 'bold' }}>Manage</Text> to add allergens*/}
+                {/*                </Text>*/}
+                {/*        </View>*/}
+                {/*    )}*/}
+                {/*</View>*/}
+
+                {/* STATISTICS SECTION */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Statistics</Text>
+                    <View style={styles.statsContainer}>
+                        <View style={styles.statCard}>
                         <Ionicons name="restaurant-outline" size={32} color="#2196F3" />
                         <Text style={styles.statValue}>{profile.totalMeals}</Text>
                         <Text style={styles.statLabel}>Total Meals</Text>
@@ -247,9 +278,65 @@ export default function ProfileScreen({ navigation }: any) {
                         <Text style={styles.statValue}>{profile.totalAlerts}</Text>
                         <Text style={styles.statLabel}>Alerts Triggered</Text>
                     </View>
+                    </View>
                 </View>
-            </View>
-        </ScrollView>
+
+                {/* ACTIVE ALLERGEN LIST */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Active Allergens</Text>
+                        <TouchableOpacity
+                            style={styles.manageButton}
+                            onPress={() => navigation.navigate('Allergens')}
+                        >
+                            <Text style={styles.manageButtonText}>Manage</Text>
+                        </TouchableOpacity>
+                    </View>
+                    {profile.allergens.length > 0 ? (
+                        <View style={styles.activeAllergensCard}>
+                            {profile.allergens.map((allergen: string, index: number) => (
+                                <View key={index}style={[
+                                    styles.activeAllergenRow,
+                                    index === profile.allergens.length - 1 && styles.activeAllergenRowLast]} 
+                                >
+                                    <View style={styles.allergenBadge}>
+                                        <Ionicons name="alert-circle" size={16} color="#E53935" />
+                                    </View>
+                                    <Text style={styles.activeAllergenText}>{allergen}</Text>
+                                    <View style={styles.allergenIndicator} />
+                                </View>
+                            ))}
+                        </View>
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Ionicons name="medical-outline" size={48} color="#ccc" />
+                            <Text style={styles.noAllergens}>No allergens added yet</Text>
+                            <Text style={styles.emptyStateSubtext}>
+                                Tap <Text style={{ fontWeight: 'bold' }}>Manage</Text> to add allergens
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* LOGOUT BUTTON */}
+                <View style={styles.logoutSection}>
+                    <TouchableOpacity
+                        style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
+                        onPress={handleLogout}
+                        disabled={isLoggingOut}
+                    >
+                        {isLoggingOut ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <>
+                                    <Ionicons name="log-out-outline" size={20} color="#fff" />
+                                    <Text style={styles.logoutButtonText}>Logout</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </View>
     );
 }
 
@@ -258,9 +345,12 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
+    scrollView: {
+        flex: 1,
+    },
     contentContainer: {
-        padding: 20,
-        paddingBottom: 40,
+        padding: 16,
+        paddingBottom: 24,
     },
     loadingContainer: {
         flex: 1,
@@ -299,31 +389,31 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        marginBottom: 24,
         color: '#333',
+        fontSize: 28,
+        fontWeight: '700',
+        marginBottom: 20,
     },
     profileIconContainer: {
         alignItems: 'center',
-        marginBottom: 32,
+        marginBottom: 20,
     },
     profileIcon: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         backgroundColor: '#f0f0f0',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
     },
     profileInitials: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#666',
+        fontSize: 24,
+        fontWeight: '700',
+        color: '#333',
     },
     section: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
     sectionHeader: {
         flexDirection: 'row',
@@ -339,13 +429,9 @@ const styles = StyleSheet.create({
     editButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-        backgroundColor: '#E3F2FD',
+        gap: 4,
     },
     editButtonText: {
-        marginLeft: 4,
         color: '#2196F3',
         fontSize: 14,
         fontWeight: '600',
@@ -355,130 +441,179 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     actionButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 6,
-        minWidth: 70,
-        alignItems: 'center',
     },
     cancelButton: {
-        backgroundColor: '#f5f5f5',
+        borderWidth: 1,
+        borderColor: '#ccc',
     },
     cancelButtonText: {
         color: '#666',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     saveButton: {
         backgroundColor: '#2196F3',
     },
     saveButtonDisabled: {
-        backgroundColor: '#90CAF9',
+        opacity: 0.6,
     },
     saveButtonText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
     infoCard: {
         backgroundColor: '#f9f9f9',
-        padding: 16,
-        borderRadius: 12,
+        padding: 14,
+        borderRadius: 8,
     },
     infoRow: {
-        marginBottom: 16,
+        marginBottom: 12,
+    },
+    infoRowLast: {
+        marginBottom: 0,
     },
     label: {
-        fontSize: 14,
         color: '#666',
-        marginBottom: 6,
-        fontWeight: '500',
+        fontSize: 12,
+        fontWeight: '600',
+        marginBottom: 4,
     },
     value: {
-        fontSize: 16,
-        fontWeight: '400',
+        fontSize: 14,
         color: '#333',
     },
     textInput: {
-        fontSize: 16,
         color: '#333',
-        borderRadius: 8,
+        fontSize: 14,
+        borderRadius: 6,
         borderWidth: 1,
         borderColor: '#ddd',
-        padding: 12,
-        backgroundColor: '#fff',
-        ...Platform.select({
-            web: {
-                outlineStyle: 'none' as any,
-            },
-        }),
+        paddingHorizontal: 10,
+        paddingVertical: 6,
     },
     manageButton: {
         backgroundColor: '#E3F2FD',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         borderRadius: 6,
     },
     manageButtonText: {
         color: '#2196F3',
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
     },
-    allergenContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    allergenPill: {
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#FFCDD2',
-    },
-    allergenText: {
-        color: '#C62828',
-        fontSize: 14,
-        fontWeight: '500',
-    },
+    //allergenContainer: {
+    //    flexDirection: 'row',
+    //    flexWrap: 'wrap',
+    //    gap: 6,
+    //},
+    //allergenPill: {
+    //    backgroundColor: '#E8F5E9',
+    //    paddingHorizontal: 10,
+    //    paddingVertical: 4,
+    //    borderRadius: 14,
+    //},
+    //allergenText: {
+    //    color: '#2e7d32',
+    //    fontSize: 12,
+    //    fontWeight: '500',
+    //},
     emptyState: {
         alignItems: 'center',
-        paddingVertical: 32,
-        backgroundColor: '#f9f9f9',
-        borderRadius: 12,
+        paddingVertical: 16,
     },
     noAllergens: {
         color: '#999',
-        fontSize: 16,
-        fontStyle: 'italic',
-        fontWeight: '500',
+        fontSize: 14,
+        fontWeight: '600',
+        marginTop: 8,
     },
     emptyStateSubtext: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#bbb',
         marginTop: 4,
-        textAlign: 'center',
     },
     statsContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        gap: 10,
     },
     statCard: {
-        backgroundColor: '#f5f5f5',
-        padding: 20,
+        flex: 1,
+        backgroundColor: '#f9f9f9',
+        padding: 12,
         borderRadius: 8,
         alignItems: 'center',
-        flex: 0.48,
     },
     statValue: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#2196F3',
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#333',
+        marginTop: 6,
     },
     statLabel: {
+        fontSize: 11,
+        color: '#999',
+        marginTop: 2,
+    },
+    activeAllergensCard: {
+        backgroundColor: '#fff9e6',
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#E53935',
+        overflow: 'hidden',
+    },
+    activeAllergenRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#ffe6e6',
+    },
+    activeAllergenRowLast: {
+        borderBottomWidth: 0,
+    },
+    allergenBadge: {
+        marginRight: 10,
+    },
+    activeAllergenText: {
+        color: '#333',
         fontSize: 14,
-        color: '#666',
-        marginTop: 5,
+        fontWeight: '500',
+        flex: 1,
+    },
+    allergenIndicator: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#E53935',
+    },
+    logoutSection: {
+        marginTop: 16, 
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        backgroundColor: '#E53935',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 8,
+    },
+    logoutButtonDisabled: {
+        opacity: 0.6,
+    },
+    logoutButtonText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
