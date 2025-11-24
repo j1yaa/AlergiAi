@@ -24,6 +24,39 @@ import ScanResultScreen from '../screens/ScanResultScreen';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+export default function RootNavigator() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = async () => {
+    if (DEMO_MODE) {
+      try {
+        const token = await storage.getItem('auth_token');
+          setIsAuthenticated(!!token);
+      } catch (error) {
+          setIsAuthenticated(false);
+      }
+    } else {
+    // Firebase auth state listener
+    const unsubscribe = onAuthStateChange((user) => {
+      setIsAuthenticated(!!user);
+    });
+    return unsubscribe;
+  }
+};
+
+const handleLogin = () => {
+    setIsAuthenticated(true);
+};
+
+const handleLogout = () => {
+  console.log('handleLogout called in RootNavigator');
+  setIsAuthenticated(false);
+};
+
 function MainTabs() {
   return (
     <Tab.Navigator
@@ -58,7 +91,9 @@ function MainTabs() {
       <Tab.Screen name="MealLog" component={MealStack} options={{ title: 'Meal Log' }} />
       <Tab.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
       <Tab.Screen name="Symptoms" component={SymptomsStack} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
+        {(props) => <ProfileScreen {...props} onLogout={handleLogout } />}
+        </Tab.Screen>
     </Tab.Navigator>
   );
 }
@@ -96,34 +131,6 @@ function SymptomsStack() {
     </Stack.Navigator>
   );
 }
-
-export default function RootNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    if (DEMO_MODE) {
-      try {
-        const token = await storage.getItem('auth_token');
-        setIsAuthenticated(!!token);
-      } catch (error) {
-        setIsAuthenticated(false);
-      }
-    } else {
-      // Firebase auth state listener
-      const unsubscribe = onAuthStateChange((user) => {
-        setIsAuthenticated(!!user);
-      });
-      return unsubscribe;
-    }
-  };
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
 
   if (isAuthenticated === null) {
     return null; // Loading state

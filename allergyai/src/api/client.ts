@@ -737,9 +737,13 @@ export const onAuthStateChange = (callback: (user: any) => void) => {
 };
 
 export const logout = async (): Promise<void> => {
+  console.log('logout() called, DEMO_MODE:', DEMO_MODE);
   if (DEMO_MODE) {
     await AsyncStorage.removeItem('auth_token');
+    console.log('Demo mode: auth_token removed');
       return;
   }
+  console.log('Calling Firebase signOut');
   await signOut(auth);
+  console.log('Firebase signOut completed');
 };

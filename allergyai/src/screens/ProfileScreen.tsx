@@ -5,8 +5,8 @@ import { getProfile, updateUserSettings, logout } from '../api/client';
 import { UserProfile } from '../types';
 import { isWeb } from '../utils/platform';
 import { useFocusEffect } from '@react-navigation/native'
-
-export default function ProfileScreen({ navigation }: any) {
+import AsyncStorage from '@react-native-async-storage/async-storage';
+export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [isEditing, setIsEditing] = useState(false);
@@ -100,15 +100,34 @@ export default function ProfileScreen({ navigation }: any) {
 
     const handleLogout = () => {
         Alert.alert('Logout',
-            'Are you sure you want to logout?', [{ text: 'Cancel', onPress: () => { }, style: 'cancel' },
+            'Are you sure you want to logout?', [
+            { text: 'Cancel', onPress: () => { }, style: 'cancel' },
                 {
                     text: 'Logout', onPress: async () => {
+                        console.log('Logout button pressed');
                         setIsLoggingOut(true);
                         try {
+                            console.log('Starting logout process..');
                             await logout();
+                            console.log('Logout API call completed');
+
+                            await AsyncStorage.removeItem('auth_token');
+                            console.log('Auth token removed');
+
+                            await AsyncStorage.removeItem('@allergyai_user');
+                            console.log('User data removed');
+
+                            console.log('Calling onLogout callback');
+                            if (onLogout) {
+                                onLogout();
+                            } else {
+                                console.warn('onLogout callback is not defined');
+                            }
                         } catch (error) {
                             console.error('Logout failed:', error);
                             showAlert('Error', 'Failed to logout. Please try again.');
+                        } finally {
+                            console.log('Logout process completed');
                             setIsLoggingOut(false);
                         }
                     },
