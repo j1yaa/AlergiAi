@@ -19,6 +19,8 @@ import {
 } from 'firebase/auth';
 import { db, auth } from '../config/firebase';
 import { DEMO_MODE } from '../config/demo';
+import { analyzeIngredientRisk } from '../data/foodDatabase';
+import { GEMINI_API_KEY } from '@env';
 import { 
   Meal, 
   AnalyzeRequest, 
@@ -214,7 +216,7 @@ export const getMeals = async (): Promise<Meal[]> => {
         where('userId', '==', firebaseUser.uid)
       );
       const snapshot = await getDocs(mealsQuery);
-      return snapshot.docs
+      const meals = snapshot.docs
         .map(doc => {
           const data = doc.data();
           return {
@@ -222,8 +224,9 @@ export const getMeals = async (): Promise<Meal[]> => {
             userId: data.userId,
             createdAt: data.createdAt || new Date().toISOString(),
             note: data.note || data.notes || data.description || '',
-            items: data.items || [],
+            items: data.items || data.ingredients || [],
             photoURL: data.photoURL || '',
+            riskScore: data.riskScore || 0,
             deleted: data.deleted || false
           } as Meal;
         })
@@ -233,6 +236,10 @@ export const getMeals = async (): Promise<Meal[]> => {
           const bTime = new Date(b.createdAt || 0).getTime();
           return bTime - aTime;
         });
+      
+      console.log(`getMeals: Found ${meals.length} meals for user`);
+      console.log('getMeals: Sample meal data:', meals[0]);
+      return meals;
     },
     [],
     'getMeals'
@@ -250,114 +257,195 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       const userData = userDoc.exists() ? userDoc.data() : null;
       const userAllergens = userData?.allergens || [];
 
-      // Enhanced AI-powered risk assessment
-      const description = payload.description?.toLowerCase() || '';
+      // AI-enhanced meal analysis - combine meal name and ingredients
+      const mealName = payload.mealName?.toLowerCase() || '';
+      const ingredients = payload.description?.toLowerCase() || '';
+      const fullDescription = [mealName, ingredients].filter(Boolean).join(', ');
       
-      // Extract ingredients from description
-      const ingredients = description
-        .split(/[,;\n]/)
-        .map(item => item.trim())
-        .filter(Boolean);
-
-      // Advanced allergen detection with fuzzy matching
-      const detectedAllergens: string[] = [];
-      const allergenMatches: { allergen: string; ingredient: string; confidence: number }[] = [];
+      console.log('Analyzing meal:', { mealName, ingredients, fullDescription });
+      console.log('User allergens:', userAllergens);
       
-      userAllergens.forEach((allergen: string) => {
-        const allergenLower = allergen.toLowerCase();
-        
-        // Direct matches
-        ingredients.forEach(ingredient => {
-          const ingredientLower = ingredient.toLowerCase();
-          
-          // Exact match
-          if (ingredientLower.includes(allergenLower)) {
-            if (!detectedAllergens.includes(allergen)) {
-              detectedAllergens.push(allergen);
-              allergenMatches.push({ allergen, ingredient, confidence: 1.0 });
-            }
-            return;
-          }
-          
-          // Common allergen variations and derivatives
-          const allergenVariations: { [key: string]: string[] } = {
-            'peanut': ['peanut butter', 'groundnut', 'arachis', 'monkey nut'],
-            'peanuts': ['peanut butter', 'groundnut', 'arachis', 'monkey nut'],
-            'milk': ['dairy', 'cheese', 'butter', 'cream', 'yogurt', 'lactose', 'casein', 'whey'],
-            'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'lactose', 'casein', 'whey'],
-            'egg': ['eggs', 'albumin', 'mayonnaise', 'meringue'],
-            'eggs': ['egg', 'albumin', 'mayonnaise', 'meringue'],
-            'wheat': ['flour', 'gluten', 'bread', 'pasta', 'cereal'],
-            'gluten': ['wheat', 'flour', 'bread', 'pasta', 'cereal', 'barley', 'rye'],
-            'soy': ['soya', 'tofu', 'edamame', 'miso', 'tempeh'],
-            'shellfish': ['shrimp', 'crab', 'lobster', 'prawns', 'crayfish'],
-            'fish': ['salmon', 'tuna', 'cod', 'mackerel', 'sardine'],
-            'nuts': ['almond', 'walnut', 'cashew', 'pistachio', 'hazelnut', 'pecan'],
-            'tree nuts': ['almond', 'walnut', 'cashew', 'pistachio', 'hazelnut', 'pecan']
-          };
-          
-          const variations = allergenVariations[allergenLower] || [];
-          variations.forEach(variation => {
-            if (ingredientLower.includes(variation)) {
-              if (!detectedAllergens.includes(allergen)) {
-                detectedAllergens.push(allergen);
-                allergenMatches.push({ allergen, ingredient, confidence: 0.9 });
-              }
-            }
-          });
-        });
-        
-        // Check description for allergen mentions
-        if (description.includes(allergenLower) && !detectedAllergens.includes(allergen)) {
-          detectedAllergens.push(allergen);
-          allergenMatches.push({ allergen, ingredient: 'meal description', confidence: 0.8 });
-        }
-      });
-
-      // Calculate sophisticated risk score
-      let riskScore = 0;
+      // Extract ingredients using AI + fallback
+      const extractedIngredients = await extractIngredients(fullDescription);
+      console.log('Extracted ingredients:', extractedIngredients);
       
-      if (detectedAllergens.length === 0) {
-        riskScore = Math.min(15, ingredients.length * 2); // Base risk increases with complexity
-      } else {
-        // High risk calculation based on matches - scales with multiple allergens
-        const baseRisk = 70;
-        const allergenMultiplier = detectedAllergens.length;
-        const allergenPenalty = allergenMultiplier * 15; // Each additional allergen adds 15%
-        const confidenceBonus = allergenMatches.reduce((sum, match) => sum + (match.confidence * 5), 0);
-        
-        // Multiple allergen exponential scaling
-        const multiAllergenBonus = allergenMultiplier > 1 ? (allergenMultiplier - 1) * 10 : 0;
-        
-        riskScore = Math.min(100, baseRisk + allergenPenalty + confidenceBonus + multiAllergenBonus);
-      }
-
-      // Generate detailed advice
-      let advice = '';
-      if (detectedAllergens.length > 0) {
-        const matchDetails = allergenMatches.map(match => 
-          `${match.allergen} (found in: ${match.ingredient})`
-        ).join(', ');
-        
-        advice = `⚠️ HIGH RISK: Detected allergens - ${matchDetails}. Avoid this meal immediately!`;
-      } else if (riskScore > 10) {
-        advice = `⚡ MODERATE RISK: No known allergens detected, but meal complexity suggests caution. Check ingredients carefully.`;
-      } else {
-        advice = `✅ LOW RISK: This meal appears safe for your dietary restrictions.`;
-      }
+      // Smart risk assessment
+      const riskAnalysis = analyzeIngredientRisk(extractedIngredients, userAllergens);
+      const detectedAllergens = riskAnalysis.detectedAllergens;
+      
+      // Realistic risk scoring (0-100)
+      let riskScore = calculateRealisticRiskScore(detectedAllergens, riskAnalysis.hiddenRisks, extractedIngredients);
+      
+      // Generate contextual advice
+      const advice = generateSmartAdvice(detectedAllergens, riskAnalysis.hiddenRisks, riskScore);
 
       const response: AnalyzeResponse = {
-        ingredients,
+        ingredients: extractedIngredients,
         allergens: detectedAllergens,
-        riskScore: Math.round(riskScore),
+        riskScore,
         advice
       };
+
+      console.log('Analysis result:', response);
+
+      // Save meal analysis to Firebase
+      const docRef = await addDoc(collection(db, 'meals'), {
+        userId: firebaseUser.uid,
+        description: fullDescription,
+        note: payload.mealName || fullDescription,
+        items: response.ingredients,
+        ingredients: response.ingredients,
+        allergens: response.allergens,
+        riskScore: response.riskScore,
+        advice: response.advice,
+        analysisMethod: extractedIngredients.length > 3 ? 'ai_enhanced' : 'basic',
+        hiddenRisks: riskAnalysis.hiddenRisks,
+        userAllergens: userAllergens,
+        createdAt: new Date().toISOString()
+      });
+      
+      console.log('analyzeMeal: Meal saved with ID:', docRef.id, 'ingredients:', response.ingredients.length);
       
       return response;
     },
     { ingredients: [], allergens: [], riskScore: 0, advice: 'Analysis unavailable' }
   );
 };
+
+// Advanced AI-powered ingredient extraction
+const extractIngredients = async (description: string): Promise<string[]> => {
+  // Try AI analysis first, fallback to pattern matching
+  try {
+    const aiIngredients = await analyzeWithAI(description);
+    if (aiIngredients.length > 0) {
+      console.log('AI extracted ingredients:', aiIngredients);
+      return aiIngredients;
+    }
+  } catch (error) {
+    console.warn('AI analysis failed, using pattern matching:', error);
+  }
+  
+  // Fallback to enhanced pattern matching
+  return extractIngredientsBasic(description);
+};
+
+// AI-powered ingredient analysis
+const analyzeWithAI = async (description: string): Promise<string[]> => {
+  if (!GEMINI_API_KEY) throw new Error('No AI key available');
+  
+  const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+  
+  const prompt = `Analyze this meal and extract ALL ingredients, including hidden ones. Consider common cooking ingredients and allergens.
+
+Meal: "${description}"
+
+Return ONLY a JSON array of ingredients:
+["ingredient1", "ingredient2", "ingredient3"]
+
+Be comprehensive - include base ingredients like flour in bread, milk in cheese, etc.`;
+
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 512 }
+    })
+  });
+
+  if (!response.ok) throw new Error('AI API failed');
+  
+  const data = await response.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+  const cleanText = text.replace(/```json|```|`/g, '').trim();
+  
+  try {
+    const parsed = JSON.parse(cleanText);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    // Extract ingredients from text response
+    const matches = cleanText.match(/"([^"]+)"/g);
+    return matches ? matches.map((m: string) => m.replace(/"/g, '')) : [];
+  }
+};
+
+// Enhanced pattern-based extraction (fallback)
+const extractIngredientsBasic = (description: string): string[] => {
+  const dishPatterns = {
+    'pizza': ['wheat', 'flour', 'cheese', 'milk', 'tomato', 'yeast'],
+    'pasta': ['wheat', 'flour', 'eggs', 'semolina'],
+    'burger': ['wheat', 'flour', 'beef', 'cheese', 'milk', 'lettuce', 'tomato'],
+    'sandwich': ['wheat', 'flour', 'bread', 'yeast'],
+    'bread': ['wheat', 'flour', 'yeast', 'eggs'],
+    'cake': ['wheat', 'flour', 'eggs', 'milk', 'butter', 'sugar'],
+    'cookie': ['wheat', 'flour', 'eggs', 'butter', 'milk'],
+    'ice cream': ['milk', 'cream', 'eggs', 'sugar'],
+    'chocolate': ['cocoa', 'milk', 'soy lecithin'],
+    'cheese': ['milk', 'rennet'],
+    'yogurt': ['milk', 'cultures'],
+    'sushi': ['fish', 'rice', 'seaweed', 'soy sauce'],
+    'ramen': ['wheat', 'eggs', 'soy sauce', 'miso'],
+    'fried': ['oil', 'wheat', 'flour']
+  };
+  
+  let ingredients: string[] = [];
+  
+  // Pattern matching with more comprehensive ingredients
+  for (const [pattern, patternIngredients] of Object.entries(dishPatterns)) {
+    if (description.includes(pattern)) {
+      ingredients.push(...patternIngredients);
+    }
+  }
+  
+  // Extract explicit ingredients
+  const explicitIngredients = description
+    .split(/[,;\n]/)
+    .map(item => item.trim().toLowerCase())
+    .filter(item => item.length > 2);
+  
+  ingredients.push(...explicitIngredients);
+  
+  return [...new Set(ingredients)];
+};
+
+// Realistic risk scoring system
+const calculateRealisticRiskScore = (detectedAllergens: string[], hiddenRisks: string[], ingredients: string[]): number => {
+  let score = 5; // Base safe score
+  
+  // Direct allergen matches (high risk)
+  if (detectedAllergens.length > 0) {
+    score += detectedAllergens.length * 25; // 25 points per direct allergen
+  }
+  
+  // Hidden allergen risks (medium risk)
+  if (hiddenRisks.length > 0) {
+    score += hiddenRisks.length * 15; // 15 points per hidden risk
+  }
+  
+  // Complexity factor (more ingredients = slightly higher risk)
+  if (ingredients.length > 10) {
+    score += 5; // Complex meals have more cross-contamination risk
+  }
+  
+  // Cap at 100
+  return Math.min(score, 100);
+};
+
+// Smart advice generation
+const generateSmartAdvice = (detectedAllergens: string[], hiddenRisks: string[], riskScore: number): string => {
+  if (riskScore >= 70) {
+    return `⚠️ HIGH RISK: Contains ${detectedAllergens.join(', ')}. Strongly avoid this meal.`;
+  } else if (riskScore >= 40) {
+    const risks = [...detectedAllergens, ...hiddenRisks];
+    return `⚠️ MODERATE RISK: May contain ${risks.join(', ')}. Exercise caution.`;
+  } else if (riskScore >= 20) {
+    return `⚠️ LOW RISK: Some ingredients need verification. Check preparation methods.`;
+  } else {
+    return `✅ SAFE: This meal appears safe for your allergen profile.`;
+  }
+};
+
+
 
 export const getAlerts = async (params?: { status?: string; page?: number; pageSize?: number }): Promise<AlertsResponse> => {
   return handleFirebaseCall(
@@ -406,26 +494,36 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
-      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
-
-      const meals = mealsSnapshot.docs.map(doc => doc.data());
+      // Get meals using the EXACT same logic as getMeals()
+      const meals = await getMeals();
       const totalMeals = meals.length;
-      const safeMeals = meals.filter((meal: any) => (meal.riskScore || 0) < 50).length;
+      
+      // Get alerts
+      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
+      
+      const safeMeals = meals.filter(meal => (meal.riskScore || 0) < 40).length;
       const safeMealsPct = totalMeals > 0 ? Math.round((safeMeals / totalMeals) * 100) : 0;
+      
+      // Calculate average risk score from actual meal data
+      const avgRiskScore = totalMeals > 0 
+        ? meals.reduce((sum, meal) => sum + (meal.riskScore || 0), 0) / totalMeals
+        : 0;
+      
+      console.log(`getAnalytics: Using getMeals() - Found ${totalMeals} meals, ${safeMeals} safe (${safeMealsPct}%)`);
+      console.log('getAnalytics: Sample meal data:', meals[0]);
    
       return {
         totalMeals,
         totalAlerts: alertsSnapshot.size,
-        riskScore: 2.5,
+        riskScore: Math.round(avgRiskScore * 10) / 10,
         weeklyTrend: [1, 3, 2, 4, 2, 1, 3],
         safeMealsPct,
-          weeklyExposure: [
-            { week: 'Week 1', count: 1 },
-            { week: 'Week 2', count: 3 },
-            { week: 'Week 3', count: 2 },
-            { week: 'Week 4', count: 4 }
-          ],
+        weeklyExposure: [
+          { week: 'Week 1', count: Math.max(0, Math.floor(totalMeals * 0.2)) },
+          { week: 'Week 2', count: Math.max(0, Math.floor(totalMeals * 0.3)) },
+          { week: 'Week 3', count: Math.max(0, Math.floor(totalMeals * 0.25)) },
+          { week: 'Week 4', count: Math.max(0, Math.floor(totalMeals * 0.25)) }
+        ],
         topAllergens: [
           { name: 'Peanuts', count: 3 },
           { name: 'Dairy', count: 2 },
@@ -878,11 +976,20 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
+      console.log('createMeal: Saving meal with items:', payload.items);
+      
       const docRef = await addDoc(collection(db, 'meals'), {
-        ...newMeal,
-        userId: firebaseUser.uid
+        userId: firebaseUser.uid,
+        note: payload.note || 'Manual meal entry',
+        description: payload.note || 'Manual meal entry',
+        items: payload.items,
+        ingredients: payload.items, // Store in both fields for consistency
+        riskScore: 5, // Default safe score
+        analysisMethod: 'manual',
+        createdAt: new Date().toISOString()
       });
       
+      console.log('createMeal: Meal saved with ID:', docRef.id);
       return { ...newMeal, id: docRef.id };
     },
     newMeal

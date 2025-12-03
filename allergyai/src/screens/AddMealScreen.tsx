@@ -18,13 +18,16 @@ export default function AddMealScreen() {
   const [loadingMeals, setLoadingMeals] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!description.trim()) return;
+    if (!description.trim() && !mealName.trim()) return;
 
     setLoading(true);
     try {
-      const response = await analyzeMeal({ description });
+      const response = await analyzeMeal({ 
+        mealName: mealName.trim(), 
+        description: description.trim() 
+      });
       setResult(response);
-      console.log('Analysis complete, mealName still:', mealName);
+      console.log('Analysis complete for:', { mealName, description });
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -222,7 +225,7 @@ export default function AddMealScreen() {
       <TouchableOpacity
         style={styles.button}
         onPress={handleAnalyze}
-        disabled={loading || !description.trim()}
+        disabled={loading || (!description.trim() && !mealName.trim())}
       >
         <Text style={styles.buttonText}>
           {loading ? 'Analyzing...' : 'Analyze Meal'}
