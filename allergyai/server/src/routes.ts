@@ -1,15 +1,14 @@
 import { Router } from 'express';
 import { analyzeWithAI } from './data';
-import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse } from './types';
+import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse, SymptomsResponse, Symptom } from './types';
 import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
 import jwt from 'jsonwebtoken';
 import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
-import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, SymptomsResponse, Symptom } from './types';
 
 const router = Router();
 
 // Auth routes
-router.post('/auth/register', async (req, res) =>
+router.post('/auth/register', async (req, res) => {
   try {
     const { name, email, password, allergens = [] }: RegisterRequest = req.body;
     
