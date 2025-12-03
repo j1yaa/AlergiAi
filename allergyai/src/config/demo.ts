@@ -1,1 +1,1 @@
-export const DEMO_MODE = false;
+export const DEMO_MODE = true; // ⚠️ TEMPORARY: Disable after testing Firebase integration

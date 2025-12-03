@@ -13,14 +13,7 @@ export default function AllergenScreen() {
     }, []);
 
     const showAlert = (title: string, message: string, buttons?: any[]) => {
-        if (isWeb && typeof window !== 'undefined') {
-            const confirmed = (window as any).confirm(`${title}\n\n${message}`);
-            if (confirmed && buttons && buttons[1]?.onPress) {
-                buttons[1].onPress();
-            }
-        } else {
-            Alert.alert(title, message, buttons);
-        }
+        Alert.alert(title, message, buttons);
     };
 
     const loadAllergens = async () => {
