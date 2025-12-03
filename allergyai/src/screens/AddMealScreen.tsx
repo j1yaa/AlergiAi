@@ -182,18 +182,6 @@ export default function AddMealScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.label}>Meal Name</Text>
-      <TextInput
-        style={styles.input}
-        value={mealName}
-        onChangeText={(text) => {
-          console.log('TextInput onChange:', `"${text}"`);
-          setMealName(text);
-        }}
-        placeholder="Enter meal name..."
-        testID="mealNameInput"
-      />
-
       {/* Scan Button Card */}
       <TouchableOpacity
         style={styles.scanCard}
@@ -209,15 +197,22 @@ export default function AddMealScreen() {
         <Ionicons name="chevron-forward" size={24} color="#999" />
       </TouchableOpacity>
 
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>OR</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
+      <Text style={styles.label}>Meal Name</Text>
       <TextInput
         style={styles.input}
-        placeholder="Describe your meal..."
+        value={mealName}
+        onChangeText={(text) => {
+          console.log('TextInput onChange:', `"${text}"`);
+          setMealName(text);
+        }}
+        placeholder="Enter meal name..."
+        testID="mealNameInput"
+      />
+
+      <Text style={styles.label}>Ingredients</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="List your meal ingredients..."
         value={description}
         onChangeText={setDescription}
         multiline
