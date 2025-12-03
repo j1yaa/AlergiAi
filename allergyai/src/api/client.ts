@@ -199,21 +199,22 @@ export const getMeals = async (): Promise<Meal[]> => {
       
       const mealsQuery = query(
         collection(db, 'meals'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       const snapshot = await getDocs(mealsQuery);
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
+      return snapshot.docs
+        .map(doc => {
+          const data = doc.data();
           return {
-          id: doc.id,
-          userId: data.userId,
-          timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
-          notes: data.notes || '',
-          photoURL: data.photoURL || '',
-          items: data.items || []
-        } as Meal;
-      });
+            id: doc.id,
+            userId: data.userId,
+            timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+            notes: data.notes || '',
+            photoURL: data.photoURL || '',
+            items: data.items || []
+          } as Meal;
+        })
+        .sort((a, b) => b.timeStamp.getTime() - a.timeStamp.getTime());
     },
     [],
     'getMeals'
@@ -280,8 +281,7 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
       
       const alertsQuery = query(
         collection(db, 'alerts'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('timestamp', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       
       const snapshot = await getDocs(alertsQuery);
@@ -488,12 +488,13 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
       
       const symptomsQuery = query(
         collection(db, 'symptoms'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       const snapshot = await getDocs(symptomsQuery);
-      const symptoms = snapshot.docs.map(doc => 
-          ({ id: doc.id, ...doc.data() })).filter((s: any) => !s.deleted) as Symptom[];
+      const symptoms = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter((s: any) => !s.deleted)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Symptom[];
       
       return {
         items: symptoms,
