@@ -8,6 +8,7 @@ import { AnalyticsSummary } from '../types';
 import { getMealAnalytics, MealAnalytics } from '../utils/mealAnalytics';
 
 export default function DashboardScreen() {
+  console.log('=== DashboardScreen rendered ===');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [mealAnalytics, setMealAnalytics] = useState<MealAnalytics | null>(null);
   const navigation = useNavigation();

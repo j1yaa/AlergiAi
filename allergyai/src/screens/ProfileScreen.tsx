@@ -37,8 +37,8 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     );
 
     const showAlert = (title: string, message: string) => {
-        if (isWeb) {
-            window.alert(`${title}: ${message}`);
+        if (isWeb && typeof window !== 'undefined') {
+            (window as any).alert(`${title}: ${message}`);
         } else {
             Alert.alert(title, message);
         }

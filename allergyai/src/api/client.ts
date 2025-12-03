@@ -35,15 +35,7 @@ import {
   RemoveAllergenRequest,
   Alert
 } from '../types';
-import { 
-  mockMeals, 
-  mockAnalytics, 
-  mockUserSettings, 
-  getMockAlertsResponse, 
-  getMockAnalyzeResponse,
-  getMockSymptomsResponse,
-  mockSymptoms
-} from './mocks';
+
 
 const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, fallbackData: T): Promise<T> => {
   if (DEMO_MODE) {
@@ -77,13 +69,17 @@ export const register = async (data: RegisterRequest): Promise<AuthResponse> => 
   const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
   const firebaseUser = userCredential.user;
       
-  await addDoc(collection(db, 'users'), {
-    uid: firebaseUser.uid,
-    name: data.name,
-    email: data.email,
-    allergens: [],
-    createdAt: new Date().toISOString()
-  });
+  try {
+    await addDoc(collection(db, 'users'), {
+      uid: firebaseUser.uid,
+      name: data.name,
+      email: data.email,
+      allergens: [],
+      createdAt: new Date().toISOString()
+    });
+  } catch (error) {
+    console.warn('Failed to create user document, continuing with auth only:', error);
+  }
 
   const token = await firebaseUser.getIdToken();
   return {
@@ -161,7 +157,7 @@ export const getMeals = async (): Promise<Meal[]> => {
         } as Meal;
       });
     },
-    mockMeals
+    []
   );
 };
 
@@ -213,7 +209,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       
       return response;
     },
-    getMockAnalyzeResponse(payload.description || '')
+    { ingredients: [], allergens: [], riskScore: 0, advice: 'Analysis unavailable' }
   );
 };
 
@@ -255,7 +251,7 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
           total: alerts.length
         };
       },
-    getMockAlertsResponse(params?.status)
+    { items: [], page: 1, pageSize: 20, total: 0 }
   );
 };
 
@@ -292,7 +288,7 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
         ]
       };
     },
-    mockAnalytics
+    { totalMeals: 0, totalAlerts: 0, riskScore: 0, weeklyTrend: [], safeMealsPct: 0, weeklyExposure: [], topAllergens: [] }
   );
 };
 
@@ -314,7 +310,7 @@ export const getUserSettings = async (): Promise<UserSettings> => {
         notifications: userData?.notifications !== false
       };
     },
-    mockUserSettings
+    { name: '', email: '', allergens: [], diet: '', notifications: true }
   );
 };
 
@@ -414,7 +410,7 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
   if (DEMO_MODE) {
     try {
       const storedSymptoms = await AsyncStorage.getItem('symptoms');
-      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : mockSymptoms;
+      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : [];
       return {
         items: symptoms,
         page: 1,
@@ -423,7 +419,7 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
       };
     } catch (error) {
       console.warn('Failed to load symptoms from storage:', error);
-      return getMockSymptomsResponse();
+      return { items: [], page: 1, pageSize: 20, total: 0 };
     }
   }
   
@@ -448,7 +444,7 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
         total: symptoms.length
       };
     },
-    getMockSymptomsResponse()
+    { items: [], page: 1, pageSize: 20, total: 0 }
   );
 };
 
@@ -456,7 +452,7 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
   if (DEMO_MODE) {
     try {
       const storedSymptoms = await AsyncStorage.getItem('symptoms');
-      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : mockSymptoms;
+      const symptoms = storedSymptoms ? JSON.parse(storedSymptoms) : [];
       const avgSeverity = symptoms.length > 0 ? Number((symptoms.reduce((sum: number, s: Symptom) => sum + s.severity, 0) / symptoms.length).toFixed(1)) : 0;
       
       return {

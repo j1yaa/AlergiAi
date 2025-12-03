@@ -12,15 +12,15 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
-import * as SecureStore from 'expo-secure-store';
-import { storage } from '../utils/storage';
 import { login } from '../api/client';
-import { testFirebaseAuth, testFirestore } from '../utils/firebaseTest';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  console.log('=== LoginScreen rendered ===');
+  console.log('LoginScreen props:', { navigation: !!navigation, onLogin: !!onLogin });
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -45,16 +45,11 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     setLoading(true);
     try {
       const response = await login({ email, password });
-      await SecureStore.setItemAsync('auth_token', response.token);
-      await storage.setItem('auth_token', response.token);
-      await SecureStore.setItemAsync('user_data', JSON.stringify(response.user));
-
-      console.log('Login response:', response);
-      console.log('Token saved');
+      console.log('Login successful:', response.user.email);
       onLogin();
     } catch (error: any) {
       console.error('Login error:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Invalid email or password';
+      const errorMessage = error.message || 'Invalid email or password';
       Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
@@ -136,29 +131,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
             </View>
           </View>
 
-          <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>Demo Accounts:</Text>
-            <TouchableOpacity onPress={() => { setEmail('john@example.com'); setPassword('password'); }}>
-              <Text style={styles.demoText}>john@example.com / password</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setEmail('jane@example.com'); setPassword('password123'); }}>
-              <Text style={styles.demoText}>jane@example.com / password123</Text>
-            </TouchableOpacity>
-            
-            <Text style={styles.demoTitle}>Firebase Tests:</Text>
-            <TouchableOpacity onPress={async () => {
-              const result = await testFirebaseAuth();
-              Alert.alert('Auth Test', result.message);
-            }}>
-              <Text style={styles.demoText}>Test Firebase Auth</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={async () => {
-              const result = await testFirestore();
-              Alert.alert('Firestore Test', result.message);
-            }}>
-              <Text style={styles.demoText}>Test Firestore</Text>
-            </TouchableOpacity>
-          </View>
+
           <Text style={styles.footer}>Privacy-first allergy insights • Data stored securely</Text>
         </View>
       </TouchableWithoutFeedback>
@@ -313,21 +286,5 @@ const styles = StyleSheet.create({
     color: '#9CA9B8',
     fontSize: 12,
   },
-  demoSection: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-  },
-  demoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#666',
-  },
-  demoText: {
-    fontSize: 14,
-    color: '#2196F3',
-    marginBottom: 5,
-  },
+
 });

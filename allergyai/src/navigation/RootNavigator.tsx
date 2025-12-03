@@ -3,9 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { storage } from '../utils/storage';
 import { onAuthStateChange } from '../api/client';
-import { DEMO_MODE } from '../config/demo';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -27,26 +25,27 @@ const Tab = createBottomTabNavigator();
 export default function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
+  console.log('RootNavigator rendered, isAuthenticated:', isAuthenticated);
+
   useEffect(() => {
-    checkAuthStatus();
+    const unsubscribe = checkAuthStatus();
+    return unsubscribe;
   }, []);
 
-  const checkAuthStatus = async () => {
-    if (DEMO_MODE) {
-      try {
-        const token = await storage.getItem('auth_token');
-          setIsAuthenticated(!!token);
-      } catch (error) {
-          setIsAuthenticated(false);
-      }
-    } else {
-    // Firebase auth state listener
-    const unsubscribe = onAuthStateChange((user) => {
-      setIsAuthenticated(!!user);
-    });
-    return unsubscribe;
-  }
-};
+  const checkAuthStatus = () => {
+    console.log('Setting up Firebase auth listener');
+    try {
+      const unsubscribe = onAuthStateChange((user) => {
+        console.log('Firebase auth state changed:', !!user);
+        setIsAuthenticated(!!user);
+      });
+      return unsubscribe;
+    } catch (error) {
+      console.error('Firebase auth setup failed:', error);
+      setIsAuthenticated(false);
+      return () => {};
+    }
+  };
 
 const handleLogin = () => {
     setIsAuthenticated(true);
@@ -133,8 +132,11 @@ function SymptomsStack() {
 }
 
   if (isAuthenticated === null) {
+    console.log('Showing loading state');
     return null; // Loading state
   }
+
+  console.log('Rendering navigation, isAuthenticated:', isAuthenticated);
 
   return (
     <NavigationContainer>

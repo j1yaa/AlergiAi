@@ -47,7 +47,25 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
         { text: 'OK', onPress: onLogin }
       ]);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error || 'Registration failed. Please try again.';
+      console.error('Registration error:', error);
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.code) {
+        switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'This email is already registered. Please use a different email or try logging in.';
+            break;
+          case 'auth/weak-password':
+            errorMessage = 'Password is too weak. Please use at least 6 characters.';
+            break;
+          case 'auth/invalid-email':
+            errorMessage = 'Please enter a valid email address.';
+            break;
+          default:
+            errorMessage = error.message || errorMessage;
+        }
+      }
+      
       Alert.alert('Registration Failed', errorMessage);
     } finally {
       setLoading(false);

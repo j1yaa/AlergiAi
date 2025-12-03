@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import { analyzeWithAI } from './data';
 import { AnalyzeRequest, AnalyzeResponse, AlertsResponse, RegisterRequest, LoginRequest, AuthResponse, SymptomsResponse, Symptom } from './types';
-import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts } from './database';
+import { createUser, findUserByEmail, validateUser, createMeal, createAlert, getUserMeals, getUserAlerts, getSymptoms, createSymptom } from './database';
 import jwt from 'jsonwebtoken';
-import { mockUser, mockMeals, mockAlerts, mockAnalytics, mockUserSettings, mockSymptoms, mockSymptomAnalytics } from './data';
 
 const router = Router();
 
@@ -189,23 +188,14 @@ router.get('/analytics/summary', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    // Simple analytics - can be enhanced later
-    const mockAnalytics = {
-      safeMealsPct: 75,
-      weeklyExposure: [
-        { week: 'Week 1', count: 2 },
-        { week: 'Week 2', count: 4 },
-        { week: 'Week 3', count: 1 },
-        { week: 'Week 4', count: 3 }
-      ],
-      topAllergens: [
-        { name: 'Peanuts', count: 8 },
-        { name: 'Dairy', count: 6 },
-        { name: 'Shellfish', count: 4 }
-      ]
+    // TODO: Implement real analytics from Firebase
+    const analytics = {
+      safeMealsPct: 0,
+      weeklyExposure: [],
+      topAllergens: []
     };
     
-    res.json(mockAnalytics);
+    res.json(analytics);
   } catch (error) {
     console.error('Analytics error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -254,40 +244,62 @@ router.put('/user/settings', async (req, res) => {
 });
 
 // Symptoms routes
-router.get('/symptoms', (req, res) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const pageSize = parseInt(req.query.pageSize as string) || 20;
-  
-  const startIndex = (page - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedSymptoms = mockSymptoms.slice(startIndex, endIndex);
-  
-  const response: SymptomsResponse = {
-    items: paginatedSymptoms,
-    page,
-    pageSize,
-    total: mockSymptoms.length
-  };
-  
-  res.json(response);
+router.get('/symptoms', async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 20;
+    
+    const { symptoms, total } = await getSymptoms(userId, page, pageSize);
+    
+    const response: SymptomsResponse = {
+      items: symptoms,
+      page,
+      pageSize,
+      total
+    };
+    
+    res.json(response);
+  } catch (error) {
+    console.error('Get symptoms error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-router.post('/symptoms', (req, res) => {
-  const { description, severity, dateISO } = req.body;
-  
-  const newSymptom: Symptom = {
-    id: `symptom-${Date.now()}`,
-    description,
-    severity,
-    dateISO
-  };
-  
-  mockSymptoms.unshift(newSymptom);
-  res.json(newSymptom);
+router.post('/symptoms', async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    const { description, severity, dateISO } = req.body;
+    
+    const newSymptom = await createSymptom(userId, description, severity, dateISO);
+    res.json(newSymptom);
+  } catch (error) {
+    console.error('Create symptom error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
-router.get('/analytics/symptoms', (req, res) => {
-  res.json(mockSymptomAnalytics);
+router.get('/analytics/symptoms', async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // TODO: Implement real analytics from Firebase
+    res.json({ totalSymptoms: 0, averageSeverity: 0, commonTriggers: [] });
+  } catch (error) {
+    console.error('Symptom analytics error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Health check

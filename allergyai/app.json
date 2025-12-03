@@ -30,11 +30,6 @@
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ],
-      //"permissionsPolicy": {
-      //  "CAMERA": "This app uses the camera to scan food labels and identify potential allergens in your meals.",
-      //  "READ_EXTERNAL_STORAGE": "This app needs to access your photos to help you upload images of food labels for allergen detection.",
-      //  "WRITE_EXTERNAL_STORAGE": "This app saves scanned food images to help you track your meal history and allergen exposure."
-      //},
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
@@ -61,7 +56,7 @@
           [
                "expo-camera",
                {
-                    "cameraPermission": "Allow AllergyAI to access your camera to scna food label for allergens.",
+                    "cameraPermission": "Allow AllergyAI to access your camera to scan food labels for allergens.",
                     "microphonePermission": "Allow AllergyAI to access your microphone."
                }
           ]
