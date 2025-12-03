@@ -192,7 +192,10 @@ export const getMeals = async (): Promise<Meal[]> => {
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
+      if (!firebaseUser) {
+        console.warn('getMeals: User not authenticated, returning empty array');
+        return [];
+      }
       
       const mealsQuery = query(
         collection(db, 'meals'),
@@ -478,7 +481,10 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
+      if (!firebaseUser) {
+        console.warn('getSymptoms: User not authenticated, returning empty array');
+        return { items: [], page: 1, pageSize: 20, total: 0 };
+      }
       
       const symptomsQuery = query(
         collection(db, 'symptoms'),
@@ -496,7 +502,8 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
         total: symptoms.length
       };
     },
-    { items: [], page: 1, pageSize: 20, total: 0 }
+    { items: [], page: 1, pageSize: 20, total: 0 },
+    'getSymptoms'
   );
 };
 
@@ -590,7 +597,18 @@ export const getProfile = async (): Promise<UserProfile> => {
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
+      if (!firebaseUser) {
+        console.warn('getProfile: User not authenticated, returning fallback profile');
+        return {
+          id: 'anonymous',
+          name: 'Anonymous User',
+          email: 'anonymous@example.com',
+          allergens: [],
+          totalMeals: 0,
+          totalAlerts: 0,
+          createdAt: new Date().toISOString(),
+        };
+      }
            
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
