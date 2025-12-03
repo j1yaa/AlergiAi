@@ -62,21 +62,28 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     if (!validateForm()) return;
     
     setLoading(true);
-    try {
-      const response = await login({ email, password });
-      console.log('Login successful:', response.user.email);
-      
-      // Save credentials if Remember Me is checked
+    
+    // Save credentials immediately for faster UX
+    const saveCredentials = async () => {
       if (rememberMe) {
-        await AsyncStorage.setItem('saved_email', email);
-        await AsyncStorage.setItem('saved_password', password); // Note: In production, use secure storage
-        await AsyncStorage.setItem('remember_me', 'true');
+        AsyncStorage.setItem('saved_email', email);
+        AsyncStorage.setItem('saved_password', password);
+        AsyncStorage.setItem('remember_me', 'true');
       } else {
-        await AsyncStorage.removeItem('saved_email');
-        await AsyncStorage.removeItem('saved_password');
-        await AsyncStorage.removeItem('remember_me');
+        AsyncStorage.removeItem('saved_email');
+        AsyncStorage.removeItem('saved_password');
+        AsyncStorage.removeItem('remember_me');
       }
+    };
+    
+    try {
+      // Run login and credential saving in parallel
+      const [response] = await Promise.all([
+        login({ email, password }),
+        saveCredentials()
+      ]);
       
+      console.log('Login successful:', response.user.email);
       onLogin();
     } catch (error: any) {
       console.error('Login error:', error);

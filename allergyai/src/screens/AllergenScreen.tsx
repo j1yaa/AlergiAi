@@ -38,12 +38,17 @@ export default function AllergenScreen() {
             return;
         }
 
+        // Optimistic update - update UI immediately
+        setAllergens([...allergens, allergenName]);
+        setNewAllergen('');
+        
+        // Save to backend in background
         try {
             await addAllergen({ allergen: allergenName });
-            setAllergens([...allergens, allergenName]);
-            setNewAllergen('');
         } catch (error) {
-            showAlert('Error', 'Failed to add  allergen');
+            // Revert on error
+            setAllergens(allergens);
+            showAlert('Error', 'Failed to add allergen');
             console.error('Failed to add allergen:', error);
         }
     };
@@ -58,11 +63,16 @@ export default function AllergenScreen() {
                     text: 'Remove Anyway',
                     style: 'destructive',
                     onPress: async () => {
+                        // Optimistic update - remove immediately
+                        const originalAllergens = allergens;
+                        setAllergens(allergens.filter((a: string) => a !== allergen));
+                        
                         try {
                             await removeAllergen({ allergen });
-                            setAllergens(allergens.filter((a: string) => a !== allergen));
                             showAlert('Success', 'Allergen successfully removed!');
                         } catch (error) {
+                            // Revert on error
+                            setAllergens(originalAllergens);
                             showAlert('Error', 'Failed to remove allergen');
                             console.error('Failed to remove allergen:', error);
                         }

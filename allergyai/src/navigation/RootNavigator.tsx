@@ -57,9 +57,11 @@ export default function RootNavigator() {
 
   const tryAutoLogin = async (): Promise<boolean> => {
     try {
-      const savedEmail = await AsyncStorage.getItem('saved_email');
-      const rememberMe = await AsyncStorage.getItem('remember_me');
-      const savedPassword = await AsyncStorage.getItem('saved_password');
+      const [savedEmail, rememberMe, savedPassword] = await Promise.all([
+        AsyncStorage.getItem('saved_email'),
+        AsyncStorage.getItem('remember_me'),
+        AsyncStorage.getItem('saved_password')
+      ]);
       
       if (savedEmail && rememberMe === 'true' && savedPassword) {
         console.log('Attempting auto-login for:', savedEmail);
@@ -70,7 +72,7 @@ export default function RootNavigator() {
     } catch (error) {
       console.error('Auto-login failed:', error);
       // Clear saved credentials if auto-login fails
-      await AsyncStorage.removeItem('saved_password');
+      AsyncStorage.removeItem('saved_password');
     }
     return false;
   };

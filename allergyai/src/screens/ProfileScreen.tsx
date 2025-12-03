@@ -11,13 +11,12 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const loadProfile = useCallback(async () => {
-        setLoading(true);
         try {
             const data = await getProfile();
             setProfile(data);
+            setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
-        } finally {
             setLoading(false);
         }
     }, []);
@@ -32,17 +31,14 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
             {
                 text: 'Logout',
                 style: 'destructive',
-                onPress: async () => {
-                    setIsLoggingOut(true);
-                    try {
-                        await logout();
-                        onLogout?.();
-                    } catch (error) {
-                        console.error('Logout failed:', error);
-                        Alert.alert('Error', 'Failed to logout. Please try again.');
-                    } finally {
-                        setIsLoggingOut(false);
-                    }
+                onPress: () => {
+                    // Logout immediately for better UX
+                    onLogout?.();
+                    
+                    // Run cleanup in background
+                    logout().catch(error => {
+                        console.error('Logout cleanup failed:', error);
+                    });
                 }
             }
         ]);
