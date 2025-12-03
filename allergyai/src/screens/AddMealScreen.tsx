@@ -84,9 +84,13 @@ export default function AddMealScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
+              console.log('Deleting meal:', mealId);
               await deleteMeal(mealId);
-              loadMeals();
+              console.log('Meal deleted successfully, reloading meals...');
+              await loadMeals();
+              Alert.alert('Success', 'Meal deleted successfully');
             } catch (error) {
+              console.error('Delete meal error:', error);
               Alert.alert('Error', 'Failed to delete meal');
             }
           }

@@ -19,6 +19,7 @@ export interface Meal {
   ingredients?: string[];
   createdAt?: string;
   note?: string;
+  deleted?: boolean;
 }
 
 export interface Alert {

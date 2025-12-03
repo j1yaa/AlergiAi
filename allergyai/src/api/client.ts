@@ -223,9 +223,11 @@ export const getMeals = async (): Promise<Meal[]> => {
             createdAt: data.createdAt || new Date().toISOString(),
             note: data.note || data.notes || data.description || '',
             items: data.items || [],
-            photoURL: data.photoURL || ''
+            photoURL: data.photoURL || '',
+            deleted: data.deleted || false
           } as Meal;
         })
+        .filter(meal => !meal.deleted)
         .sort((a, b) => {
           const aTime = new Date(a.createdAt || 0).getTime();
           const bTime = new Date(b.createdAt || 0).getTime();
