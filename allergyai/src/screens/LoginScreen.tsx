@@ -12,6 +12,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { login } from '../api/client';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
