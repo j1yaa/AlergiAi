@@ -214,7 +214,7 @@ export const getMeals = async (): Promise<Meal[]> => {
             items: data.items || []
           } as Meal;
         })
-        .sort((a, b) => b.timeStamp.getTime() - a.timeStamp.getTime());
+        .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
     },
     [],
     'getMeals'
@@ -779,6 +779,12 @@ export const onAuthStateChange = (callback: (user: any) => void) => {
 
 export const logout = async (): Promise<void> => {
   console.log('logout() called, DEMO_MODE:', DEMO_MODE);
+  
+  // Clear saved credentials
+  await AsyncStorage.removeItem('saved_email');
+  await AsyncStorage.removeItem('saved_password');
+  await AsyncStorage.removeItem('remember_me');
+  
   if (DEMO_MODE) {
     await AsyncStorage.removeItem('auth_token');
     console.log('Demo mode: auth_token removed');

@@ -18,9 +18,28 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   console.log('=== LoginScreen rendered ===');
   console.log('LoginScreen props:', { navigation: !!navigation, onLogin: !!onLogin });
+
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('saved_email');
+      const savedRememberMe = await AsyncStorage.getItem('remember_me');
+      
+      if (savedEmail && savedRememberMe === 'true') {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.error('Failed to load saved credentials:', error);
+    }
+  };
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -46,6 +65,18 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     try {
       const response = await login({ email, password });
       console.log('Login successful:', response.user.email);
+      
+      // Save credentials if Remember Me is checked
+      if (rememberMe) {
+        await AsyncStorage.setItem('saved_email', email);
+        await AsyncStorage.setItem('saved_password', password); // Note: In production, use secure storage
+        await AsyncStorage.setItem('remember_me', 'true');
+      } else {
+        await AsyncStorage.removeItem('saved_email');
+        await AsyncStorage.removeItem('saved_password');
+        await AsyncStorage.removeItem('remember_me');
+      }
+      
       onLogin();
     } catch (error: any) {
       console.error('Login error:', error);
@@ -92,6 +123,16 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               secureTextEntry
               textContentType="password"
             />
+
+            <View style={styles.rememberMeContainer}>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setRememberMe(!rememberMe)}
+              >
+                {rememberMe && <Ionicons name="checkmark" size={16} color="#0B63D6" />}
+              </TouchableOpacity>
+              <Text style={styles.rememberMeText}>Remember me</Text>
+            </View>
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
@@ -285,6 +326,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#9CA9B8',
     fontSize: 12,
+  },
+
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#0B63D6',
+    borderRadius: 4,
+    marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+  },
+  rememberMeText: {
+    color: '#5C6B7A',
+    fontSize: 14,
   },
 
 });
