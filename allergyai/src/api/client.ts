@@ -134,6 +134,17 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
 };
 
 export const getMeals = async (): Promise<Meal[]> => {
+  if (DEMO_MODE) {
+    try {
+      const existingRaw = await AsyncStorage.getItem('meals');
+      const meals: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+      return meals;
+    } catch (error) {
+      console.warn('Failed to load meals from storage:', error);
+      return [];
+    }
+  }
+
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;

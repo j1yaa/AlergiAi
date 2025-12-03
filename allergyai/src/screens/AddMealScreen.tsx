@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { useNavigation } from '@react-navigation/native';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal } from '../api/client';
-import { AnalyzeResponse } from '../types';
+import { analyzeMeal, createMeal, getMeals } from '../api/client';
+import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function AddMealScreen() {
@@ -13,6 +13,9 @@ export default function AddMealScreen() {
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [loadingMeals, setLoadingMeals] = useState(false);
 
   const handleAnalyze = async () => {
     if (!description.trim()) return;
@@ -28,6 +31,58 @@ export default function AddMealScreen() {
       setLoading(false);
     }
   };
+
+  const loadMeals = async () => {
+    setLoadingMeals(true);
+    try {
+      const mealsData = await getMeals();
+      setMeals(mealsData);
+    } catch (error) {
+      console.error('Failed to load meals:', error);
+    } finally {
+      setLoadingMeals(false);
+    }
+  };
+
+  const handleViewHistory = async () => {
+    setShowHistory(true);
+    await loadMeals();
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const renderMeal = ({ item }: { item: Meal }) => (
+    <View style={styles.mealCard}>
+      <View style={styles.mealHeader}>
+        <Text style={styles.mealDate}>{formatDate(item.createdAt)}</Text>
+        <Ionicons name="restaurant-outline" size={20} color="#666" />
+      </View>
+      
+      {item.note && (
+        <Text style={styles.mealName}>{item.note}</Text>
+      )}
+      
+      {item.items && item.items.length > 0 && (
+        <View style={styles.mealIngredientsContainer}>
+          <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
+          <View style={styles.mealIngredientsList}>
+            {item.items.map((ingredient, index) => (
+              <View key={index} style={styles.mealIngredientPill}>
+                <Text style={styles.mealIngredientText}>{ingredient}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
+  );
 
   const handleSave = async () => {
     const nameFromName = (mealName ?? '').trim();
@@ -54,7 +109,10 @@ export default function AddMealScreen() {
       setMealName('');
       setDescription('');
       setResult(null);
-      navigation.goBack();
+      // Refresh meals list if history is currently shown
+      if (showHistory) {
+        loadMeals();
+      }
     } catch (e) {
       console.error('Save failed:', e);
       Alert.alert('Error', 'Could not save the meal.');
@@ -65,7 +123,16 @@ export default function AddMealScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Add Meal</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Add Meal</Text>
+        <TouchableOpacity 
+          style={styles.historyButton}
+          onPress={handleViewHistory}
+        >
+          <Ionicons name="time-outline" size={18} color="#2196F3" />
+          <Text style={styles.historyButtonText}>View History</Text>
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.label}>Meal Name</Text>
       <TextInput
@@ -169,6 +236,44 @@ export default function AddMealScreen() {
           <Text style={styles.advice}>{result.advice}</Text>
         </View>
       )}
+
+      <Modal
+        visible={showHistory}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Meal History</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowHistory(false)}
+            >
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+          
+          {loadingMeals ? (
+            <View style={styles.loadingContainer}>
+              <Text>Loading meals...</Text>
+            </View>
+          ) : meals.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons name="restaurant-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>No meals logged yet</Text>
+              <Text style={styles.emptySubtext}>Start tracking your meals to monitor allergen exposure</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={meals}
+              renderItem={renderMeal}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.mealsList}
+            />
+          )}
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -323,6 +428,121 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     color: '#999',
     fontSize: 14,
+    fontWeight: '500',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  historyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f8ff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
+  historyButtonText: {
+    color: '#2196F3',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#999',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  mealsList: {
+    padding: 20,
+  },
+  mealCard: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  mealHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  mealDate: {
+    fontSize: 14,
+    color: '#666',
+  },
+  mealName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  mealIngredientsContainer: {
+    marginTop: 8,
+  },
+  mealIngredientsLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 6,
+  },
+  mealIngredientsList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  mealIngredientPill: {
+    backgroundColor: '#e3f2fd',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  mealIngredientText: {
+    color: '#1976d2',
+    fontSize: 11,
     fontWeight: '500',
   },
 });

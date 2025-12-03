@@ -9,6 +9,7 @@ import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import DashboardScreen from '../screens/DashboardScreen';
 import AddMealScreen from '../screens/AddMealScreen';
+import AlertsScreen from '../screens/AlertsScreen';
 import AddSymptomScreen from '../screens/AddSymptomScreen';
 import SymptomHistoryScreen from '../screens/SymptomHistoryScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -64,7 +65,8 @@ function MainTabs() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'AddMeal') {
             iconName = focused ? 'add-circle' : 'add-circle-outline';
-
+          } else if (route.name === 'Alerts') {
+            iconName = focused ? 'warning' : 'warning-outline';
           } else if (route.name === 'Symptoms') {
             iconName = focused ? 'medical' : 'medical-outline';
           } else if (route.name === 'Profile') {
@@ -81,6 +83,7 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
       <Tab.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Add Meal' }} />
+      <Tab.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
       <Tab.Screen name="Symptoms" component={SymptomsStack} />
       <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
         {(props) => <ProfileScreen {...props} onLogout={handleLogout } />}
