@@ -6,7 +6,10 @@ import {
   updateDoc, 
   query, 
   where, 
-  orderBy
+  orderBy,
+  doc,
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
 import { 
   createUserWithEmailAndPassword, 
@@ -37,20 +40,30 @@ import {
 } from '../types';
 
 
-const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, fallbackData: T): Promise<T> => {
+const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, fallbackData: T, functionName?: string): Promise<T> => {
   if (DEMO_MODE) {
+    console.log(`${functionName || 'Firebase call'}: Using demo mode fallback`);
     return fallbackData;
   }
   try {
-    return await firebaseCall();
-  } catch (error) {
-    console.error('Firebase call failed:', error);
+    const result = await firebaseCall();
+    console.log(`${functionName || 'Firebase call'}: Success`);
+    return result;
+  } catch (error: any) {
+    console.error(`${functionName || 'Firebase call'} failed:`, {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
     return fallbackData;
   }
 };
 
 export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
+  console.log('🔥 REGISTER: Starting registration for', data.email);
+  
   if (DEMO_MODE) {
+    console.log('🔥 REGISTER: Using demo mode');
     const mockToken = 'demo-token-' + Date.now();
     await AsyncStorage.setItem('auth_token', mockToken);
     return {
@@ -66,37 +79,62 @@ export const register = async (data: RegisterRequest): Promise<AuthResponse> => 
     };
   }
 
-  const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-  const firebaseUser = userCredential.user;
-      
   try {
-    await addDoc(collection(db, 'users'), {
-      uid: firebaseUser.uid,
-      name: data.name,
-      email: data.email,
-      allergens: [],
-      createdAt: new Date().toISOString()
-    });
-  } catch (error) {
-    console.warn('Failed to create user document, continuing with auth only:', error);
-  }
-
-  const token = await firebaseUser.getIdToken();
-  return {
-    token,
-    user: {
-      id: firebaseUser.uid,
-      name: data.name,
-      email: data.email,
-      passwordHash: '',
-      createdAt: new Date(),
-      allergens: []
+    console.log('🔥 REGISTER: Creating Firebase Auth user...');
+    const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+    const firebaseUser = userCredential.user;
+    console.log('🔥 REGISTER: Firebase Auth user created:', firebaseUser.uid);
+        
+    try {
+      console.log('🔥 REGISTER: Creating Firestore user document...');
+      const userDocData = {
+        name: data.name,
+        email: data.email,
+        allergens: [],
+        createdAt: new Date().toISOString()
+      };
+      console.log('🔥 REGISTER: User doc data:', userDocData);
+      
+      await setDoc(doc(db, 'users', firebaseUser.uid), userDocData);
+      console.log('🔥 REGISTER: Firestore user document created successfully');
+    } catch (firestoreError: any) {
+      console.error('🔥 REGISTER: Firestore error:', {
+        code: firestoreError.code,
+        message: firestoreError.message,
+        stack: firestoreError.stack
+      });
     }
-  };
+
+    console.log('🔥 REGISTER: Getting ID token...');
+    const token = await firebaseUser.getIdToken();
+    console.log('🔥 REGISTER: Registration completed successfully');
+    
+    return {
+      token,
+      user: {
+        id: firebaseUser.uid,
+        name: data.name,
+        email: data.email,
+        passwordHash: '',
+        createdAt: new Date(),
+        allergens: []
+      }
+    };
+  } catch (authError: any) {
+    console.error('🔥 REGISTER: Auth error:', {
+      code: authError.code,
+      message: authError.message,
+      stack: authError.stack
+    });
+    throw authError;
+  }
 };
 
 export const login = async (data: LoginRequest): Promise<AuthResponse> => {
+  console.log('🔥 LOGIN: Starting login for', data.email);
+  
   if (DEMO_MODE) {
+    console.log('🔥 LOGIN: Using demo mode');
     const mockToken = 'demo-token-' + Date.now();
     await AsyncStorage.setItem('auth_token', mockToken);
     return {
@@ -112,25 +150,42 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
     };
   }
 
-  const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-  const firebaseUser = userCredential.user;
-      
-  const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-  const userDocs = await getDocs(userQuery);
-  const userData = userDocs.docs[0]?.data();
+  try {
+    console.log('🔥 LOGIN: Authenticating with Firebase...');
+    const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+    const firebaseUser = userCredential.user;
+    console.log('🔥 LOGIN: Firebase Auth successful:', firebaseUser.uid);
+        
+    console.log('🔥 LOGIN: Fetching user document from Firestore...');
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+    const userData = userDoc.exists() ? userDoc.data() : null;
+    console.log('🔥 LOGIN: User document exists:', userDoc.exists());
+    console.log('🔥 LOGIN: User data:', userData);
 
-  const token = await firebaseUser.getIdToken();
-  return {
-    token,
-    user: {
-      id: firebaseUser.uid,
-      name: userData?.name || firebaseUser.displayName || 'User',
-      email: firebaseUser.email || '',
-      passwordHash: '',
-      createdAt: userData?.createdAt ? new Date(userData.createdAt) : new Date(),
-      allergens: userData?.allergens || []
-    }
-  };
+    console.log('🔥 LOGIN: Getting ID token...');
+    const token = await firebaseUser.getIdToken();
+    console.log('🔥 LOGIN: Login completed successfully');
+    
+    return {
+      token,
+      user: {
+        id: firebaseUser.uid,
+        name: userData?.name || firebaseUser.displayName || 'User',
+        email: firebaseUser.email || '',
+        passwordHash: '',
+        createdAt: userData?.createdAt ? new Date(userData.createdAt) : new Date(),
+        allergens: userData?.allergens || []
+      }
+    };
+  } catch (error: any) {
+    console.error('🔥 LOGIN: Error:', {
+      code: error.code,
+      message: error.message,
+      stack: error.stack
+    });
+    throw error;
+  }
 };
 
 export const getMeals = async (): Promise<Meal[]> => {
@@ -148,27 +203,32 @@ export const getMeals = async (): Promise<Meal[]> => {
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
+      if (!firebaseUser) {
+        console.warn('getMeals: User not authenticated, returning empty array');
+        return [];
+      }
       
       const mealsQuery = query(
         collection(db, 'meals'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       const snapshot = await getDocs(mealsQuery);
-      return snapshot.docs.map(doc => {
-        const data = doc.data();
+      return snapshot.docs
+        .map(doc => {
+          const data = doc.data();
           return {
-          id: doc.id,
-          userId: data.userId,
-          timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
-          notes: data.notes || '',
-          photoURL: data.photoURL || '',
-          items: data.items || []
-        } as Meal;
-      });
+            id: doc.id,
+            userId: data.userId,
+            timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+            notes: data.notes || '',
+            photoURL: data.photoURL || '',
+            items: data.items || []
+          } as Meal;
+        })
+        .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
     },
-    []
+    [],
+    'getMeals'
   );
 };
 
@@ -232,8 +292,7 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
       
       const alertsQuery = query(
         collection(db, 'alerts'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('timestamp', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       
       const snapshot = await getDocs(alertsQuery);
@@ -309,9 +368,9 @@ export const getUserSettings = async (): Promise<UserSettings> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
       
       return {
         name: userData?.name || '',
@@ -331,19 +390,15 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
       
-      if (userDocRef) {
-        await updateDoc(userDocRef, {
-          name: settings.name,
-          email: settings.email,
-          notifications: settings.notifications,
-          allergens: settings.allergens,
-          diet: settings.diet
-        });
-      }
+      await updateDoc(userDocRef, {
+        name: settings.name,
+        email: settings.email,
+        notifications: settings.notifications,
+        allergens: settings.allergens,
+        diet: settings.diet
+      });
       
       return settings;
     },
@@ -437,16 +492,20 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
   return handleFirebaseCall(
     async () => {
       const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
+      if (!firebaseUser) {
+        console.warn('getSymptoms: User not authenticated, returning empty array');
+        return { items: [], page: 1, pageSize: 20, total: 0 };
+      }
       
       const symptomsQuery = query(
         collection(db, 'symptoms'),
-        where('userId', '==', firebaseUser.uid),
-        orderBy('createdAt', 'desc')
+        where('userId', '==', firebaseUser.uid)
       );
       const snapshot = await getDocs(symptomsQuery);
-      const symptoms = snapshot.docs.map(doc => 
-          ({ id: doc.id, ...doc.data() })).filter((s: any) => !s.deleted) as Symptom[];
+      const symptoms = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter((s: any) => !s.deleted)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as Symptom[];
       
       return {
         items: symptoms,
@@ -455,7 +514,8 @@ export const getSymptoms = async (): Promise<SymptomsResponse> => {
         total: symptoms.length
       };
     },
-    { items: [], page: 1, pageSize: 20, total: 0 }
+    { items: [], page: 1, pageSize: 20, total: 0 },
+    'getSymptoms'
   );
 };
 
@@ -535,60 +595,52 @@ export const getSymptomAnalytics = async (): Promise<SymptomAnalytics> => {
 
 export const getProfile = async (): Promise<UserProfile> => {
   if (DEMO_MODE) {
-    try {
-      const storedAllergensData = await AsyncStorage.getItem('@allergyai_allergens');
-        const userAllergens = storedAllergensData ? JSON.parse(storedAllergensData) : [];
+    return {
+      id: '1',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      allergens: ['Peanuts', 'Shellfish'],
+      totalMeals: 5,
+      totalAlerts: 2,
+      createdAt: new Date().toISOString(),
+    };
+  }
+  
+  // Wait for auth state to be ready
+  await new Promise(resolve => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
 
-        const storedUserData = await AsyncStorage.getItem('@allergyai_user');
-        const userData = storedUserData ? JSON.parse(storedUserData) : {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com',
-          createdAt: new Date().toISOString(),
-        };
-
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        console.warn('getProfile: User not authenticated, returning fallback profile');
         return {
-          id: userData.id || '1',
-          name: userData.name || 'Demo User',
-          email: userData.email || 'demo@example.com',
-          allergens: userAllergens,
-          totalMeals: userData.totalMeals || 0,
-          totalAlerts: userData.totalAlerts || 0,
-          createdAt: userData.createdAt || new Date().toISOString(),
-        };
-      } catch (error) {
-        console.error('Failed to load the profile from storage:', error);
-        return {
-          id: '1',
-          name: 'Demo User',
-          email: 'demo@example.com',
+          id: 'anonymous',
+          name: 'Anonymous User',
+          email: 'anonymous@example.com',
           allergens: [],
           totalMeals: 0,
           totalAlerts: 0,
           createdAt: new Date().toISOString(),
         };
       }
-  }
-
-  return handleFirebaseCall(
-    async () => {
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
            
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
-            
-      const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
-      const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
             
       return {
         id: firebaseUser.uid,
-        name: userData?.name || firebaseUser.displayName || '',
+        name: userData?.name || firebaseUser.displayName || 'User',
         email: firebaseUser.email || '',
         allergens: userData?.allergens || [],
-        totalMeals: mealsSnapshot.size,
-        totalAlerts: alertsSnapshot.size,
+        totalMeals: 0,
+        totalAlerts: 0,
         createdAt: userData?.createdAt || new Date().toISOString(),
       };
     },
@@ -600,7 +652,8 @@ export const getProfile = async (): Promise<UserProfile> => {
       totalMeals: 0,
       totalAlerts: 0,
       createdAt: new Date().toISOString(),
-    }
+    },
+    'getProfile'
   );
 }; 
 
@@ -745,6 +798,12 @@ export const onAuthStateChange = (callback: (user: any) => void) => {
 
 export const logout = async (): Promise<void> => {
   console.log('logout() called, DEMO_MODE:', DEMO_MODE);
+  
+  // Clear saved credentials
+  await AsyncStorage.removeItem('saved_email');
+  await AsyncStorage.removeItem('saved_password');
+  await AsyncStorage.removeItem('remember_me');
+  
   if (DEMO_MODE) {
     await AsyncStorage.removeItem('auth_token');
     console.log('Demo mode: auth_token removed');

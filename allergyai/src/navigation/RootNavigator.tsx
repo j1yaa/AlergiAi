@@ -3,7 +3,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { onAuthStateChange } from '../api/client';
+import { onAuthStateChange, login } from '../api/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -33,9 +34,16 @@ export default function RootNavigator() {
   const checkAuthStatus = () => {
     console.log('Setting up Firebase auth listener');
     try {
-      const unsubscribe = onAuthStateChange((user) => {
+      const unsubscribe = onAuthStateChange(async (user) => {
         console.log('Firebase auth state changed:', !!user);
-        setIsAuthenticated(!!user);
+        
+        if (!user) {
+          // Try auto-login if user is not authenticated
+          const autoLoginSuccess = await tryAutoLogin();
+          setIsAuthenticated(autoLoginSuccess);
+        } else {
+          setIsAuthenticated(true);
+        }
       });
       return unsubscribe;
     } catch (error) {
@@ -43,6 +51,28 @@ export default function RootNavigator() {
       setIsAuthenticated(false);
       return () => {};
     }
+  };
+
+  const tryAutoLogin = async (): Promise<boolean> => {
+    try {
+      const [savedEmail, rememberMe, savedPassword] = await Promise.all([
+        AsyncStorage.getItem('saved_email'),
+        AsyncStorage.getItem('remember_me'),
+        AsyncStorage.getItem('saved_password')
+      ]);
+      
+      if (savedEmail && rememberMe === 'true' && savedPassword) {
+        console.log('Attempting auto-login for:', savedEmail);
+        await login({ email: savedEmail, password: savedPassword });
+        console.log('Auto-login successful');
+        return true;
+      }
+    } catch (error) {
+      console.error('Auto-login failed:', error);
+      // Clear saved credentials if auto-login fails
+      AsyncStorage.removeItem('saved_password');
+    }
+    return false;
   };
 
 const handleLogin = () => {

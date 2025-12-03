@@ -1,1 +1,1 @@
-export const DEMO_MODE = false;
+export const DEMO_MODE = false; // ✅ Real Firebase integration enabled
