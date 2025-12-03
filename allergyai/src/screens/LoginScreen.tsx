@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,47 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { login } from '../api/client';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  console.log('=== LoginScreen rendered ===');
-  console.log('LoginScreen props:', { navigation: !!navigation, onLogin: !!onLogin });
+  useEffect(() => {
+    loadSavedCredentials();
+  }, []);
+
+  const loadSavedCredentials = async () => {
+    try {
+      const savedEmail = await AsyncStorage.getItem('saved_email');
+      const savedPassword = await AsyncStorage.getItem('saved_password');
+      if (savedEmail && savedPassword) {
+        setEmail(savedEmail);
+        setPassword(savedPassword);
+        setRememberMe(true);
+      }
+    } catch (error) {
+      console.log('Failed to load saved credentials:', error);
+    }
+  };
+
+  const saveCredentials = async () => {
+    try {
+      if (rememberMe) {
+        await AsyncStorage.setItem('saved_email', email);
+        await AsyncStorage.setItem('saved_password', password);
+      } else {
+        await AsyncStorage.removeItem('saved_email');
+        await AsyncStorage.removeItem('saved_password');
+      }
+    } catch (error) {
+      console.log('Failed to save credentials:', error);
+    }
+  };
 
   const validateForm = () => {
     if (!email.trim()) {
@@ -45,6 +77,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     setLoading(true);
     try {
       const response = await login({ email, password });
+      await saveCredentials();
       console.log('Login successful:', response.user.email);
       onLogin();
     } catch (error: any) {
@@ -92,6 +125,18 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               secureTextEntry
               textContentType="password"
             />
+
+            <TouchableOpacity
+              style={styles.rememberMeRow}
+              onPress={() => setRememberMe(!rememberMe)}
+            >
+              <Ionicons
+                name={rememberMe ? 'checkbox' : 'checkbox-outline'}
+                size={20}
+                color={rememberMe ? ACCENT : '#9AA4B2'}
+              />
+              <Text style={styles.rememberMeText}>Remember me</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
@@ -285,6 +330,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#9CA9B8',
     fontSize: 12,
+  },
+  rememberMeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 4,
+  },
+  rememberMeText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#5C6B7A',
   },
 
 });

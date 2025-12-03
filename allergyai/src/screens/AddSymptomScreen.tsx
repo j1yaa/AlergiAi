@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { ThemedText } from '../../components/themed-text';
-import { ThemedView } from '../../components/themed-view';
 import { saveSymptom } from '../api/client';
 
 export default function AddSymptomScreen() {
@@ -58,7 +56,7 @@ export default function AddSymptomScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <ThemedText style={styles.title}>Log Symptom</ThemedText>
+      <Text style={styles.title}>Log Symptom</Text>
       
       <TextInput
         style={styles.input}
@@ -70,7 +68,7 @@ export default function AddSymptomScreen() {
       />
       
       <View style={styles.severityContainer}>
-        <ThemedText style={styles.label}>Severity (1-5)</ThemedText>
+        <Text style={styles.label}>Severity (1-5)</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -83,9 +81,9 @@ export default function AddSymptomScreen() {
           thumbTintColor="#2196F3"
         />
         <View style={styles.severityLabels}>
-          <ThemedText>Mild</ThemedText>
-          <ThemedText style={styles.severityValue}>{severity}</ThemedText>
-          <ThemedText>Severe</ThemedText>
+          <Text>Mild</Text>
+          <Text style={styles.severityValue}>{severity}</Text>
+          <Text>Severe</Text>
         </View>
       </View>
 

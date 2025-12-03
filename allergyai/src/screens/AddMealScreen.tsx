@@ -5,7 +5,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeMeal, createMeal } from '../api/client';
 import { AnalyzeResponse } from '../types';
 import { Ionicons } from '@expo/vector-icons';
-import { MEALS_KEY, MealEntry } from '../utils/mealStorage';
 
 export default function AddMealScreen() {
   const navigation = useNavigation();
@@ -46,24 +45,16 @@ export default function AddMealScreen() {
 
     setSaving(true);
     try {
-      const mealEntry: MealEntry = {
-        id: `meal-${Date.now()}`,
-        name: finalName || 'Unnamed Meal',
-        ingredients: ing,
-        riskScore: result?.riskScore || 25,
-        createdAt: new Date().toISOString()
-      };
-
-      const existingRaw = await AsyncStorage.getItem(MEALS_KEY);
-      const existing: MealEntry[] = existingRaw ? JSON.parse(existingRaw) : [];
-      existing.unshift(mealEntry);
-      await AsyncStorage.setItem(MEALS_KEY, JSON.stringify(existing));
+      await createMeal({
+        items: ing,
+        note: finalName || 'Unnamed Meal'
+      });
 
       Alert.alert('Saved', 'Your meal was logged.');
       setMealName('');
       setDescription('');
       setResult(null);
-      navigation.navigate('MealLog' as never);
+      navigation.goBack();
     } catch (e) {
       console.error('Save failed:', e);
       Alert.alert('Error', 'Could not save the meal.');
