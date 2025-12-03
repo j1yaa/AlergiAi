@@ -245,9 +245,9 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
       const userAllergens = userData?.allergens || [];
 
       // Analyze the meal descritions for potential allergens
@@ -681,15 +681,25 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
-
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          allergens: [],
+          createdAt: new Date().toISOString()
+        });
+        return { allergens: [] };
+      }
+      
+      const userData = userDoc.data();
       return {
         allergens: userData?.allergens || [],
       };
     },
-    { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
+    { allergens: []}
   ); 
 };
 
@@ -715,12 +725,18 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
-
-      if (userDocRef) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          allergens: [data.allergen],
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        const userData = userDoc.data();
         const currentAllergens = userData?.allergens || [];
         if (!currentAllergens.includes(data.allergen)) {
           await updateDoc(userDocRef, {
@@ -752,12 +768,18 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
             
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
-            
-      if (userDocRef) {
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          name: firebaseUser.displayName || 'User',
+          email: firebaseUser.email || '',
+          allergens: [],
+          createdAt: new Date().toISOString()
+        });
+      } else {
+        const userData = userDoc.data();
         const currentAllergens = userData?.allergens || [];
         await updateDoc(userDocRef, {
           allergens: currentAllergens.filter((a: string) => a !== data.allergen)

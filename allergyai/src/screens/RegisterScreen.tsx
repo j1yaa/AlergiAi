@@ -84,6 +84,10 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
+          textContentType="name"
+          autoComplete="name"
+          autoCorrect={false}
+          spellCheck={false}
         />
         
         <TextInput
@@ -93,6 +97,10 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
+          textContentType="emailAddress"
+          autoComplete="email"
+          autoCorrect={false}
+          spellCheck={false}
         />
         
         <TextInput
@@ -101,6 +109,11 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          textContentType="newPassword"
+          autoComplete="password-new"
+          autoCorrect={false}
+          spellCheck={false}
+          passwordRules="minlength: 6;"
         />
         
         <TextInput
@@ -109,6 +122,10 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
+          textContentType="newPassword"
+          autoComplete="password-new"
+          autoCorrect={false}
+          spellCheck={false}
         />
         
         <TouchableOpacity 

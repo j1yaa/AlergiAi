@@ -115,6 +115,9 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               autoCapitalize="none"
               autoComplete="email"
               textContentType="emailAddress"
+              autoCorrect={false}
+              spellCheck={false}
+              importantForAutofill="yes"
             />
             <TextInput
               style={styles.input}
@@ -124,6 +127,11 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               onChangeText={setPassword}
               secureTextEntry
               textContentType="password"
+              autoComplete="password"
+              autoCorrect={false}
+              spellCheck={false}
+              importantForAutofill="yes"
+              passwordRules="minlength: 6;"
             />
 
             <TouchableOpacity
