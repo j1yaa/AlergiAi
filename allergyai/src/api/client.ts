@@ -273,17 +273,6 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         riskScore,
         advice
       };
-
-      // Save the analyzed meal the Firabase
-      await addDoc(collection(db, 'meals'), {
-        userId: firebaseUser.uid,
-        description: payload.description,
-        ingredients: response.ingredients,
-        allergens: response.allergens,
-        riskScore: response.riskScore,
-        advice: response.advice,
-        createdAt: new Date().toISOString()
-      });
       
       return response;
     },
