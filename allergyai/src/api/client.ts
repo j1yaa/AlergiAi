@@ -208,6 +208,7 @@ export const getMeals = async (): Promise<Meal[]> => {
         return [];
       }
       
+      console.log('getMeals: Fetching meals for user:', firebaseUser.uid);
       const mealsQuery = query(
         collection(db, 'meals'),
         where('userId', '==', firebaseUser.uid)
@@ -219,13 +220,17 @@ export const getMeals = async (): Promise<Meal[]> => {
           return {
             id: doc.id,
             userId: data.userId,
-            timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
-            notes: data.notes || '',
-            photoURL: data.photoURL || '',
-            items: data.items || []
+            createdAt: data.createdAt || new Date().toISOString(),
+            note: data.note || data.notes || data.description || '',
+            items: data.items || [],
+            photoURL: data.photoURL || ''
           } as Meal;
         })
-        .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
+        .sort((a, b) => {
+          const aTime = new Date(a.createdAt || 0).getTime();
+          const bTime = new Date(b.createdAt || 0).getTime();
+          return bTime - aTime;
+        });
     },
     [],
     'getMeals'

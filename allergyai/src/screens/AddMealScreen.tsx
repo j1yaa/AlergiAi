@@ -49,8 +49,23 @@ export default function AddMealScreen() {
     await loadMeals();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (meal: Meal) => {
+    let date: Date;
+    if (meal.createdAt) {
+      date = new Date(meal.createdAt);
+    } else if (meal.timeStamp) {
+      date = meal.timeStamp;
+    } else if (meal.dateISO) {
+      date = new Date(meal.dateISO);
+    } else {
+      date = new Date();
+    }
+    
+    if (isNaN(date.getTime())) {
+      date = new Date();
+    }
+    
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -58,31 +73,33 @@ export default function AddMealScreen() {
     });
   };
 
-  const renderMeal = ({ item }: { item: Meal }) => (
-    <View style={styles.mealCard}>
-      <View style={styles.mealHeader}>
-        <Text style={styles.mealDate}>{formatDate(item.createdAt)}</Text>
-        <Ionicons name="restaurant-outline" size={20} color="#666" />
-      </View>
-      
-      {item.note && (
-        <Text style={styles.mealName}>{item.note}</Text>
-      )}
-      
-      {item.items && item.items.length > 0 && (
-        <View style={styles.mealIngredientsContainer}>
-          <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
-          <View style={styles.mealIngredientsList}>
-            {item.items.map((ingredient, index) => (
-              <View key={index} style={styles.mealIngredientPill}>
-                <Text style={styles.mealIngredientText}>{ingredient}</Text>
-              </View>
-            ))}
-          </View>
+  const renderMeal = ({ item }: { item: Meal }) => {
+    const mealName = item.note || item.notes || item.description || 'Unnamed Meal';
+    
+    return (
+      <View style={styles.mealCard}>
+        <View style={styles.mealHeader}>
+          <Text style={styles.mealName}>{mealName}</Text>
+          <Ionicons name="restaurant-outline" size={20} color="#666" />
         </View>
-      )}
-    </View>
-  );
+        
+        <Text style={styles.mealDate}>{formatDate(item)}</Text>
+        
+        {item.items && item.items.length > 0 && (
+          <View style={styles.mealIngredientsContainer}>
+            <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
+            <View style={styles.mealIngredientsList}>
+              {item.items.map((ingredient, index) => (
+                <View key={index} style={styles.mealIngredientPill}>
+                  <Text style={styles.mealIngredientText}>{ingredient}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
 
   const handleSave = async () => {
     const nameFromName = (mealName ?? '').trim();
@@ -510,14 +527,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mealDate: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 8,
   },
   mealName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 8,
     color: '#333',
+    flex: 1,
   },
   mealIngredientsContainer: {
     marginTop: 8,
