@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal, getMeals } from '../api/client';
+import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -73,6 +73,28 @@ export default function AddMealScreen() {
     });
   };
 
+  const handleDeleteMeal = async (mealId: string, mealName: string) => {
+    Alert.alert(
+      'Delete Meal',
+      `Are you sure you want to delete "${mealName}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMeal(mealId);
+              loadMeals();
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete meal');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderMeal = ({ item }: { item: Meal }) => {
     const mealName = item.note || item.notes || item.description || 'Unnamed Meal';
     
@@ -80,7 +102,12 @@ export default function AddMealScreen() {
       <View style={styles.mealCard}>
         <View style={styles.mealHeader}>
           <Text style={styles.mealName}>{mealName}</Text>
-          <Ionicons name="restaurant-outline" size={20} color="#666" />
+          <TouchableOpacity 
+            onPress={() => handleDeleteMeal(item.id, mealName)}
+            style={styles.deleteButton}
+          >
+            <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
+          </TouchableOpacity>
         </View>
         
         <Text style={styles.mealDate}>{formatDate(item)}</Text>
@@ -562,5 +589,8 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontSize: 11,
     fontWeight: '500',
+  },
+  deleteButton: {
+    padding: 4,
   },
 });

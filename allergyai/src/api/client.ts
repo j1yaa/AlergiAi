@@ -797,6 +797,30 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
   );
 }
 
+export const deleteMeal = async (mealId: string): Promise<void> => {
+  if (DEMO_MODE) {
+    const existingRaw = await AsyncStorage.getItem('meals');
+    const meals: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+    const filtered = meals.filter(meal => meal.id !== mealId);
+    await AsyncStorage.setItem('meals', JSON.stringify(filtered));
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
+      
+      const mealDoc = doc(db, 'meals', mealId);
+      await updateDoc(mealDoc, {
+        deleted: true,
+        deletedAt: new Date().toISOString()
+      });
+    },
+    undefined
+  );
+};
+
 export const onAuthStateChange = (callback: (user: any) => void) => {
   return onAuthStateChanged(auth, callback);
 };
