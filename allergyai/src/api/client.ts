@@ -594,6 +594,14 @@ export const getProfile = async (): Promise<UserProfile> => {
       createdAt: new Date().toISOString(),
     };
   }
+  
+  // Wait for auth state to be ready
+  await new Promise(resolve => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      unsubscribe();
+      resolve(user);
+    });
+  });
 
   return handleFirebaseCall(
     async () => {
