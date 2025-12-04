@@ -115,9 +115,6 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               autoCapitalize="none"
               autoComplete="email"
               textContentType="emailAddress"
-              autoCorrect={false}
-              spellCheck={false}
-              importantForAutofill="yes"
             />
             <TextInput
               style={styles.input}
@@ -127,11 +124,6 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               onChangeText={setPassword}
               secureTextEntry
               textContentType="password"
-              autoComplete="password"
-              autoCorrect={false}
-              spellCheck={false}
-              importantForAutofill="yes"
-              passwordRules="minlength: 6;"
             />
 
             <TouchableOpacity
@@ -204,7 +196,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 24,
-    justifyContent: 'center',
+    paddingTop: 80,
+    justifyContent: 'flex-start',
   },
 
   // brand / header
@@ -250,6 +243,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginTop: 8,
+    marginBottom: 100,
     marginHorizontal: 4,
     // shadow (iOS)
     shadowColor: '#000',
@@ -334,7 +328,7 @@ const styles = StyleSheet.create({
   },
 
   footer: {
-    marginTop: 18,
+    marginTop: 60,
     textAlign: 'center',
     color: '#9CA9B8',
     fontSize: 12,

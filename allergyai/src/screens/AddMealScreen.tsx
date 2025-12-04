@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
+import { analyzeMeal, createMeal, getMeals } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,16 +18,13 @@ export default function AddMealScreen() {
   const [loadingMeals, setLoadingMeals] = useState(false);
 
   const handleAnalyze = async () => {
-    if (!description.trim() && !mealName.trim()) return;
+    if (!description.trim()) return;
 
     setLoading(true);
     try {
-      const response = await analyzeMeal({ 
-        mealName: mealName.trim(), 
-        description: description.trim() 
-      });
+      const response = await analyzeMeal({ description });
       setResult(response);
-      console.log('Analysis complete for:', { mealName, description });
+      console.log('Analysis complete, mealName still:', mealName);
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -52,23 +49,8 @@ export default function AddMealScreen() {
     await loadMeals();
   };
 
-  const formatDate = (meal: Meal) => {
-    let date: Date;
-    if (meal.createdAt) {
-      date = new Date(meal.createdAt);
-    } else if (meal.timeStamp) {
-      date = meal.timeStamp;
-    } else if (meal.dateISO) {
-      date = new Date(meal.dateISO);
-    } else {
-      date = new Date();
-    }
-    
-    if (isNaN(date.getTime())) {
-      date = new Date();
-    }
-    
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -76,64 +58,31 @@ export default function AddMealScreen() {
     });
   };
 
-  const handleDeleteMeal = async (mealId: string, mealName: string) => {
-    Alert.alert(
-      'Delete Meal',
-      `Are you sure you want to delete "${mealName}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              console.log('Deleting meal:', mealId);
-              await deleteMeal(mealId);
-              console.log('Meal deleted successfully, reloading meals...');
-              await loadMeals();
-              Alert.alert('Success', 'Meal deleted successfully');
-            } catch (error) {
-              console.error('Delete meal error:', error);
-              Alert.alert('Error', 'Failed to delete meal');
-            }
-          }
-        }
-      ]
-    );
-  };
-
-  const renderMeal = ({ item }: { item: Meal }) => {
-    const mealName = item.note || item.notes || item.description || 'Unnamed Meal';
-    
-    return (
-      <View style={styles.mealCard}>
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealName}>{mealName}</Text>
-          <TouchableOpacity 
-            onPress={() => handleDeleteMeal(item.id, mealName)}
-            style={styles.deleteButton}
-          >
-            <Ionicons name="trash-outline" size={18} color="#FF6B6B" />
-          </TouchableOpacity>
-        </View>
-        
-        <Text style={styles.mealDate}>{formatDate(item)}</Text>
-        
-        {item.items && item.items.length > 0 && (
-          <View style={styles.mealIngredientsContainer}>
-            <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
-            <View style={styles.mealIngredientsList}>
-              {item.items.map((ingredient, index) => (
-                <View key={index} style={styles.mealIngredientPill}>
-                  <Text style={styles.mealIngredientText}>{ingredient}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
+  const renderMeal = ({ item }: { item: Meal }) => (
+    <View style={styles.mealCard}>
+      <View style={styles.mealHeader}>
+        <Text style={styles.mealDate}>{formatDate(item.createdAt)}</Text>
+        <Ionicons name="restaurant-outline" size={20} color="#666" />
       </View>
-    );
-  };
+      
+      {item.note && (
+        <Text style={styles.mealName}>{item.note}</Text>
+      )}
+      
+      {item.items && item.items.length > 0 && (
+        <View style={styles.mealIngredientsContainer}>
+          <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
+          <View style={styles.mealIngredientsList}>
+            {item.items.map((ingredient, index) => (
+              <View key={index} style={styles.mealIngredientPill}>
+                <Text style={styles.mealIngredientText}>{ingredient}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
+  );
 
   const handleSave = async () => {
     const nameFromName = (mealName ?? '').trim();
@@ -185,6 +134,18 @@ export default function AddMealScreen() {
         </TouchableOpacity>
       </View>
 
+      <Text style={styles.label}>Meal Name</Text>
+      <TextInput
+        style={styles.input}
+        value={mealName}
+        onChangeText={(text) => {
+          console.log('TextInput onChange:', `"${text}"`);
+          setMealName(text);
+        }}
+        placeholder="Enter meal name..."
+        testID="mealNameInput"
+      />
+
       {/* Scan Button Card */}
       <TouchableOpacity
         style={styles.scanCard}
@@ -200,22 +161,15 @@ export default function AddMealScreen() {
         <Ionicons name="chevron-forward" size={24} color="#999" />
       </TouchableOpacity>
 
-      <Text style={styles.label}>Meal Name</Text>
-      <TextInput
-        style={styles.input}
-        value={mealName}
-        onChangeText={(text) => {
-          console.log('TextInput onChange:', `"${text}"`);
-          setMealName(text);
-        }}
-        placeholder="Enter meal name..."
-        testID="mealNameInput"
-      />
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>OR</Text>
+        <View style={styles.dividerLine} />
+      </View>
 
-      <Text style={styles.label}>Ingredients</Text>
       <TextInput
         style={styles.input}
-        placeholder="List your meal ingredients..."
+        placeholder="Describe your meal..."
         value={description}
         onChangeText={setDescription}
         multiline
@@ -225,7 +179,7 @@ export default function AddMealScreen() {
       <TouchableOpacity
         style={styles.button}
         onPress={handleAnalyze}
-        disabled={loading || (!description.trim() && !mealName.trim())}
+        disabled={loading || !description.trim()}
       >
         <Text style={styles.buttonText}>
           {loading ? 'Analyzing...' : 'Analyze Meal'}
@@ -556,15 +510,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mealDate: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 8,
+    fontSize: 14,
+    color: '#666',
   },
   mealName: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 8,
     color: '#333',
-    flex: 1,
   },
   mealIngredientsContainer: {
     marginTop: 8,
@@ -591,8 +544,5 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontSize: 11,
     fontWeight: '500',
-  },
-  deleteButton: {
-    padding: 4,
   },
 });
