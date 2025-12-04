@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.allergyai.app"
     },
     "android": {
       "package": "com.allergyai.app",
@@ -28,7 +29,9 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "softwareKeyboardLayoutMode": "pan"
     },
@@ -36,35 +39,28 @@
       "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
-     "plugins": [
-          [
-               "expo-splash-screen",
-               {
-                    "backgroundColor": "#ffffff",
-                    "image": "./assets/images/splash-icon.png",
-                    "imageWidth": 200
-               }
-          ],
-          [
-               "expo-font",
-               {
-                    "fonts": [
-                         "./assets/fonts/SpaceMono-Regular.ttf"
-                    ]
-               }
-          ],
-          [
-               "expo-camera",
-               {
-                    "cameraPermission": "Allow AllergyAI to access your camera to scan food labels for allergens.",
-                    "microphonePermission": "Allow AllergyAI to access your microphone."
-               }
-          ]
-     ],
-     "extra": {
-          "eas": {
-               "projectId": "allergyai"
-          }
-     }
+    "plugins": [
+  [
+    "expo-splash-screen",
+    {
+      "backgroundColor": "#ffffff",
+      "image": "./assets/images/splash-icon.png",
+      "imageWidth": 200
+    }
+  ],
+  [
+    "expo-camera",
+    {
+      "cameraPermission": "Allow AllergyAI to access your camera to scan food labels for allergens.",
+      "microphonePermission": "Allow AllergyAI to access your microphone."
+    }
+  ]
+],
+
+    "extra": {
+      "eas": {
+        "projectId": "b6cdc972-fa6b-454c-89d9-195e98c87704"
+      }
+    }
   }
 }
