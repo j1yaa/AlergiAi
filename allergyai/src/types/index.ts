@@ -25,6 +25,7 @@ export interface Meal {
   ingredients?: string[];
   createdAt?: string;
   note?: string;
+  riskScore?: number;
   deleted?: boolean;
 }
 
@@ -54,6 +55,7 @@ export interface AnalyticsSummary {
 }
 
 export interface AnalyzeRequest {
+  mealName?: string;
   description?: string;
   imageBase64?: string;
 }

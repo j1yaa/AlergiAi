@@ -68,7 +68,7 @@ export default function DashboardScreen() {
           {analytics.weeklyExposure.map((item, index) => (
             <View key={index} style={styles.barItem}>
               <Text style={styles.barLabel}>{item.week}</Text>
-              <View style={[styles.bar, { height: Math.max(item.count * 20, 5), backgroundColor: item.count > 0 ? '#E53935' : '#4CAF50' }]} />
+              <View style={[styles.bar, { height: Math.min(Math.max(item.count * 15, 5), 100), backgroundColor: item.count > 0 ? '#E53935' : '#4CAF50' }]} />
               <Text style={styles.barValue}>{item.count}</Text>
             </View>
           ))}
@@ -150,6 +150,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 8,
+    marginBottom: 20,
+    overflow: 'hidden',
   },
   chartTitle: {
     fontSize: 18,
@@ -158,23 +160,27 @@ const styles = StyleSheet.create({
   },
   chartPlaceholder: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'flex-end',
     height: 150,
     paddingBottom: 20,
+    paddingHorizontal: 10,
   },
   barItem: {
     alignItems: 'center',
+    flex: 1,
+    maxWidth: 60,
   },
   bar: {
-    width: 30,
+    width: 25,
     backgroundColor: '#FF6B6B',
     marginVertical: 5,
     borderRadius: 2,
   },
   barLabel: {
-    fontSize: 12,
+    fontSize: 10,
     color: '#666',
+    textAlign: 'center',
   },
   barValue: {
     fontSize: 12,
