@@ -14,13 +14,31 @@ export interface GeminiScanResult {
 
 export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> => {
     try {
-        const prompt = `Analyze this image of the food item or the label. 
-        Extract the product name and list the ingredients found. Respond with ONLY a JSON object in the format: {
-            "productName": "The Product Name",
-            "detectedIngredients": ["ingredient 1", "ingredient 2", ...]
+        const prompt = `
+        You are an allergy-scanner assistant.
+
+        Given an IMAGE of a food item OR an ingredients label, you must return ONLY a JSON object:
+
+        {
+        "productName": "name of the food or product",
+        "detectedIngredients": ["ingredient1", "ingredient2", ...]
         }
-        If the product name or ingredients could not be detected,
-        return an empty array for ingredients and an empty string for the product name.`;
+
+        Rules:
+        - If the image shows a single obvious food (e.g., banana, apple, egg), 
+        use that as both the productName and a single item in detectedIngredients.
+        Example for a banana photo:
+        {
+            "productName": "Banana",
+            "detectedIngredients": ["banana"]
+        }
+        - If there is an ingredients LABEL, extract as many ingredients as you can from the text.
+        - If you truly cannot identify the food OR ingredients:
+        - use "Unknown" for productName
+        - use an empty array [] for detectedIngredients.
+
+        Return ONLY the JSON. No explanations, no markdown fences.
+        `;
 
         const response = await axios.post(API_URL, {
             contents: [{
