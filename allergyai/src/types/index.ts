@@ -1,3 +1,8 @@
+export interface AllergenWithSeverity {
+  name: string;
+  severity: 'low' | 'moderate' | 'high';
+}
+
 export interface User {
   id: string;
   name: string;
@@ -5,6 +10,7 @@ export interface User {
   passwordHash: string;
   createdAt: Date;
   allergens: string[];
+  allergensSeverity?: AllergenWithSeverity[];
 }
 
 export interface Meal {
@@ -64,6 +70,7 @@ export interface UserSettings {
   name: string;
   email: string;
   allergens: string[];
+  allergensSeverity?: AllergenWithSeverity[];
   diet: string;
   notifications: boolean;
   notificationTimes?: any[];
@@ -128,10 +135,12 @@ export interface UserProfile {
 
 export interface AllergensResponse {
     allergens: string[];
+    allergensSeverity?: AllergenWithSeverity[];
 }
 
 export interface AddAllergenRequest {
     allergen: string;
+    severity?: 'low' | 'moderate' | 'high';
 }
 
 export interface RemoveAllergenRequest {

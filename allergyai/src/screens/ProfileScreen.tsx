@@ -1,19 +1,24 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, logout } from '../api/client'; 
-import { UserProfile } from '../types';
+import { getProfile, logout, getAllergens } from '../api/client'; 
+import { UserProfile, AllergenWithSeverity } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const loadProfile = useCallback(async () => {
         try {
-            const data = await getProfile();
-            setProfile(data);
+            const [profileData, allergensData] = await Promise.all([
+                getProfile(),
+                getAllergens()
+            ]);
+            setProfile(profileData);
+            setAllergensSeverity(allergensData.allergensSeverity || []);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -110,12 +115,37 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 </View>
                 {profile.allergens.length > 0 ? (
                     <View style={styles.allergensList}>
-                        {profile.allergens.map((allergen, index) => (
-                            <View key={index} style={styles.allergenPill}>
-                                <Ionicons name="alert-circle" size={16} color="#E53935" />
-                                <Text style={styles.allergenText}>{allergen}</Text>
-                            </View>
-                        ))}
+                        {profile.allergens.map((allergen, index) => {
+                            const severityData = allergensSeverity.find(a => a.name === allergen);
+                            const severity = severityData?.severity || 'moderate';
+                            
+                            const severityStyles = {
+                                low: {
+                                    pill: styles.lowRiskPill,
+                                    text: styles.lowRiskText,
+                                    icon: '#4CAF50'
+                                },
+                                moderate: {
+                                    pill: styles.moderateRiskPill,
+                                    text: styles.moderateRiskText,
+                                    icon: '#FF9800'
+                                },
+                                high: {
+                                    pill: styles.highRiskPill,
+                                    text: styles.highRiskText,
+                                    icon: '#E53935'
+                                }
+                            };
+                            
+                            const style = severityStyles[severity];
+                            
+                            return (
+                                <View key={index} style={[styles.allergenPill, style.pill]}>
+                                    <Ionicons name="alert-circle" size={16} color={style.icon} />
+                                    <Text style={[styles.allergenText, style.text]}>{allergen}</Text>
+                                </View>
+                            );
+                        })}
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
@@ -325,5 +355,26 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    lowRiskPill: {
+        backgroundColor: '#E8F5E8',
+        borderColor: '#C8E6C9',
+    },
+    moderateRiskPill: {
+        backgroundColor: '#FFF3E0',
+        borderColor: '#FFCC02',
+    },
+    highRiskPill: {
+        backgroundColor: '#FFEBEE',
+        borderColor: '#FFCDD2',
+    },
+    lowRiskText: {
+        color: '#2E7D32',
+    },
+    moderateRiskText: {
+        color: '#F57C00',
+    },
+    highRiskText: {
+        color: '#C62828',
     },
 });

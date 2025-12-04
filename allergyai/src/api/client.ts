@@ -249,6 +249,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists() ? userDoc.data() : null;
       const userAllergens = userData?.allergens || [];
+      const userAllergensSeverity = userData?.allergensSeverity || [];
 
       // Enhanced AI-powered risk assessment
       const description = payload.description?.toLowerCase() || '';
@@ -259,12 +260,19 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         .map(item => item.trim())
         .filter(Boolean);
 
-      // Advanced allergen detection with fuzzy matching
+      // Advanced allergen detection with fuzzy matching and severity
       const detectedAllergens: string[] = [];
-      const allergenMatches: { allergen: string; ingredient: string; confidence: number }[] = [];
+      const allergenMatches: { allergen: string; ingredient: string; confidence: number; severity: string }[] = [];
+      
+      // Helper function to get allergen severity
+      const getAllergenSeverity = (allergenName: string): 'low' | 'moderate' | 'high' => {
+        const severityData = userAllergensSeverity.find(a => a.name.toLowerCase() === allergenName.toLowerCase());
+        return severityData?.severity || 'moderate'; // Default to moderate if not specified
+      };
       
       userAllergens.forEach((allergen: string) => {
         const allergenLower = allergen.toLowerCase();
+        const allergenSeverity = getAllergenSeverity(allergen);
         
         // Direct matches
         ingredients.forEach(ingredient => {
@@ -274,7 +282,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
           if (ingredientLower.includes(allergenLower)) {
             if (!detectedAllergens.includes(allergen)) {
               detectedAllergens.push(allergen);
-              allergenMatches.push({ allergen, ingredient, confidence: 1.0 });
+              allergenMatches.push({ allergen, ingredient, confidence: 1.0, severity: allergenSeverity });
             }
             return;
           }
@@ -301,7 +309,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
             if (ingredientLower.includes(variation)) {
               if (!detectedAllergens.includes(allergen)) {
                 detectedAllergens.push(allergen);
-                allergenMatches.push({ allergen, ingredient, confidence: 0.9 });
+                allergenMatches.push({ allergen, ingredient, confidence: 0.9, severity: allergenSeverity });
               }
             }
           });
@@ -310,36 +318,66 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         // Check description for allergen mentions
         if (description.includes(allergenLower) && !detectedAllergens.includes(allergen)) {
           detectedAllergens.push(allergen);
-          allergenMatches.push({ allergen, ingredient: 'meal description', confidence: 0.8 });
+          allergenMatches.push({ allergen, ingredient: 'meal description', confidence: 0.8, severity: allergenSeverity });
         }
       });
 
-      // Calculate sophisticated risk score
+      // Calculate sophisticated risk score with severity tiers
       let riskScore = 0;
       
       if (detectedAllergens.length === 0) {
         riskScore = Math.min(15, ingredients.length * 2); // Base risk increases with complexity
       } else {
-        // High risk calculation based on matches - scales with multiple allergens
-        const baseRisk = 70;
-        const allergenMultiplier = detectedAllergens.length;
-        const allergenPenalty = allergenMultiplier * 15; // Each additional allergen adds 15%
-        const confidenceBonus = allergenMatches.reduce((sum, match) => sum + (match.confidence * 5), 0);
+        // Severity-based risk calculation
+        const baseRisk = 40;
+        let severityScore = 0;
         
-        // Multiple allergen exponential scaling
-        const multiAllergenBonus = allergenMultiplier > 1 ? (allergenMultiplier - 1) * 10 : 0;
+        allergenMatches.forEach(match => {
+          const severityMultiplier = {
+            'low': 15,
+            'moderate': 25, 
+            'high': 40
+          }[match.severity] || 25;
+          
+          severityScore += severityMultiplier * match.confidence;
+        });
         
-        riskScore = Math.min(100, baseRisk + allergenPenalty + confidenceBonus + multiAllergenBonus);
+        // Multiple allergen scaling based on severity combinations
+        const multiAllergenBonus = allergenMatches.length > 1 ? 
+          allergenMatches.reduce((bonus, match) => {
+            const severityBonus = {
+              'low': 5,
+              'moderate': 10,
+              'high': 15
+            }[match.severity] || 10;
+            return bonus + severityBonus;
+          }, 0) : 0;
+        
+        riskScore = Math.min(100, baseRisk + severityScore + multiAllergenBonus);
       }
 
-      // Generate detailed advice
+      // Generate detailed advice with severity information
       let advice = '';
       if (detectedAllergens.length > 0) {
-        const matchDetails = allergenMatches.map(match => 
-          `${match.allergen} (found in: ${match.ingredient})`
-        ).join(', ');
+        const highRiskMatches = allergenMatches.filter(m => m.severity === 'high');
+        const moderateRiskMatches = allergenMatches.filter(m => m.severity === 'moderate');
+        const lowRiskMatches = allergenMatches.filter(m => m.severity === 'low');
         
-        advice = `⚠️ HIGH RISK: Detected allergens - ${matchDetails}. Avoid this meal immediately!`;
+        if (highRiskMatches.length > 0) {
+          const highDetails = highRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
+          advice = `🚨 CRITICAL RISK: High-severity allergens detected - ${highDetails}. AVOID IMMEDIATELY!`;
+        } else if (moderateRiskMatches.length > 0) {
+          const moderateDetails = moderateRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
+          advice = `⚠️ HIGH RISK: Moderate-severity allergens detected - ${moderateDetails}. Exercise extreme caution.`;
+        } else {
+          const lowDetails = lowRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
+          advice = `⚡ MODERATE RISK: Low-severity allergens detected - ${lowDetails}. Monitor for reactions.`;
+        }
+        
+        // Add combination warning for multiple allergens
+        if (allergenMatches.length > 1) {
+          advice += ` Multiple allergens present - risk may be compounded.`;
+        }
       } else if (riskScore > 10) {
         advice = `⚡ MODERATE RISK: No known allergens detected, but meal complexity suggests caution. Check ingredients carefully.`;
       } else {
@@ -737,10 +775,12 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
-      return {allergens};
+      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
+      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
+      return {allergens, allergensSeverity};
     } catch (error) {
       console.error('Failed to load allergens from storage:', error);
-      return {allergens: []};
+      return {allergens: [], allergensSeverity: []};
     }
   }
 
@@ -765,6 +805,7 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
       const userData = userDoc.data();
       return {
         allergens: userData?.allergens || [],
+        allergensSeverity: userData?.allergensSeverity || []
       };
     },
     { allergens: []}
@@ -776,10 +817,15 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
+      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
+      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
+      
       // Check if there duplicates
       if (!allergens.includes(data.allergen)) {
         allergens.push(data.allergen);
+        allergensSeverity.push({ name: data.allergen, severity: data.severity || 'moderate' });
         await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(allergens));
+        await AsyncStorage.setItem('@allergyai_allergens_severity', JSON.stringify(allergensSeverity));
       }
     } catch (error) {
       console.error('Failed to add the allergen to storage:', error);
@@ -806,9 +852,11 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       } else {
         const userData = userDoc.data();
         const currentAllergens = userData?.allergens || [];
+        const currentAllergensSeverity = userData?.allergensSeverity || [];
         if (!currentAllergens.includes(data.allergen)) {
           await updateDoc(userDocRef, {
-            allergens: [...currentAllergens, data.allergen]
+            allergens: [...currentAllergens, data.allergen],
+            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
           });
         }
       }

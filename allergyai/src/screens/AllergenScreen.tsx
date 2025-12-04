@@ -1,11 +1,17 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform, Modal } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAllergens, addAllergen, removeAllergen } from '../api/client';
-import {isWeb } from '../utils/platform';   
+import {isWeb } from '../utils/platform';
+import { AllergenWithSeverity } from '../types';
+import { DEMO_MODE } from '../config/demo';   
 
 export default function AllergenScreen() {
     const [allergens, setAllergens] = useState<string[]>([]);
+    const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
+    const [selectedSeverity, setSelectedSeverity] = useState<'low' | 'moderate' | 'high'>('moderate');
+    const [showSeverityModal, setShowSeverityModal] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,6 +27,7 @@ export default function AllergenScreen() {
         try {
             const data = await getAllergens();
             setAllergens(data.allergens);
+            setAllergensSeverity(data.allergensSeverity || []);
         } catch (error) {
             console.error('Failed to load allergens:', error);
         } finally {
@@ -29,7 +36,10 @@ export default function AllergenScreen() {
     };
 
     const handleAddAllergen = async () => {
-        if (!newAllergen.trim()) return;
+        if (!newAllergen.trim()) {
+            showAlert('Error', 'Please enter an allergen name');
+            return;
+        }
 
         const allergenName = newAllergen.trim();
 
@@ -40,14 +50,17 @@ export default function AllergenScreen() {
 
         // Optimistic update - update UI immediately
         setAllergens([...allergens, allergenName]);
+        setAllergensSeverity([...allergensSeverity, { name: allergenName, severity: selectedSeverity }]);
         setNewAllergen('');
+        setSelectedSeverity('moderate');
         
         // Save to backend in background
         try {
-            await addAllergen({ allergen: allergenName });
+            await addAllergen({ allergen: allergenName, severity: selectedSeverity });
         } catch (error) {
             // Revert on error
             setAllergens(allergens);
+            setAllergensSeverity(allergensSeverity);
             showAlert('Error', 'Failed to add allergen');
             console.error('Failed to add allergen:', error);
         }
@@ -91,19 +104,33 @@ export default function AllergenScreen() {
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={styles.input}
-                        placeholder="Enter name for the allergen:"
+                        placeholder="Enter allergen name..."
                         value={newAllergen}
                         onChangeText={setNewAllergen}
                         autoCapitalize="words"
                     />
-                    <TouchableOpacity
-                        style={[styles.addButton, !newAllergen.trim() && styles.addButtonDisabled]}
-                        onPress={handleAddAllergen}
-                        disabled={!newAllergen.trim()}
-                    >
-                        <Text style={styles.addButtonText}>Add</Text>
-                    </TouchableOpacity>
                 </View>
+                
+                <Text style={styles.severityLabel}>Risk Level</Text>
+                <TouchableOpacity
+                    style={styles.severitySelector}
+                    onPress={() => setShowSeverityModal(true)}
+                >
+                    <Text style={styles.severityText}>
+                        {selectedSeverity === 'low' && '🟢 Low Risk'}
+                        {selectedSeverity === 'moderate' && '🟡 Moderate Risk'}
+                        {selectedSeverity === 'high' && '🔴 High Risk'}
+                    </Text>
+                    <Text style={styles.dropdownArrow}>▼</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                    style={[styles.addButton, (!newAllergen.trim()) && styles.addButtonDisabled]}
+                    onPress={handleAddAllergen}
+                    disabled={!newAllergen.trim()}
+                >
+                    <Text style={styles.addButtonText}>Add Allergen</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.listSection}>
@@ -114,19 +141,38 @@ export default function AllergenScreen() {
                     <Text style={styles.loadingText}>Loading..</Text>
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
-                        {allergens.map((allergen: string, index: number) => (
-                        <View key={index} style={styles.allergenItem}>
-                            <View style={styles.allergenPill}>
-                                <Text style={styles.allergenText}>{allergen}</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.removeButton}
-                                onPress={() => handleRemoveAllergen(allergen)}
-                            >
-                                    <Text style={styles.removeButtonText}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-                          ))}
+                        {allergens.map((allergen: string, index: number) => {
+                            const severityData = allergensSeverity.find(a => a.name === allergen);
+                            const severity = severityData?.severity || 'moderate';
+                            return (
+                                <View key={index} style={styles.allergenItem}>
+                                    <View style={styles.allergenInfo}>
+                                        <View style={[styles.allergenPill, 
+                                            severity === 'low' && styles.lowRiskPill,
+                                            severity === 'moderate' && styles.moderateRiskPill,
+                                            severity === 'high' && styles.highRiskPill
+                                        ]}>
+                                            <Text style={[styles.allergenText,
+                                                severity === 'low' && styles.lowRiskText,
+                                                severity === 'moderate' && styles.moderateRiskText,
+                                                severity === 'high' && styles.highRiskText
+                                            ]}>{allergen}</Text>
+                                        </View>
+                                        <Text style={styles.severityBadge}>
+                                            {severity === 'low' && '🟢 Low'}
+                                            {severity === 'moderate' && '🟡 Moderate'}
+                                            {severity === 'high' && '🔴 High'}
+                                        </Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemoveAllergen(allergen)}
+                                    >
+                                        <Text style={styles.removeButtonText}>✕</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            );
+                        })}
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
@@ -152,6 +198,59 @@ export default function AllergenScreen() {
                     ))}
                 </View>
             </View>
+            
+            <Modal
+                visible={showSeverityModal}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setShowSeverityModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Select Risk Level</Text>
+                        
+                        <TouchableOpacity
+                            style={[styles.severityOption, selectedSeverity === 'low' && styles.selectedOption]}
+                            onPress={() => {
+                                setSelectedSeverity('low');
+                                setShowSeverityModal(false);
+                            }}
+                        >
+                            <Text style={styles.severityOptionText}>🟢 Low Risk</Text>
+                            <Text style={styles.severityDescription}>Mild reactions, manageable symptoms</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[styles.severityOption, selectedSeverity === 'moderate' && styles.selectedOption]}
+                            onPress={() => {
+                                setSelectedSeverity('moderate');
+                                setShowSeverityModal(false);
+                            }}
+                        >
+                            <Text style={styles.severityOptionText}>🟡 Moderate Risk</Text>
+                            <Text style={styles.severityDescription}>Noticeable reactions, requires caution</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={[styles.severityOption, selectedSeverity === 'high' && styles.selectedOption]}
+                            onPress={() => {
+                                setSelectedSeverity('high');
+                                setShowSeverityModal(false);
+                            }}
+                        >
+                            <Text style={styles.severityOptionText}>🔴 High Risk</Text>
+                            <Text style={styles.severityDescription}>Severe reactions, avoid completely</Text>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={() => setShowSeverityModal(false)}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 }
@@ -300,6 +399,112 @@ const styles = StyleSheet.create({
         color: '#1976D2',
         fontSize: 14,
         fontWeight: '500',
+    },
+    severityLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 8,
+        marginTop: 16,
+        color: '#333',
+    },
+    severitySelector: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ddd',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 16,
+        backgroundColor: '#fff',
+    },
+    severityText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    dropdownArrow: {
+        fontSize: 12,
+        color: '#666',
+    },
+    allergenInfo: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    severityBadge: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    lowRiskPill: {
+        backgroundColor: '#E8F5E8',
+        borderColor: '#C8E6C9',
+    },
+    moderateRiskPill: {
+        backgroundColor: '#FFF3E0',
+        borderColor: '#FFCC02',
+    },
+    highRiskPill: {
+        backgroundColor: '#FFEBEE',
+        borderColor: '#FFCDD2',
+    },
+    lowRiskText: {
+        color: '#2E7D32',
+    },
+    moderateRiskText: {
+        color: '#F57C00',
+    },
+    highRiskText: {
+        color: '#C62828',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 20,
+        width: '80%',
+        maxWidth: 300,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 16,
+        textAlign: 'center',
+        color: '#333',
+    },
+    severityOption: {
+        padding: 16,
+        borderRadius: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    selectedOption: {
+        backgroundColor: '#E3F2FD',
+        borderColor: '#2196F3',
+    },
+    severityOptionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    severityDescription: {
+        fontSize: 14,
+        color: '#666',
+    },
+    cancelButton: {
+        padding: 12,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    cancelButtonText: {
+        color: '#666',
+        fontSize: 16,
     },
 });
                   
