@@ -208,7 +208,6 @@ export const getMeals = async (): Promise<Meal[]> => {
         return [];
       }
       
-      console.log('getMeals: Fetching meals for user:', firebaseUser.uid);
       const mealsQuery = query(
         collection(db, 'meals'),
         where('userId', '==', firebaseUser.uid)
@@ -220,19 +219,13 @@ export const getMeals = async (): Promise<Meal[]> => {
           return {
             id: doc.id,
             userId: data.userId,
-            createdAt: data.createdAt || new Date().toISOString(),
-            note: data.note || data.notes || data.description || '',
-            items: data.items || [],
+            timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
+            notes: data.notes || '',
             photoURL: data.photoURL || '',
-            deleted: data.deleted || false
+            items: data.items || []
           } as Meal;
         })
-        .filter(meal => !meal.deleted)
-        .sort((a, b) => {
-          const aTime = new Date(a.createdAt || 0).getTime();
-          const bTime = new Date(b.createdAt || 0).getTime();
-          return bTime - aTime;
-        });
+        .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
     },
     [],
     'getMeals'
@@ -245,151 +238,45 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      const userData = userDoc.exists() ? userDoc.data() : null;
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userData = userDocs.docs[0]?.data();
       const userAllergens = userData?.allergens || [];
-      const userAllergensSeverity = userData?.allergensSeverity || [];
 
-      // Enhanced AI-powered risk assessment
+      // Analyze the meal descritions for potential allergens
       const description = payload.description?.toLowerCase() || '';
-      
-      // Extract ingredients from description
+      const detectedAllergens = userAllergens.filter((allergen: string) =>
+        description.includes(allergen.toLowerCase())
+      );
+
       const ingredients = description
-        .split(/[,;\n]/)
+        .split(/[,;]/)
         .map(item => item.trim())
         .filter(Boolean);
 
-      // Advanced allergen detection with fuzzy matching and severity
-      const detectedAllergens: string[] = [];
-      const allergenMatches: { allergen: string; ingredient: string; confidence: number; severity: string }[] = [];
-      
-      // Helper function to get allergen severity
-      const getAllergenSeverity = (allergenName: string): 'low' | 'moderate' | 'high' => {
-        const severityData = userAllergensSeverity.find(a => a.name.toLowerCase() === allergenName.toLowerCase());
-        return severityData?.severity || 'moderate'; // Default to moderate if not specified
-      };
-      
-      userAllergens.forEach((allergen: string) => {
-        const allergenLower = allergen.toLowerCase();
-        const allergenSeverity = getAllergenSeverity(allergen);
-        
-        // Direct matches
-        ingredients.forEach(ingredient => {
-          const ingredientLower = ingredient.toLowerCase();
-          
-          // Exact match
-          if (ingredientLower.includes(allergenLower)) {
-            if (!detectedAllergens.includes(allergen)) {
-              detectedAllergens.push(allergen);
-              allergenMatches.push({ allergen, ingredient, confidence: 1.0, severity: allergenSeverity });
-            }
-            return;
-          }
-          
-          // Common allergen variations and derivatives
-          const allergenVariations: { [key: string]: string[] } = {
-            'peanut': ['peanut butter', 'groundnut', 'arachis', 'monkey nut'],
-            'peanuts': ['peanut butter', 'groundnut', 'arachis', 'monkey nut'],
-            'milk': ['dairy', 'cheese', 'butter', 'cream', 'yogurt', 'lactose', 'casein', 'whey'],
-            'dairy': ['milk', 'cheese', 'butter', 'cream', 'yogurt', 'lactose', 'casein', 'whey'],
-            'egg': ['eggs', 'albumin', 'mayonnaise', 'meringue'],
-            'eggs': ['egg', 'albumin', 'mayonnaise', 'meringue'],
-            'wheat': ['flour', 'gluten', 'bread', 'pasta', 'cereal'],
-            'gluten': ['wheat', 'flour', 'bread', 'pasta', 'cereal', 'barley', 'rye'],
-            'soy': ['soya', 'tofu', 'edamame', 'miso', 'tempeh'],
-            'shellfish': ['shrimp', 'crab', 'lobster', 'prawns', 'crayfish'],
-            'fish': ['salmon', 'tuna', 'cod', 'mackerel', 'sardine'],
-            'nuts': ['almond', 'walnut', 'cashew', 'pistachio', 'hazelnut', 'pecan'],
-            'tree nuts': ['almond', 'walnut', 'cashew', 'pistachio', 'hazelnut', 'pecan']
-          };
-          
-          const variations = allergenVariations[allergenLower] || [];
-          variations.forEach(variation => {
-            if (ingredientLower.includes(variation)) {
-              if (!detectedAllergens.includes(allergen)) {
-                detectedAllergens.push(allergen);
-                allergenMatches.push({ allergen, ingredient, confidence: 0.9, severity: allergenSeverity });
-              }
-            }
-          });
-        });
-        
-        // Check description for allergen mentions
-        if (description.includes(allergenLower) && !detectedAllergens.includes(allergen)) {
-          detectedAllergens.push(allergen);
-          allergenMatches.push({ allergen, ingredient: 'meal description', confidence: 0.8, severity: allergenSeverity });
-        }
-      });
+      const riskScore = detectedAllergens.length > 0 ? 85 : 15;
 
-      // Calculate sophisticated risk score with severity tiers
-      let riskScore = 0;
-      
-      if (detectedAllergens.length === 0) {
-        riskScore = Math.min(15, ingredients.length * 2); // Base risk increases with complexity
-      } else {
-        // Severity-based risk calculation
-        const baseRisk = 40;
-        let severityScore = 0;
-        
-        allergenMatches.forEach(match => {
-          const severityMultiplier = {
-            'low': 15,
-            'moderate': 25, 
-            'high': 40
-          }[match.severity] || 25;
-          
-          severityScore += severityMultiplier * match.confidence;
-        });
-        
-        // Multiple allergen scaling based on severity combinations
-        const multiAllergenBonus = allergenMatches.length > 1 ? 
-          allergenMatches.reduce((bonus, match) => {
-            const severityBonus = {
-              'low': 5,
-              'moderate': 10,
-              'high': 15
-            }[match.severity] || 10;
-            return bonus + severityBonus;
-          }, 0) : 0;
-        
-        riskScore = Math.min(100, baseRisk + severityScore + multiAllergenBonus);
-      }
-
-      // Generate detailed advice with severity information
-      let advice = '';
-      if (detectedAllergens.length > 0) {
-        const highRiskMatches = allergenMatches.filter(m => m.severity === 'high');
-        const moderateRiskMatches = allergenMatches.filter(m => m.severity === 'moderate');
-        const lowRiskMatches = allergenMatches.filter(m => m.severity === 'low');
-        
-        if (highRiskMatches.length > 0) {
-          const highDetails = highRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
-          advice = `🚨 CRITICAL RISK: High-severity allergens detected - ${highDetails}. AVOID IMMEDIATELY!`;
-        } else if (moderateRiskMatches.length > 0) {
-          const moderateDetails = moderateRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
-          advice = `⚠️ HIGH RISK: Moderate-severity allergens detected - ${moderateDetails}. Exercise extreme caution.`;
-        } else {
-          const lowDetails = lowRiskMatches.map(m => `${m.allergen} (${m.ingredient})`).join(', ');
-          advice = `⚡ MODERATE RISK: Low-severity allergens detected - ${lowDetails}. Monitor for reactions.`;
-        }
-        
-        // Add combination warning for multiple allergens
-        if (allergenMatches.length > 1) {
-          advice += ` Multiple allergens present - risk may be compounded.`;
-        }
-      } else if (riskScore > 10) {
-        advice = `⚡ MODERATE RISK: No known allergens detected, but meal complexity suggests caution. Check ingredients carefully.`;
-      } else {
-        advice = `✅ LOW RISK: This meal appears safe for your dietary restrictions.`;
-      }
+      const advice = detectedAllergens.length > 0
+        ? `High allergen risk was detected: ${detectedAllergens.join(', ')}. Avoid this meal.`
+        : 'This meal appears to be safe for your dietary restrictions.';
 
       const response: AnalyzeResponse = {
         ingredients,
         allergens: detectedAllergens,
-        riskScore: Math.round(riskScore),
+        riskScore,
         advice
       };
+
+      // Save the analyzed meal the Firabase
+      await addDoc(collection(db, 'meals'), {
+        userId: firebaseUser.uid,
+        description: payload.description,
+        ingredients: response.ingredients,
+        allergens: response.allergens,
+        riskScore: response.riskScore,
+        advice: response.advice,
+        createdAt: new Date().toISOString()
+      });
       
       return response;
     },
@@ -775,12 +662,10 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
-      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
-      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
-      return {allergens, allergensSeverity};
+      return {allergens};
     } catch (error) {
       console.error('Failed to load allergens from storage:', error);
-      return {allergens: [], allergensSeverity: []};
+      return {allergens: []};
     }
   }
 
@@ -789,26 +674,15 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          name: firebaseUser.displayName || 'User',
-          email: firebaseUser.email || '',
-          allergens: [],
-          createdAt: new Date().toISOString()
-        });
-        return { allergens: [] };
-      }
-      
-      const userData = userDoc.data();
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userData = userDocs.docs[0]?.data();
+
       return {
         allergens: userData?.allergens || [],
-        allergensSeverity: userData?.allergensSeverity || []
       };
     },
-    { allergens: []}
+    { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
   ); 
 };
 
@@ -817,15 +691,10 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
-      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
-      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
-      
       // Check if there duplicates
       if (!allergens.includes(data.allergen)) {
         allergens.push(data.allergen);
-        allergensSeverity.push({ name: data.allergen, severity: data.severity || 'moderate' });
         await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(allergens));
-        await AsyncStorage.setItem('@allergyai_allergens_severity', JSON.stringify(allergensSeverity));
       }
     } catch (error) {
       console.error('Failed to add the allergen to storage:', error);
@@ -839,24 +708,16 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          name: firebaseUser.displayName || 'User',
-          email: firebaseUser.email || '',
-          allergens: [data.allergen],
-          createdAt: new Date().toISOString()
-        });
-      } else {
-        const userData = userDoc.data();
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userDocRef = userDocs.docs[0]?.ref;
+      const userData = userDocs.docs[0]?.data();
+
+      if (userDocRef) {
         const currentAllergens = userData?.allergens || [];
-        const currentAllergensSeverity = userData?.allergensSeverity || [];
         if (!currentAllergens.includes(data.allergen)) {
           await updateDoc(userDocRef, {
-            allergens: [...currentAllergens, data.allergen],
-            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
+            allergens: [...currentAllergens, data.allergen]
           });
         }
       }
@@ -884,18 +745,12 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
             
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          name: firebaseUser.displayName || 'User',
-          email: firebaseUser.email || '',
-          allergens: [],
-          createdAt: new Date().toISOString()
-        });
-      } else {
-        const userData = userDoc.data();
+      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
+      const userDocs = await getDocs(userQuery);
+      const userDocRef = userDocs.docs[0]?.ref;
+      const userData = userDocs.docs[0]?.data();
+            
+      if (userDocRef) {
         const currentAllergens = userData?.allergens || [];
         await updateDoc(userDocRef, {
           allergens: currentAllergens.filter((a: string) => a !== data.allergen)
@@ -936,30 +791,6 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
     newMeal
   );
 }
-
-export const deleteMeal = async (mealId: string): Promise<void> => {
-  if (DEMO_MODE) {
-    const existingRaw = await AsyncStorage.getItem('meals');
-    const meals: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
-    const filtered = meals.filter(meal => meal.id !== mealId);
-    await AsyncStorage.setItem('meals', JSON.stringify(filtered));
-    return;
-  }
-
-  return handleFirebaseCall(
-    async () => {
-      const firebaseUser = auth.currentUser;
-      if (!firebaseUser) throw new Error('User not authenticated');
-      
-      const mealDoc = doc(db, 'meals', mealId);
-      await updateDoc(mealDoc, {
-        deleted: true,
-        deletedAt: new Date().toISOString()
-      });
-    },
-    undefined
-  );
-};
 
 export const onAuthStateChange = (callback: (user: any) => void) => {
   return onAuthStateChanged(auth, callback);
