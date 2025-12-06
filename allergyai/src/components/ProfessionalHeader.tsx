@@ -7,6 +7,8 @@ import {
   Modal,
   FlatList,
   SafeAreaView,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -93,9 +95,6 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
         <View style={styles.header}>
           <View style={styles.leftSection}>
             <View style={styles.logoContainer}>
-              <View style={styles.logoInner}>
-                <Ionicons name="pulse" size={20} color="#FFFFFF" />
-              </View>
               <View style={styles.logoDot} />
             </View>
           </View>
@@ -116,9 +115,10 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
         animationType="slide"
         presentationStyle="fullScreen"
         onRequestClose={() => setDropdownVisible(false)}
+        statusBarTranslucent
       >
-        <SafeAreaView style={styles.modalOverlay}>
-          <View style={styles.dropdownContainer}>
+        <View style={styles.modalOverlay}>
+          <SafeAreaView style={styles.dropdownContainer}>
             <View style={styles.dropdownHeader}>
               <View>
                 <Text style={styles.dropdownTitle}>Quick Navigation</Text>
@@ -138,8 +138,8 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
               showsVerticalScrollIndicator={false}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
-          </View>
-        </SafeAreaView>
+          </SafeAreaView>
+        </View>
       </Modal>
     </>
   );
@@ -167,22 +167,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 44,
-    height: 44,
     position: 'relative',
   },
   logoInner: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#667eea',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
+  },
+  logoText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#0B63D6',
   },
   logoDot: {
     position: 'absolute',
@@ -219,6 +213,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0,
   },
   dropdownContainer: {
     flex: 1,
