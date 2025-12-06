@@ -113,15 +113,11 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
 
       <Modal
         visible={dropdownVisible}
-        transparent
         animationType="slide"
+        presentationStyle="fullScreen"
         onRequestClose={() => setDropdownVisible(false)}
       >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setDropdownVisible(false)}
-        >
+        <SafeAreaView style={styles.modalOverlay}>
           <View style={styles.dropdownContainer}>
             <View style={styles.dropdownHeader}>
               <View>
@@ -143,7 +139,7 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
               ItemSeparatorComponent={() => <View style={styles.separator} />}
             />
           </View>
-        </TouchableOpacity>
+        </SafeAreaView>
       </Modal>
     </>
   );
@@ -222,20 +218,11 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'flex-start',
-    paddingTop: 90,
+    backgroundColor: '#FFFFFF',
   },
   dropdownContainer: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    borderRadius: 20,
-    maxHeight: 450,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 15,
   },
   dropdownHeader: {
     flexDirection: 'row',
