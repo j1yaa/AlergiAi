@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
 import { onAuthStateChange, login } from '../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ProfessionalHeader from '../components/ProfessionalHeader';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -19,7 +18,6 @@ import ScannerScreen from '../screens/ScannerScreen';
 import ScanResultScreen from '../screens/ScanResultScreen';
 
 const Stack = createStackNavigator();
-const Tab = createBottomTabNavigator();
 
 export default function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -84,41 +82,29 @@ const handleLogout = () => {
   setIsAuthenticated(false);
 };
 
-function MainTabs() {
+function MainStack() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
-
-          if (route.name === 'Dashboard') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'AddMeal') {
-            iconName = focused ? 'add-circle' : 'add-circle-outline';
-          } else if (route.name === 'Alerts') {
-            iconName = focused ? 'warning' : 'warning-outline';
-          } else if (route.name === 'Symptoms') {
-            iconName = focused ? 'medical' : 'medical-outline';
-          } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
-          } else {
-            iconName = 'help-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#2196F3',
-        tabBarInactiveTintColor: 'gray',
+    <Stack.Navigator
+      screenOptions={({ route, navigation }) => ({
+        header: () => (
+          <ProfessionalHeader 
+            navigation={navigation} 
+            currentScreen={route.name}
+          />
+        ),
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Dashboard' }} />
-      <Tab.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Add Meal' }} />
-      <Tab.Screen name="Alerts" component={AlertsScreen} options={{ title: 'Alerts' }} />
-      <Tab.Screen name="Symptoms" component={SymptomsStack} />
-      <Tab.Screen name="Profile" options={{ title: 'Profile' }}>
-        {(props) => <ProfileScreen {...props} onLogout={handleLogout } />}
-        </Tab.Screen>
-    </Tab.Navigator>
+      <Stack.Screen name="Dashboard" component={DashboardScreen} />
+      <Stack.Screen name="AddMeal" component={AddMealScreen} />
+      <Stack.Screen name="Alerts" component={AlertsScreen} />
+      <Stack.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
+      <Stack.Screen name="Profile">
+        {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
+      </Stack.Screen>
+      <Stack.Screen name="Allergens" component={AllergenScreen} />
+      <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false }} />
+    </Stack.Navigator>
   );
 }
 
@@ -126,16 +112,23 @@ function MainTabs() {
 
 function SymptomsStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={({ route, navigation }) => ({
+        header: () => (
+          <ProfessionalHeader 
+            navigation={navigation} 
+            currentScreen="Symptoms"
+          />
+        ),
+      })}
+    >
       <Stack.Screen
         name="SymptomHistory"
         component={SymptomHistoryScreen}
-        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="AddSymptom"
         component={AddSymptomScreen}
-        options={{ title: 'Log Symptom' }}
       />
     </Stack.Navigator>
   );
@@ -151,13 +144,7 @@ function SymptomsStack() {
   return (
     <NavigationContainer>
       {isAuthenticated ? (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="MainTabs" component={MainTabs} />
-
-          <Stack.Screen name="Allergens" component={AllergenScreen} options={{ title: 'Manage Allergens', headerShown: true }} />
-          <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false }} />
-        </Stack.Navigator>
+        <MainStack />
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login">
