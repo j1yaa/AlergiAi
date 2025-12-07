@@ -238,36 +238,45 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
       
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
       const userAllergens = userData?.allergens || [];
+      const allergensSeverity = userData?.allergensSeverity || [];
 
-      // Analyze the meal descritions for potential allergens
+      // Parse ingredients from description
       const description = payload.description?.toLowerCase() || '';
-      const detectedAllergens = userAllergens.filter((allergen: string) =>
-        description.includes(allergen.toLowerCase())
-      );
-
       const ingredients = description
         .split(/[,;]/)
         .map(item => item.trim())
         .filter(Boolean);
 
-      const riskScore = detectedAllergens.length > 0 ? 85 : 15;
+      // Create allergen matches with severity information
+      const allergenMatches = userAllergens.map((allergen: string) => {
+        const severityInfo = allergensSeverity.find((as: any) => as.name.toLowerCase() === allergen.toLowerCase());
+        return {
+          allergen: allergen.toLowerCase(),
+          severity: severityInfo?.severity || 'moderate' as 'low' | 'moderate' | 'high',
+          sensitivity: 'moderate' as 'mild' | 'moderate' | 'severe'
+        };
+      });
 
-      const advice = detectedAllergens.length > 0
-        ? `High allergen risk was detected: ${detectedAllergens.join(', ')}. Avoid this meal.`
+      // Use the scientific risk calculation
+      const { computeRiskScore } = await import('../utils/smartAnalyzer');
+      const riskResult = computeRiskScore(ingredients, allergenMatches);
+
+      const advice = riskResult.matchedAllergens.length > 0
+        ? `${riskResult.riskTier} detected: ${riskResult.matchedAllergens.join(', ')}. ${riskResult.explanation || ''}`
         : 'This meal appears to be safe for your dietary restrictions.';
 
       const response: AnalyzeResponse = {
         ingredients,
-        allergens: detectedAllergens,
-        riskScore,
+        allergens: riskResult.matchedAllergens,
+        riskScore: riskResult.riskScore,
         advice
       };
 
-      // Save the analyzed meal the Firabase
+      // Save the analyzed meal to Firebase
       await addDoc(collection(db, 'meals'), {
         userId: firebaseUser.uid,
         description: payload.description,
@@ -662,10 +671,12 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
-      return {allergens};
+      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
+      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
+      return {allergens, allergensSeverity};
     } catch (error) {
       console.error('Failed to load allergens from storage:', error);
-      return {allergens: []};
+      return {allergens: [], allergensSeverity: []};
     }
   }
 
@@ -680,6 +691,7 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
 
       return {
         allergens: userData?.allergens || [],
+        allergensSeverity: userData?.allergensSeverity || []
       };
     },
     { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
@@ -691,10 +703,14 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
     try {
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
-      // Check if there duplicates
+      const storedSeverity = await AsyncStorage.getItem('@allergyai_allergens_severity');
+      const allergensSeverity = storedSeverity ? JSON.parse(storedSeverity) : [];
+      
       if (!allergens.includes(data.allergen)) {
         allergens.push(data.allergen);
+        allergensSeverity.push({ name: data.allergen, severity: data.severity || 'moderate' });
         await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(allergens));
+        await AsyncStorage.setItem('@allergyai_allergens_severity', JSON.stringify(allergensSeverity));
       }
     } catch (error) {
       console.error('Failed to add the allergen to storage:', error);
@@ -715,9 +731,11 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
 
       if (userDocRef) {
         const currentAllergens = userData?.allergens || [];
+        const currentAllergensSeverity = userData?.allergensSeverity || [];
         if (!currentAllergens.includes(data.allergen)) {
           await updateDoc(userDocRef, {
-            allergens: [...currentAllergens, data.allergen]
+            allergens: [...currentAllergens, data.allergen],
+            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
           });
         }
       }

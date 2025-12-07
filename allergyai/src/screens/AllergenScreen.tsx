@@ -6,6 +6,7 @@ import {isWeb } from '../utils/platform';
 export default function AllergenScreen() {
     const [allergens, setAllergens] = useState<string[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
+    const [selectedSeverity, setSelectedSeverity] = useState<'low' | 'moderate' | 'high'>('moderate');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -44,7 +45,7 @@ export default function AllergenScreen() {
         
         // Save to backend in background
         try {
-            await addAllergen({ allergen: allergenName });
+            await addAllergen({ allergen: allergenName, severity: selectedSeverity });
         } catch (error) {
             // Revert on error
             setAllergens(allergens);
@@ -103,6 +104,37 @@ export default function AllergenScreen() {
                     >
                         <Text style={styles.addButtonText}>Add</Text>
                     </TouchableOpacity>
+                </View>
+                
+                <View style={styles.severitySection}>
+                    <Text style={styles.severityLabel}>Reaction Severity:</Text>
+                    <View style={styles.severityButtons}>
+                        {(['low', 'moderate', 'high'] as const).map((severity) => (
+                            <TouchableOpacity
+                                key={severity}
+                                style={[
+                                    styles.severityButton,
+                                    selectedSeverity === severity && styles.severityButtonActive,
+                                    severity === 'low' && styles.severityLow,
+                                    severity === 'moderate' && styles.severityModerate,
+                                    severity === 'high' && styles.severityHigh,
+                                ]}
+                                onPress={() => setSelectedSeverity(severity)}
+                            >
+                                <Text style={[
+                                    styles.severityButtonText,
+                                    selectedSeverity === severity && styles.severityButtonTextActive
+                                ]}>
+                                    {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                    <Text style={styles.severityDescription}>
+                        {selectedSeverity === 'low' && 'Mild reactions (discomfort, minor symptoms)'}
+                        {selectedSeverity === 'moderate' && 'Moderate reactions (noticeable symptoms, some distress)'}
+                        {selectedSeverity === 'high' && 'Severe reactions (anaphylaxis, life-threatening)'}
+                    </Text>
                 </View>
             </View>
 
@@ -300,6 +332,60 @@ const styles = StyleSheet.create({
         color: '#1976D2',
         fontSize: 14,
         fontWeight: '500',
+    },
+    severitySection: {
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 8,
+    },
+    severityLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 12,
+        color: '#333',
+    },
+    severityButtons: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 8,
+    },
+    severityButton: {
+        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#ddd',
+        backgroundColor: '#fff',
+        alignItems: 'center',
+    },
+    severityButtonActive: {
+        borderColor: '#2196F3',
+        backgroundColor: '#2196F3',
+    },
+    severityLow: {
+        borderColor: '#4CAF50',
+    },
+    severityModerate: {
+        borderColor: '#FF9800',
+    },
+    severityHigh: {
+        borderColor: '#f44336',
+    },
+    severityButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#666',
+    },
+    severityButtonTextActive: {
+        color: '#fff',
+    },
+    severityDescription: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
+        textAlign: 'center',
     },
 });
                   

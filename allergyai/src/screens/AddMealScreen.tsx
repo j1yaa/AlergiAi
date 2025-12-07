@@ -227,9 +227,21 @@ export default function AddMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Risk Score: {result.riskScore}/100</Text>
-            <View style={[styles.riskBar, { backgroundColor: result.riskScore > 50 ? '#FF6B6B' : '#4CAF50' }]}>
-              <View style={[styles.riskFill, { width: `${result.riskScore}%` }]} />
+            <Text style={styles.sectionTitle}>Risk Assessment</Text>
+            <View style={styles.riskContainer}>
+              <Text style={styles.riskScoreText}>Risk Score: {result.riskScore}%</Text>
+              <View style={[
+                styles.riskBar, 
+                { backgroundColor: result.riskScore <= 30 ? '#4CAF50' : result.riskScore <= 70 ? '#FF9800' : '#f44336' }
+              ]}>
+                <View style={[styles.riskFill, { width: `${result.riskScore}%` }]} />
+              </View>
+              <Text style={[
+                styles.riskTierText,
+                { color: result.riskScore <= 30 ? '#4CAF50' : result.riskScore <= 70 ? '#FF9800' : '#f44336' }
+              ]}>
+                {result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk'}
+              </Text>
             </View>
           </View>
 
@@ -373,14 +385,29 @@ const styles = StyleSheet.create({
     color: '#4caf50',
     fontStyle: 'italic',
   },
+  riskContainer: {
+    alignItems: 'center',
+  },
+  riskScoreText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
   riskBar: {
-    height: 8,
-    borderRadius: 4,
+    height: 12,
+    width: '100%',
+    borderRadius: 6,
     overflow: 'hidden',
+    marginBottom: 8,
   },
   riskFill: {
     height: '100%',
     backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  riskTierText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   advice: {
     fontSize: 14,

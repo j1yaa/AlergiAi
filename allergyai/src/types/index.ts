@@ -125,14 +125,23 @@ export interface UserProfile {
     createdAt: string;
 }
 
-export interface AllergensResponse {
-    allergens: string[];
-}
+
 
 export interface AddAllergenRequest {
     allergen: string;
+    severity?: 'low' | 'moderate' | 'high';
 }
 
 export interface RemoveAllergenRequest {
     allergen: string;
+}
+
+export interface AllergenWithSeverity {
+    name: string;
+    severity: 'low' | 'moderate' | 'high';
+}
+
+export interface AllergensResponse {
+    allergens: string[];
+    allergensSeverity?: AllergenWithSeverity[];
 }

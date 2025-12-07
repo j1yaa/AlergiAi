@@ -35,6 +35,8 @@ export default function ScanResultScreen() {
     riskScore,
     matchedAllergens,
     severity,
+    riskTier,
+    explanation,
   } = computeRiskScore(
     params.detectedIngredients ?? [],
     params.allergenWarnings ?? [],
@@ -89,8 +91,16 @@ export default function ScanResultScreen() {
 
           {/* Risk score from AI helper */}
           <Text style={styles.riskScoreText}>
-            Risk Score: {riskScore}/100 ({severity.toLowerCase()})
+            Risk Score: {riskScore}% - {riskTier}
           </Text>
+          <Text style={styles.severityText}>
+            Severity Level: {severity}
+          </Text>
+          {explanation && (
+            <Text style={styles.explanationText}>
+              {explanation}
+            </Text>
+          )}
         </View>
 
         {/* Allergen Warnings */}
@@ -228,9 +238,23 @@ const styles = StyleSheet.create({
   },
   riskScoreText: {
     marginTop: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#444',
+  },
+  severityText: {
+    marginTop: 5,
     fontSize: 14,
     fontWeight: '500',
-    color: '#444',
+    color: '#666',
+  },
+  explanationText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingHorizontal: 10,
   },
   section: {
     backgroundColor: '#fff',

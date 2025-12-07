@@ -1,46 +1,100 @@
 // Smart AI-powered meal analysis utilities
+import { calculateRiskScore, determineExposureLevel, RiskFactors } from './riskCalculator';
 
 export interface RiskScoreResult {
   riskScore: number;            // 0–100
   matchedAllergens: string[];   // allergens found in this meal
   severity: 'LOW' | 'MODERATE' | 'HIGH';
+  riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk';
+  explanation?: string;
 }
 
-// Basic deterministic risk scoring used by both Add Meal and Scan Results
+export interface AllergenMatch {
+  allergen: string;
+  severity: 'low' | 'moderate' | 'high';
+  sensitivity?: 'mild' | 'moderate' | 'severe';
+}
+
+// Scientific 3-factor weighted risk calculation
 export const computeRiskScore = (
   ingredients: string[],
-  userAllergens: string[],
+  userAllergens: string[] | AllergenMatch[],
 ): RiskScoreResult => {
-  // normalize everything for safer matching
+  // Normalize ingredients for matching
   const normalizedIngredients = ingredients.map(i => i.toLowerCase());
-  const normalizedAllergens = userAllergens.map(a => a.toLowerCase());
+  
+  // Handle both string array and AllergenMatch array formats
+  const allergenMatches: AllergenMatch[] = Array.isArray(userAllergens) && userAllergens.length > 0 && typeof userAllergens[0] === 'object'
+    ? userAllergens as AllergenMatch[]
+    : (userAllergens as string[]).map(allergen => ({
+        allergen: allergen.toLowerCase(),
+        severity: 'moderate' as const,
+        sensitivity: 'moderate' as const
+      }));
 
-  const matchedAllergens = normalizedAllergens.filter(allergen =>
-    normalizedIngredients.some(ing => ing.includes(allergen)),
-  );
+  const matchedAllergens: string[] = [];
+  let maxRiskScore = 0;
+  let riskExplanation = '';
 
-  let riskScore = 5;
-  let severity: RiskScoreResult['severity'] = 'LOW';
+  // Calculate risk for each matched allergen
+  allergenMatches.forEach(({ allergen, severity, sensitivity = 'moderate' }) => {
+    const isMatched = normalizedIngredients.some(ing => ing.includes(allergen));
+    
+    if (isMatched) {
+      matchedAllergens.push(allergen);
+      
+      // Determine exposure level based on ingredient position
+      const exposure = determineExposureLevel(allergen, ingredients);
+      
+      // Calculate risk using the scientific model
+      const riskFactors: RiskFactors = {
+        severity,
+        exposure,
+        sensitivity
+      };
+      
+      const riskResult = calculateRiskScore(riskFactors);
+      
+      // Track the highest risk score
+      if (riskResult.normalizedScore > maxRiskScore) {
+        maxRiskScore = riskResult.normalizedScore;
+        riskExplanation = riskResult.explanation;
+      }
+    }
+  });
 
+  // If no allergens matched, return low risk
   if (matchedAllergens.length === 0) {
-    riskScore = 5;
+    return {
+      riskScore: 5,
+      matchedAllergens: [],
+      severity: 'LOW',
+      riskTier: 'Low Risk',
+      explanation: 'No known allergens detected in ingredients.'
+    };
+  }
+
+  // Determine severity based on final score
+  let severity: RiskScoreResult['severity'];
+  let riskTier: RiskScoreResult['riskTier'];
+  
+  if (maxRiskScore <= 30) {
     severity = 'LOW';
-  } else if (matchedAllergens.length === 1) {
-    // one allergen → like your Banana example ~65/100
-    riskScore = 65;
-    severity = 'HIGH';
-  } else if (matchedAllergens.length === 2) {
-    riskScore = 85;
-    severity = 'HIGH';
+    riskTier = 'Low Risk';
+  } else if (maxRiskScore <= 70) {
+    severity = 'MODERATE';
+    riskTier = 'Moderate Risk';
   } else {
-    riskScore = 95;
     severity = 'HIGH';
+    riskTier = 'High Risk';
   }
 
   return {
-    riskScore,
+    riskScore: maxRiskScore,
     matchedAllergens,
     severity,
+    riskTier,
+    explanation: riskExplanation
   };
 };
 
