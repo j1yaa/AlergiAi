@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal, getMeals } from '../api/client';
+import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { createAlert } from '../utils/allergenAlertService';
@@ -51,6 +51,29 @@ export default function AddMealScreen() {
     await loadMeals();
   };
 
+  const handleDeleteMeal = async (mealId: string) => {
+    Alert.alert(
+      'Delete Meal',
+      'Are you sure you want to delete this meal?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMeal(mealId);
+              await loadMeals();
+            } catch (error) {
+              console.error('Failed to delete meal:', error);
+              Alert.alert('Error', 'Could not delete the meal.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No date';
     try {
@@ -66,6 +89,11 @@ export default function AddMealScreen() {
   };
 
   const renderMeal = ({ item }: { item: Meal }) => {
+    // Skip rendering if meal has no name and no ingredients
+    if (!item.notes && !item.note && !item.description && (!item.items || item.items.length === 0)) {
+      return null;
+    }
+    
     console.log('Rendering meal item:', JSON.stringify(item, null, 2));
     return (
     <View style={styles.mealCard}>
@@ -95,6 +123,13 @@ export default function AddMealScreen() {
           </View>
         </View>
       )}
+      
+      <TouchableOpacity 
+        style={styles.deleteButton}
+        onPress={() => handleDeleteMeal(item.id)}
+      >
+        <Ionicons name="trash-outline" size={18} color="#F44336" />
+      </TouchableOpacity>
     </View>
   );
   };
@@ -603,6 +638,15 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
+    position: 'relative',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    padding: 8,
+    backgroundColor: '#ffebee',
+    borderRadius: 20,
   },
   mealHeader: {
     flexDirection: 'row',

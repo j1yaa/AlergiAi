@@ -813,6 +813,30 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
   );
 }
 
+export async function deleteMeal(mealId: string): Promise<void> {
+  if (DEMO_MODE) {
+    const existingRaw = await AsyncStorage.getItem('meals');
+    const existing: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+    const filtered = existing.filter(m => m.id !== mealId);
+    await AsyncStorage.setItem('meals', JSON.stringify(filtered));
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
+      
+      const mealRef = doc(db, 'meals', mealId);
+      await updateDoc(mealRef, {
+        deleted: true,
+        deletedAt: new Date().toISOString()
+      });
+    },
+    undefined
+  );
+}
+
 export const onAuthStateChange = (callback: (user: any) => void) => {
   return onAuthStateChanged(auth, callback);
 };
