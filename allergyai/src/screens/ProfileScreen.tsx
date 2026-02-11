@@ -121,7 +121,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 {profile.allergens.length > 0 ? (
                     <View style={styles.allergensList}>
                         {profile.allergens.map((allergen, index) => {
-                            const severityInfo = allergensSeverity.find(a => a.name === allergen);
+                            const severityInfo = allergensSeverity.find(a => a.name.toLowerCase() === allergen.toLowerCase());
                             const severity = severityInfo?.severity || 'moderate';
                             const colors = {
                                 low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32', icon: '#4CAF50' },

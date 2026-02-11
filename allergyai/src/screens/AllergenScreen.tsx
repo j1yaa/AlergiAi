@@ -151,7 +151,7 @@ export default function AllergenScreen() {
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
                         {allergens.map((allergen: string, index: number) => {
-                            const severityInfo = allergensSeverity.find((a: any) => a.name === allergen);
+                            const severityInfo = allergensSeverity.find((a: any) => a.name.toLowerCase() === allergen.toLowerCase());
                             const severity = severityInfo?.severity || 'moderate';
                             const colors = {
                                 low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32' },
