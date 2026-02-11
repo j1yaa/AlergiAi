@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeMeal, createMeal, getMeals } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import { createAlert } from '../utils/allergenAlertService';
 
 export default function AddMealScreen() {
   const navigation = useNavigation();
@@ -25,6 +26,14 @@ export default function AddMealScreen() {
       const response = await analyzeMeal({ description });
       setResult(response);
       console.log('Analysis complete, mealName still:', mealName);
+      
+      // Create alerts for detected allergens
+      if (response.allergens.length > 0) {
+        for (const allergen of response.allergens) {
+          const severity = response.riskScore > 70 ? 'high' : response.riskScore > 30 ? 'medium' : 'low';
+          await createAlert(allergen, severity, 'meal');
+        }
+      }
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -125,13 +134,21 @@ export default function AddMealScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Add Meal</Text>
-        <TouchableOpacity 
-          style={styles.historyButton}
-          onPress={handleViewHistory}
-        >
-          <Ionicons name="time-outline" size={18} color="#2196F3" />
-          <Text style={styles.historyButtonText}>View History</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.reminderButton}
+            onPress={() => navigation.navigate('ReminderSettings' as never)}
+          >
+            <Ionicons name="notifications-outline" size={18} color="#FF9800" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.historyButton}
+            onPress={handleViewHistory}
+          >
+            <Ionicons name="time-outline" size={18} color="#2196F3" />
+            <Text style={styles.historyButtonText}>History</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.label}>Meal Name</Text>
@@ -462,6 +479,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  reminderButton: {
+    backgroundColor: '#fff3e0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FF9800',
   },
   historyButton: {
     flexDirection: 'row',

@@ -16,6 +16,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AllergenScreen from '../screens/AllergenScreen';
 import ScannerScreen from '../screens/ScannerScreen';
 import ScanResultScreen from '../screens/ScanResultScreen';
+import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
+import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 
 const Stack = createStackNavigator();
 
@@ -104,6 +106,8 @@ function MainStack() {
       <Stack.Screen name="Allergens" component={AllergenScreen} />
       <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ReminderSettings" component={ReminderSettingsScreen} />
+      <Stack.Screen name="AlertSettings" component={AlertSettingsScreen} />
     </Stack.Navigator>
   );
 }
