@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createDrawerNavigator } from '@react-navigation/drawer';
 import { onAuthStateChange, login } from '../api/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ProfessionalHeader from '../components/ProfessionalHeader';
+import CustomDrawer from '../components/CustomDrawer';
+import DrawerHeader from '../components/DrawerHeader';
 
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
@@ -20,6 +22,7 @@ import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
 import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 
 const Stack = createStackNavigator();
+const Drawer = createDrawerNavigator();
 
 export default function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -84,31 +87,32 @@ const handleLogout = () => {
   setIsAuthenticated(false);
 };
 
-function MainStack() {
+function MainDrawer() {
   return (
-    <Stack.Navigator
+    <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawer {...props} />}
       screenOptions={({ route, navigation }) => ({
-        header: () => (
-          <ProfessionalHeader 
-            navigation={navigation} 
-            currentScreen={route.name}
-          />
-        ),
+        header: () => <DrawerHeader navigation={navigation} title={route.name} />,
+        drawerType: 'front',
+        drawerStyle: {
+          width: 280,
+        },
+        overlayColor: 'rgba(0,0,0,0.5)',
       })}
     >
-      <Stack.Screen name="Dashboard" component={DashboardScreen} />
-      <Stack.Screen name="AddMeal" component={AddMealScreen} />
-      <Stack.Screen name="Alerts" component={AlertsScreen} />
-      <Stack.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
-      <Stack.Screen name="Profile">
+      <Drawer.Screen name="Dashboard" component={DashboardScreen} />
+      <Drawer.Screen name="AddMeal" component={AddMealScreen} />
+      <Drawer.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
+      <Drawer.Screen name="Allergens" component={AllergenScreen} />
+      <Drawer.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
+      <Drawer.Screen name="Alerts" component={AlertsScreen} />
+      <Drawer.Screen name="Profile">
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
-      </Stack.Screen>
-      <Stack.Screen name="Allergens" component={AllergenScreen} />
-      <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="ReminderSettings" component={ReminderSettingsScreen} />
-      <Stack.Screen name="AlertSettings" component={AlertSettingsScreen} />
-    </Stack.Navigator>
+      </Drawer.Screen>
+      <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+    </Drawer.Navigator>
   );
 }
 
@@ -118,12 +122,7 @@ function SymptomsStack() {
   return (
     <Stack.Navigator
       screenOptions={({ route, navigation }) => ({
-        header: () => (
-          <ProfessionalHeader 
-            navigation={navigation} 
-            currentScreen="Symptoms"
-          />
-        ),
+        header: () => <DrawerHeader navigation={navigation} title="Symptoms" />,
       })}
     >
       <Stack.Screen
@@ -148,7 +147,7 @@ function SymptomsStack() {
   return (
     <NavigationContainer>
       {isAuthenticated ? (
-        <MainStack />
+        <MainDrawer />
       ) : (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login">

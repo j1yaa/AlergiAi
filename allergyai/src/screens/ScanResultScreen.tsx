@@ -45,10 +45,7 @@ export default function ScanResultScreen() {
   const hasAllergens = matchedAllergens.length > 0;
 
   const handleDone = () => {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'MainTabs' as never }],
-    });
+    navigation.navigate('Dashboard' as never);
   };
 
   return (

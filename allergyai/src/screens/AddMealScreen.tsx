@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { analyzeMeal, createMeal, getMeals } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
@@ -131,7 +131,12 @@ export default function AddMealScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.title}>Add Meal</Text>
         <View style={styles.headerButtons}>
@@ -303,7 +308,9 @@ export default function AddMealScreen() {
           )}
         </View>
       </Modal>
-    </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
