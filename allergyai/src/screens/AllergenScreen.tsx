@@ -5,6 +5,7 @@ import {isWeb } from '../utils/platform';
 
 export default function AllergenScreen() {
     const [allergens, setAllergens] = useState<string[]>([]);
+    const [allergensSeverity, setAllergensSeverity] = useState<any[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
     const [selectedSeverity, setSelectedSeverity] = useState<'low' | 'moderate' | 'high'>('moderate');
     const [loading, setLoading] = useState(true);
@@ -22,6 +23,7 @@ export default function AllergenScreen() {
         try {
             const data = await getAllergens();
             setAllergens(data.allergens);
+            setAllergensSeverity(data.allergensSeverity || []);
         } catch (error) {
             console.error('Failed to load allergens:', error);
         } finally {
@@ -41,6 +43,7 @@ export default function AllergenScreen() {
 
         // Optimistic update - update UI immediately
         setAllergens([...allergens, allergenName]);
+        setAllergensSeverity([...allergensSeverity, { name: allergenName, severity: selectedSeverity }]);
         setNewAllergen('');
         
         // Save to backend in background
@@ -49,6 +52,7 @@ export default function AllergenScreen() {
         } catch (error) {
             // Revert on error
             setAllergens(allergens);
+            setAllergensSeverity(allergensSeverity);
             showAlert('Error', 'Failed to add allergen');
             console.error('Failed to add allergen:', error);
         }
@@ -146,19 +150,29 @@ export default function AllergenScreen() {
                     <Text style={styles.loadingText}>Loading..</Text>
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
-                        {allergens.map((allergen: string, index: number) => (
-                        <View key={index} style={styles.allergenItem}>
-                            <View style={styles.allergenPill}>
-                                <Text style={styles.allergenText}>{allergen}</Text>
-                            </View>
-                            <TouchableOpacity
-                                style={styles.removeButton}
-                                onPress={() => handleRemoveAllergen(allergen)}
-                            >
-                                    <Text style={styles.removeButtonText}>✕</Text>
-                            </TouchableOpacity>
-                        </View>
-                          ))}
+                        {allergens.map((allergen: string, index: number) => {
+                            const severityInfo = allergensSeverity.find((a: any) => a.name === allergen);
+                            const severity = severityInfo?.severity || 'moderate';
+                            const colors = {
+                                low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32' },
+                                moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' },
+                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828' }
+                            };
+                            const color = colors[severity];
+                            return (
+                                <View key={index} style={styles.allergenItem}>
+                                    <View style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
+                                        <Text style={[styles.allergenText, { color: color.text }]}>{allergen}</Text>
+                                    </View>
+                                    <TouchableOpacity
+                                        style={styles.removeButton}
+                                        onPress={() => handleRemoveAllergen(allergen)}
+                                    >
+                                        <Text style={styles.removeButtonText}>✕</Text>
+                                    </TouchableOpacity>
+                                </View>
+                            );
+                        })}
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
