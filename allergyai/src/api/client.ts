@@ -831,3 +831,51 @@ export const logout = async (): Promise<void> => {
   await signOut(auth);
   console.log('Firebase signOut completed');
 };
+
+
+export async function getMealTrends() {
+  const meals = await getMeals();
+  const symptomsResponse = await getSymptoms();
+  const symptoms = symptomsResponse.items || [];
+  
+  // Last 7 days meals
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dailyMeals = days.map(day => ({
+    day,
+    count: Math.floor(Math.random() * 5) + 1 // Mock data
+  }));
+
+  // Top 3 allergens
+  const allergenCounts: { [key: string]: number } = {};
+  meals.forEach(meal => {
+    meal.detectedAllergens?.forEach(allergen => {
+      allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
+    });
+  });
+  
+  const topAllergens = Object.entries(allergenCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([name, count]) => ({ name, count }));
+
+  // Reactions this week vs last week
+  const now = Date.now();
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+
+  const reactionsThisWeek = symptoms.filter(s => 
+    new Date(s.timestamp).getTime() > weekAgo
+  ).length;
+  
+  const reactionsLastWeek = symptoms.filter(s => {
+    const time = new Date(s.timestamp).getTime();
+    return time > twoWeeksAgo && time <= weekAgo;
+  }).length;
+
+  return {
+    dailyMeals,
+    topAllergens: topAllergens.length > 0 ? topAllergens : [{ name: 'No data', count: 0 }],
+    reactionsThisWeek,
+    reactionsLastWeek
+  };
+}

@@ -18,6 +18,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AllergenScreen from '../screens/AllergenScreen';
 import ScannerScreen from '../screens/ScannerScreen';
 import ScanResultScreen from '../screens/ScanResultScreen';
+import MealTrendsScreen from '../screens/MealTrendsScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -101,6 +102,7 @@ function MainDrawer() {
       <Drawer.Screen name="Dashboard" component={DashboardScreen} />
       <Drawer.Screen name="AddMeal" component={AddMealScreen} />
       <Drawer.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
+      <Drawer.Screen name="Trends" component={MealTrendsScreen} />
       <Drawer.Screen name="Allergens" component={AllergenScreen} />
       <Drawer.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
       <Drawer.Screen name="Alerts" component={AlertsScreen} />
