@@ -783,7 +783,7 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
   const newMeal: Meal = {
     id: `meal-${Date.now()}`,
     items: payload.items,
-    note: payload.note,
+    notes: payload.note || '',
     createdAt: new Date().toISOString(),
   };
 
@@ -800,8 +800,11 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
       if (!firebaseUser) throw new Error('User not authenticated');
       
       const docRef = await addDoc(collection(db, 'meals'), {
-        ...newMeal,
-        userId: firebaseUser.uid
+        userId: firebaseUser.uid,
+        items: newMeal.items,
+        notes: newMeal.notes,
+        photoURL: '',
+        createdAt: newMeal.createdAt
       });
       
       return { ...newMeal, id: docRef.id };

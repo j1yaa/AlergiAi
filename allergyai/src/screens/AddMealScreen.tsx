@@ -26,14 +26,6 @@ export default function AddMealScreen() {
       const response = await analyzeMeal({ description });
       setResult(response);
       console.log('Analysis complete, mealName still:', mealName);
-      
-      // Create alerts for detected allergens
-      if (response.allergens.length > 0) {
-        for (const allergen of response.allergens) {
-          const severity = response.riskScore > 70 ? 'high' : response.riskScore > 30 ? 'medium' : 'low';
-          await createAlert(allergen, severity, 'meal');
-        }
-      }
     } catch (error) {
       console.error('Analysis failed:', error);
     } finally {
@@ -45,6 +37,7 @@ export default function AddMealScreen() {
     setLoadingMeals(true);
     try {
       const mealsData = await getMeals();
+      console.log('Loaded meals data:', JSON.stringify(mealsData.slice(0, 2), null, 2));
       setMeals(mealsData);
     } catch (error) {
       console.error('Failed to load meals:', error);
@@ -59,23 +52,35 @@ export default function AddMealScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'No date';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid date';
+    }
   };
 
-  const renderMeal = ({ item }: { item: Meal }) => (
+  const renderMeal = ({ item }: { item: Meal }) => {
+    console.log('Rendering meal item:', JSON.stringify(item, null, 2));
+    return (
     <View style={styles.mealCard}>
       <View style={styles.mealHeader}>
-        <Text style={styles.mealDate}>{formatDate(item.createdAt)}</Text>
+        <Text style={styles.mealDate}>
+          {item.createdAt ? formatDate(item.createdAt) : 
+           item.timeStamp ? formatDate(item.timeStamp.toString()) : 
+           item.dateISO ? formatDate(item.dateISO) :
+           'No date'}
+        </Text>
         <Ionicons name="restaurant-outline" size={20} color="#666" />
       </View>
       
-      {item.note && (
-        <Text style={styles.mealName}>{item.note}</Text>
+      {(item.note || item.notes || item.description) && (
+        <Text style={styles.mealName}>{item.note || item.notes || item.description}</Text>
       )}
       
       {item.items && item.items.length > 0 && (
@@ -92,6 +97,7 @@ export default function AddMealScreen() {
       )}
     </View>
   );
+  };
 
   const handleSave = async () => {
     const nameFromName = (mealName ?? '').trim();
@@ -107,6 +113,8 @@ export default function AddMealScreen() {
       return;
     }
 
+    console.log('Saving meal:', { finalName, ing, hasResult: !!result, allergens: result?.allergens });
+
     setSaving(true);
     try {
       await createMeal({
@@ -114,11 +122,41 @@ export default function AddMealScreen() {
         note: finalName || 'Unnamed Meal'
       });
 
+      // Check for allergens - either from analysis result or by analyzing ingredients
+      let allergensToAlert: string[] = [];
+      let riskScore = 0;
+
+      if (result?.allergens && result.allergens.length > 0) {
+        // Use analysis result if available
+        allergensToAlert = result.allergens;
+        riskScore = result.riskScore;
+      } else if (ing.length > 0) {
+        // Analyze ingredients against user's allergen profile
+        try {
+          const response = await analyzeMeal({ description: ing.join(', ') });
+          allergensToAlert = response.allergens;
+          riskScore = response.riskScore;
+        } catch (error) {
+          console.log('Could not analyze ingredients:', error);
+        }
+      }
+
+      // Create alerts for detected allergens
+      if (allergensToAlert.length > 0) {
+        console.log('Creating alerts for allergens:', allergensToAlert);
+        for (const allergen of allergensToAlert) {
+          const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
+          console.log(`Creating alert: ${allergen} - ${severity}`);
+          await createAlert(allergen, severity, 'meal');
+        }
+      } else {
+        console.log('No allergens detected');
+      }
+
       Alert.alert('Saved', 'Your meal was logged.');
       setMealName('');
       setDescription('');
       setResult(null);
-      // Refresh meals list if history is currently shown
       if (showHistory) {
         loadMeals();
       }

@@ -61,17 +61,21 @@ export const createAlert = async (
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
 
-  const alert = {
+  const alert: any = {
     userId: user.uid,
     allergen,
     severity,
     source,
-    mealId,
     message: `${severity.toUpperCase()} RISK: ${allergen} detected in your ${source}`,
     timestamp: new Date(),
     read: false,
     acknowledged: false,
   };
+
+  // Only add mealId if it's provided
+  if (mealId) {
+    alert.mealId = mealId;
+  }
 
   const docRef = await addDoc(collection(db, 'alerts'), alert);
   
