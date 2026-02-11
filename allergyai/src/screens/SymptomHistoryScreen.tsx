@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { getSymptoms } from '../api/client';
-import { Symptom } from '../types';
+import { getSymptoms, getMeals } from '../api/client';
+import { Symptom, Meal } from '../types';
+import SymptomCorrelationChart from '../components/SymptomCorrelationChart';
 
 // Placeholder function for deleting symptoms
 const deleteSymptom = async (id: string) => {
@@ -13,6 +14,7 @@ const deleteSymptom = async (id: string) => {
 
 export default function SymptomHistoryScreen() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
+  const [correlationData, setCorrelationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
 
@@ -28,11 +30,49 @@ export default function SymptomHistoryScreen() {
       const response = await getSymptoms();
       console.log('Loaded symptoms:', response.items);
       setSymptoms(response.items);
+
+      const meals = await getMeals();
+      const correlations = calculateCorrelations(response.items, meals);
+      setCorrelationData(correlations);
     } catch (error) {
       console.error('Failed to load symptoms:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateCorrelations = (symptoms: Symptom[], meals: Meal[]) => {
+    const allergenMap = new Map<string, { count: number; totalSeverity: number }>();
+
+    symptoms.forEach(symptom => {
+      const symptomDate = new Date(symptom.dateISO);
+      const recentMeals = meals.filter(meal => {
+        const mealDate = meal.timeStamp ? new Date(meal.timeStamp) : meal.createdAt ? new Date(meal.createdAt) : null;
+        if (!mealDate) return false;
+        const hoursDiff = (symptomDate.getTime() - mealDate.getTime()) / (1000 * 60 * 60);
+        return hoursDiff >= 0 && hoursDiff <= 24;
+      });
+
+      recentMeals.forEach(meal => {
+        const ingredients = meal.ingredients || meal.items || [];
+          ingredients.forEach(ingredient => {
+            const current = allergenMap.get(ingredient) || { count: 0, totalSeverity: 0 };
+            allergenMap.set(ingredient, {
+              count: current.count + 1,
+              totalSeverity: current.totalSeverity + symptom.severity
+            });
+          });
+      });
+  });
+
+  return Array.from(allergenMap.entries())
+    .map(([allergen, data]) => ({
+      allergen,
+      count: data.count,
+      avgSeverity: data.totalSeverity / data.count
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
   };
 
   const handleDeleteSymptom = (symptom: Symptom) => {
@@ -125,12 +165,12 @@ export default function SymptomHistoryScreen() {
           <Text style={styles.emptyText}>No symptoms logged yet</Text>
         </View>
       ) : (
-        <FlatList
-          data={symptoms}
-          renderItem={renderSymptom}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-        />
+         <ScrollView showsVerticalScrollIndicator={false}>
+           <SymptomCorrelationChart data={correlationData} />
+             {symptoms.map((item) => (
+                 <View key={item.id}>{renderSymptom({ item })}</View>
+             ))}
+        </ScrollView>
       )}
     </View>
   );
