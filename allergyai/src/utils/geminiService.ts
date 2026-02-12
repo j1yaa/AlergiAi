@@ -10,6 +10,8 @@ const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-
 export interface GeminiScanResult {
     productName: string;
     detectedIngredients: string[];
+    allergenCategories: string[];
+    isFood: boolean;
 }
 
 export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> => {
@@ -17,27 +19,55 @@ export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> =
     const prompt = `
       You are an allergy-scanner assistant.
 
-      Given an IMAGE of a food item OR an ingredients label, you must return ONLY a JSON object:
+      Given an IMAGE, you must return ONLY a JSON object:
 
       {
         "productName": "name of the food or product",
-        "detectedIngredients": ["ingredient1", "ingredient2", ...]
+        "detectedIngredients": ["ingredient1", "ingredient2", ...],
+        "allergenCategories": ["category1", "category2", ...],
+        "isFood": true
       }
 
       Rules:
+      - First, determine if the image shows a FOOD ITEM, a FOOD LABEL, or a NON-FOOD item.
+
+      - If the item is NOT food (e.g., play dough, soap, cleaning products, toys, tools,
+        clothing, electronics, or any other non-edible item), return:
+        {
+          "productName": "name of the item (e.g. Play Dough)",
+          "detectedIngredients": [],
+          "allergenCategories": [],
+          "isFood": false
+        }
+
+      - If you truly cannot identify what the item is at all, return:
+        {
+          "productName": "Unknown",
+          "detectedIngredients": [],
+          "allergenCategories": [],
+          "isFood": false
+        }
+
       - If the image shows a single obvious food (e.g., banana, apple, egg),
         use that as both the productName and a single item in detectedIngredients.
-        Example for a banana photo:
+        Example for a milk photo:
         {
-          "productName": "Banana",
-          "detectedIngredients": ["banana"]
+          "productName": "Milk",
+          "detectedIngredients": ["milk"],
+          "allergenCategories": ["dairy"],
+          "isFood": true
         }
 
       - If there is an ingredients LABEL, extract as many ingredients as you can from the text.
+        Set "isFood": true.
 
-      - If you truly cannot identify the food OR ingredients:
-        * use "Unknown" for productName
-        * use an empty array [] for detectedIngredients.
+      - For "allergenCategories", identify ALL major allergen categories that ANY of the
+        detected ingredients belong to. Use these standard category names:
+        dairy, eggs, peanuts, tree nuts, shellfish, fish, wheat, gluten, soy, sesame,
+        mustard, celery, lupin, mollusk, banana, mango, shrimp.
+        An ingredient can belong to multiple categories.
+        Examples: milk -> dairy, shrimp -> shellfish, flour -> wheat/gluten,
+        cheese -> dairy, almond -> tree nuts, mayo -> eggs.
 
       Return ONLY the JSON. No explanations, no markdown fences, no backticks.
     `;
@@ -83,13 +113,22 @@ export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> =
             const first = detectedIngredients[0];
             productName = first.charAt(0).toUpperCase() + first.slice(1);
           } else {
-            productName = 'No product detected';
+            // Keep "Unknown" so the result screen can distinguish
+            // "unrecognizable" from "recognized but not food"
+            productName = 'Unknown';
           }
         }
+
+        const allergenCategories =
+          parsed.allergenCategories?.map((c) => c.trim().toLowerCase()) || [];
+
+        const isFood = parsed.isFood !== false;
 
         return {
           productName,
           detectedIngredients,
+          allergenCategories,
+          isFood,
         };
       } catch {
         console.error('Failed to parse JSON from Gemini response:', jsonText);

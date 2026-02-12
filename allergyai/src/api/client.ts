@@ -696,8 +696,8 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
         allergensSeverity: userData?.allergensSeverity || []
       };
     },
-    { allergens: [], allergensSeverity: []}
-  ); 
+    { allergens: ['Peanuts', 'Shellfish', 'Dairy'], allergensSeverity: [] }
+  );
 };
 
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
@@ -730,14 +730,15 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists() ? userDoc.data() : null;
 
-      const currentAllergens = userData?.allergens || [];
-      const currentAllergensSeverity = userData?.allergensSeverity || [];
-      
-      if (!currentAllergens.includes(data.allergen)) {
-        await updateDoc(userDocRef, {
-          allergens: [...currentAllergens, data.allergen],
-          allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
-        });
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
+        if (!currentAllergens.includes(data.allergen)) {
+          await updateDoc(userDocRef, {
+            allergens: [...currentAllergens, data.allergen],
+            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
+          });
+        }
       }
     },
     undefined
@@ -762,18 +763,19 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
     async () => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
-            
+
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists() ? userDoc.data() : null;
-            
-      const currentAllergens = userData?.allergens || [];
-      const currentAllergensSeverity = userData?.allergensSeverity || [];
-      
-      await updateDoc(userDocRef, {
-        allergens: currentAllergens.filter((a: string) => a !== data.allergen),
-        allergensSeverity: currentAllergensSeverity.filter((as: any) => as.name !== data.allergen)
-      });
+
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
+        await updateDoc(userDocRef, {
+          allergens: currentAllergens.filter((a: string) => a !== data.allergen),
+          allergensSeverity: currentAllergensSeverity.filter((a: any) => a.name !== data.allergen)
+        });
+      }
     },
     undefined
   );

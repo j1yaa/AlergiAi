@@ -1,5 +1,6 @@
 // Smart AI-powered meal analysis utilities
 import { calculateRiskScore, determineExposureLevel, RiskFactors } from './riskCalculator';
+import { expandAllergen } from './allergenMatcher';
 
 export interface RiskScoreResult {
   riskScore: number;            // 0–100
@@ -38,7 +39,10 @@ export const computeRiskScore = (
 
   // Calculate risk for each matched allergen
   allergenMatches.forEach(({ allergen, severity, sensitivity = 'moderate' }) => {
-    const isMatched = normalizedIngredients.some(ing => ing.includes(allergen));
+    const expandedTerms = expandAllergen(allergen);
+    const isMatched = normalizedIngredients.some(ing =>
+      expandedTerms.some(term => ing.includes(term) || term.includes(ing))
+    );
     
     if (isMatched) {
       matchedAllergens.push(allergen);
