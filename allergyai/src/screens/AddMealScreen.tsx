@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal, getMeals } from '../api/client';
+import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import { createAlert } from '../utils/allergenAlertService';
 
 export default function AddMealScreen() {
   const navigation = useNavigation();
@@ -36,6 +37,7 @@ export default function AddMealScreen() {
     setLoadingMeals(true);
     try {
       const mealsData = await getMeals();
+      console.log('Loaded meals data:', JSON.stringify(mealsData.slice(0, 2), null, 2));
       setMeals(mealsData);
     } catch (error) {
       console.error('Failed to load meals:', error);
@@ -49,24 +51,64 @@ export default function AddMealScreen() {
     await loadMeals();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleDeleteMeal = async (mealId: string) => {
+    Alert.alert(
+      'Delete Meal',
+      'Are you sure you want to delete this meal?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteMeal(mealId);
+              await loadMeals();
+            } catch (error) {
+              console.error('Failed to delete meal:', error);
+              Alert.alert('Error', 'Could not delete the meal.');
+            }
+          }
+        }
+      ]
+    );
   };
 
-  const renderMeal = ({ item }: { item: Meal }) => (
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'No date';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'Invalid date';
+    }
+  };
+
+  const renderMeal = ({ item }: { item: Meal }) => {
+    // Skip rendering if meal has no name and no ingredients
+    if (!item.notes && !item.note && !item.description && (!item.items || item.items.length === 0)) {
+      return null;
+    }
+    
+    console.log('Rendering meal item:', JSON.stringify(item, null, 2));
+    return (
     <View style={styles.mealCard}>
       <View style={styles.mealHeader}>
-        <Text style={styles.mealDate}>{formatDate(item.createdAt)}</Text>
+        <Text style={styles.mealDate}>
+          {item.createdAt ? formatDate(item.createdAt) : 
+           item.timeStamp ? formatDate(item.timeStamp.toString()) : 
+           item.dateISO ? formatDate(item.dateISO) :
+           'No date'}
+        </Text>
         <Ionicons name="restaurant-outline" size={20} color="#666" />
       </View>
       
-      {item.note && (
-        <Text style={styles.mealName}>{item.note}</Text>
+      {(item.note || item.notes || item.description) && (
+        <Text style={styles.mealName}>{item.note || item.notes || item.description}</Text>
       )}
       
       {item.items && item.items.length > 0 && (
@@ -81,8 +123,16 @@ export default function AddMealScreen() {
           </View>
         </View>
       )}
+      
+      <TouchableOpacity 
+        style={styles.deleteButton}
+        onPress={() => handleDeleteMeal(item.id)}
+      >
+        <Ionicons name="trash-outline" size={18} color="#F44336" />
+      </TouchableOpacity>
     </View>
   );
+  };
 
   const handleSave = async () => {
     const nameFromName = (mealName ?? '').trim();
@@ -98,6 +148,8 @@ export default function AddMealScreen() {
       return;
     }
 
+    console.log('Saving meal:', { finalName, ing, hasResult: !!result, allergens: result?.allergens });
+
     setSaving(true);
     try {
       await createMeal({
@@ -105,11 +157,41 @@ export default function AddMealScreen() {
         note: finalName || 'Unnamed Meal'
       });
 
+      // Check for allergens - either from analysis result or by analyzing ingredients
+      let allergensToAlert: string[] = [];
+      let riskScore = 0;
+
+      if (result?.allergens && result.allergens.length > 0) {
+        // Use analysis result if available
+        allergensToAlert = result.allergens;
+        riskScore = result.riskScore;
+      } else if (ing.length > 0) {
+        // Analyze ingredients against user's allergen profile
+        try {
+          const response = await analyzeMeal({ description: ing.join(', ') });
+          allergensToAlert = response.allergens;
+          riskScore = response.riskScore;
+        } catch (error) {
+          console.log('Could not analyze ingredients:', error);
+        }
+      }
+
+      // Create alerts for detected allergens
+      if (allergensToAlert.length > 0) {
+        console.log('Creating alerts for allergens:', allergensToAlert);
+        for (const allergen of allergensToAlert) {
+          const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
+          console.log(`Creating alert: ${allergen} - ${severity}`);
+          await createAlert(allergen, severity, 'meal');
+        }
+      } else {
+        console.log('No allergens detected');
+      }
+
       Alert.alert('Saved', 'Your meal was logged.');
       setMealName('');
       setDescription('');
       setResult(null);
-      // Refresh meals list if history is currently shown
       if (showHistory) {
         loadMeals();
       }
@@ -130,13 +212,21 @@ export default function AddMealScreen() {
         <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.title}>Add Meal</Text>
-        <TouchableOpacity 
-          style={styles.historyButton}
-          onPress={handleViewHistory}
-        >
-          <Ionicons name="time-outline" size={18} color="#2196F3" />
-          <Text style={styles.historyButtonText}>View History</Text>
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.reminderButton}
+            onPress={() => navigation.navigate('ReminderSettings' as never)}
+          >
+            <Ionicons name="notifications-outline" size={18} color="#FF9800" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.historyButton}
+            onPress={handleViewHistory}
+          >
+            <Ionicons name="time-outline" size={18} color="#2196F3" />
+            <Text style={styles.historyButtonText}>History</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Text style={styles.label}>Meal Name</Text>
@@ -470,6 +560,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  reminderButton: {
+    backgroundColor: '#fff3e0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
   historyButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -536,6 +638,15 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
+    position: 'relative',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    padding: 8,
+    backgroundColor: '#ffebee',
+    borderRadius: 20,
   },
   mealHeader: {
     flexDirection: 'row',

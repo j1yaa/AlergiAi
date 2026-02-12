@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../hooks/useTheme';
 
 interface MenuItem {
   name: string;
@@ -13,6 +14,7 @@ const menuItems: MenuItem[] = [
   { name: 'Dashboard', label: 'Dashboard', icon: 'home' },
   { name: 'AddMeal', label: 'Add Meal', icon: 'restaurant' },
   { name: 'Scanner', label: 'Scan Food', icon: 'camera' },
+  { name: 'Trends', label: 'Meal Trends', icon: 'stats-chart' },
   { name: 'Allergens', label: 'Allergens', icon: 'shield' },
   { name: 'Symptoms', label: 'Symptoms', icon: 'medical' },
   { name: 'Alerts', label: 'Alerts', icon: 'warning' },
@@ -20,17 +22,18 @@ const menuItems: MenuItem[] = [
 ];
 
 export default function CustomDrawer(props: any) {
+  const { colors } = useTheme();
   const { state, navigation } = props;
   const currentRoute = state.routes[state.index].name;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.logoContainer}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.surface }]}>
+        <View style={[styles.logoContainer, { backgroundColor: colors.surface }]}>
           <Ionicons name="leaf" size={32} color="#4CAF50" />
         </View>
-        <Text style={styles.appName}>AllergyAI</Text>
-        <Text style={styles.tagline}>Your Health Guardian</Text>
+        <Text style={[styles.appName, { color: colors.text }]}>AllergyAI</Text>
+        <Text style={[styles.tagline, { color: colors.icon }]}>Your Health Guardian</Text>
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
@@ -39,27 +42,27 @@ export default function CustomDrawer(props: any) {
           return (
             <TouchableOpacity
               key={item.name}
-              style={[styles.menuItem, isActive && styles.activeMenuItem]}
+              style={[styles.menuItem, isActive && { backgroundColor: colors.surface }]}
               onPress={() => navigation.navigate(item.name)}
             >
-              <View style={[styles.iconWrapper, isActive && styles.activeIconWrapper]}>
+              <View style={styles.iconWrapper}>
                 <Ionicons
                   name={item.icon}
                   size={20}
-                  color={isActive ? '#2196F3' : '#6C757D'}
+                  color={isActive ? colors.primary : colors.icon}
                 />
               </View>
-              <Text style={[styles.menuLabel, isActive && styles.activeMenuLabel]}>
+              <Text style={[styles.menuLabel, { color: isActive ? colors.primary : colors.text }]}>
                 {item.label}
               </Text>
-              {isActive && <View style={styles.activeIndicator} />}
+              {isActive && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Text style={styles.version}>Version 1.0.0</Text>
+      <View style={[styles.footer, { borderTopColor: colors.surface }]}>
+        <Text style={[styles.version, { color: colors.icon }]}>Version 1.0.0</Text>
       </View>
     </View>
   );
@@ -68,21 +71,17 @@ export default function CustomDrawer(props: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
   header: {
     paddingTop: 50,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E9ECEF',
   },
   logoContainer: {
     width: 48,
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#E8F5E9',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -90,12 +89,10 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#212529',
     marginBottom: 2,
   },
   tagline: {
     fontSize: 12,
-    color: '#6C757D',
   },
   menuContainer: {
     flex: 1,
@@ -110,9 +107,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     borderRadius: 8,
   },
-  activeMenuItem: {
-    backgroundColor: '#F0F9FF',
-  },
   iconWrapper: {
     width: 32,
     height: 32,
@@ -122,33 +116,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  activeIconWrapper: {
-    backgroundColor: 'transparent',
-  },
   menuLabel: {
     fontSize: 15,
     fontWeight: '500',
-    color: '#495057',
     flex: 1,
-  },
-  activeMenuLabel: {
-    color: '#2196F3',
-    fontWeight: '600',
   },
   activeIndicator: {
     width: 3,
     height: 20,
     borderRadius: 2,
-    backgroundColor: '#2196F3',
   },
   footer: {
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#E9ECEF',
   },
   version: {
     fontSize: 11,
-    color: '#ADB5BD',
     textAlign: 'center',
   },
 });

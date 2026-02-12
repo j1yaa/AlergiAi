@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../hooks/useTheme';
 
 import { getAnalytics } from '../api/client';
 import { AnalyticsSummary } from '../types';
 
 export default function DashboardScreen() {
+  const { colors } = useTheme();
   console.log('=== DashboardScreen rendered ===');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const navigation = useNavigation();
@@ -28,31 +30,31 @@ export default function DashboardScreen() {
 
   if (!analytics) {
     return (
-      <View style={styles.container}>
-        <Text>Loading...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.welcomeSection}>
-        <Text style={styles.welcomeText}>Welcome back</Text>
-        <Text style={styles.subtitle}>Here's your allergy overview</Text>
+        <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>Here's your allergy overview</Text>
       </View>
       
       <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.safeMealsPct}%</Text>
-          <Text style={styles.statLabel}>Safe Meals</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.safeMealsPct}%</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>Safe Meals</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.totalMeals}</Text>
-          <Text style={styles.statLabel}>Total Meals</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.totalMeals}</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>Total Meals</Text>
         </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statValue}>{analytics.totalAlerts}</Text>
-          <Text style={styles.statLabel}>Alerts</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.totalAlerts}</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
         </View>
       </View>
 
@@ -104,27 +106,27 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Weekly Exposure Trends</Text>
+      <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>Weekly Exposure Trends</Text>
         <View style={styles.chartPlaceholder}>
           {analytics.weeklyExposure.map((item, index) => (
             <View key={index} style={styles.barItem}>
-              <Text style={styles.barLabel}>{item.week}</Text>
+              <Text style={[styles.barLabel, { color: colors.icon }]}>{item.week}</Text>
               <View style={[styles.bar, { height: Math.max(item.count * 20, 5), backgroundColor: item.count > 0 ? '#E53935' : '#4CAF50' }]} />
-              <Text style={styles.barValue}>{item.count}</Text>
+              <Text style={[styles.barValue, { color: colors.text }]}>{item.count}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Most Common Allergens</Text>
+      <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.chartTitle, { color: colors.text }]}>Most Common Allergens</Text>
         <View style={styles.allergenList}>
           {analytics.topAllergens.map((item, index) => (
             <View key={index} style={styles.allergenItem}>
               <View style={styles.allergenInfo}>
-                <Text style={styles.allergenName}>{item.name}</Text>
-                <Text style={styles.allergenSubtext}>{item.count} exposures</Text>
+                <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.allergenSubtext, { color: colors.icon }]}>{item.count} exposures</Text>
               </View>
               <View style={styles.allergenBadge}>
                 <Text style={styles.allergenCount}>{item.count}</Text>
@@ -140,7 +142,6 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
     padding: 20,
   },
   welcomeSection: {
@@ -149,12 +150,10 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#212529',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6C757D',
   },
   quickActions: {
     flexDirection: 'row',
@@ -212,7 +211,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   statCard: {
-    backgroundColor: '#FFFFFF',
     padding: 18,
     borderRadius: 20,
     alignItems: 'center',
@@ -223,23 +221,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     elevation: 6,
-    borderLeftWidth: 4,
-    borderLeftColor: '#9C27B0',
   },
   statValue: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#9C27B0',
   },
   statLabel: {
     fontSize: 13,
-    color: '#6C757D',
     marginTop: 6,
     textAlign: 'center',
     fontWeight: '500',
   },
   chartContainer: {
-    backgroundColor: '#FFFFFF',
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
@@ -252,7 +245,6 @@ const styles = StyleSheet.create({
   chartTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#212529',
     marginBottom: 16,
   },
   chartPlaceholder: {
@@ -273,13 +265,11 @@ const styles = StyleSheet.create({
   },
   barLabel: {
     fontSize: 12,
-    color: '#6C757D',
     fontWeight: '500',
   },
   barValue: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#212529',
   },
   allergenList: {
     paddingVertical: 8,
@@ -298,11 +288,9 @@ const styles = StyleSheet.create({
   allergenName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#212529',
   },
   allergenSubtext: {
     fontSize: 14,
-    color: '#6C757D',
     marginTop: 2,
   },
   allergenBadge: {

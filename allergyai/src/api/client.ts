@@ -222,9 +222,11 @@ export const getMeals = async (): Promise<Meal[]> => {
             timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
             notes: data.notes || '',
             photoURL: data.photoURL || '',
-            items: data.items || []
+            items: data.items || [],
+            deleted: data.deleted || false
           } as Meal;
         })
+        .filter((meal: any) => !meal.deleted)
         .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
     },
     [],
@@ -749,12 +751,12 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
       const filtered = allergens.filter((a: string) => a !== data.allergen);
-        await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(filtered));
-      } catch (error) {
-        console.error('Failed to remove the allergen from storage:', error);
-        throw error;
-      }
-      return;
+      await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(filtered));
+    } catch (error) {
+      console.error('Failed to remove the allergen from storage:', error);
+      throw error;
+    }
+    return;
   }
   
   return handleFirebaseCall(
@@ -783,7 +785,7 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
   const newMeal: Meal = {
     id: `meal-${Date.now()}`,
     items: payload.items,
-    note: payload.note,
+    notes: payload.note || '',
     createdAt: new Date().toISOString(),
   };
 
@@ -800,13 +802,40 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
       if (!firebaseUser) throw new Error('User not authenticated');
       
       const docRef = await addDoc(collection(db, 'meals'), {
-        ...newMeal,
-        userId: firebaseUser.uid
+        userId: firebaseUser.uid,
+        items: newMeal.items,
+        notes: newMeal.notes,
+        photoURL: '',
+        createdAt: newMeal.createdAt
       });
       
       return { ...newMeal, id: docRef.id };
     },
     newMeal
+  );
+}
+
+export async function deleteMeal(mealId: string): Promise<void> {
+  if (DEMO_MODE) {
+    const existingRaw = await AsyncStorage.getItem('meals');
+    const existing: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+    const filtered = existing.filter(m => m.id !== mealId);
+    await AsyncStorage.setItem('meals', JSON.stringify(filtered));
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
+      
+      const mealRef = doc(db, 'meals', mealId);
+      await updateDoc(mealRef, {
+        deleted: true,
+        deletedAt: new Date().toISOString()
+      });
+    },
+    undefined
   );
 }
 
@@ -831,3 +860,51 @@ export const logout = async (): Promise<void> => {
   await signOut(auth);
   console.log('Firebase signOut completed');
 };
+
+
+export async function getMealTrends() {
+  const meals = await getMeals();
+  const symptomsResponse = await getSymptoms();
+  const symptoms = symptomsResponse.items || [];
+  
+  // Last 7 days meals
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const dailyMeals = days.map(day => ({
+    day,
+    count: Math.floor(Math.random() * 5) + 1 // Mock data
+  }));
+
+  // Top 3 allergens
+  const allergenCounts: { [key: string]: number } = {};
+  meals.forEach(meal => {
+    meal.detectedAllergens?.forEach(allergen => {
+      allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
+    });
+  });
+  
+  const topAllergens = Object.entries(allergenCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([name, count]) => ({ name, count }));
+
+  // Reactions this week vs last week
+  const now = Date.now();
+  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
+  const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+
+  const reactionsThisWeek = symptoms.filter(s => 
+    new Date(s.timestamp).getTime() > weekAgo
+  ).length;
+  
+  const reactionsLastWeek = symptoms.filter(s => {
+    const time = new Date(s.timestamp).getTime();
+    return time > twoWeeksAgo && time <= weekAgo;
+  }).length;
+
+  return {
+    dailyMeals,
+    topAllergens: topAllergens.length > 0 ? topAllergens : [{ name: 'No data', count: 0 }],
+    reactionsThisWeek,
+    reactionsLastWeek
+  };
+}
