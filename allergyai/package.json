@@ -31,7 +31,7 @@
     "expo-image": "~3.0.10",
     "expo-image-picker": "~17.0.8",
     "expo-linking": "~8.0.9",
-    "expo-notifications": "~0.30.5",
+    "expo-notifications": "~0.32.16",
     "expo-secure-store": "~15.0.7",
     "expo-splash-screen": "~31.0.11",
     "expo-status-bar": "~3.0.8",
@@ -55,6 +55,7 @@
   "devDependencies": {
     "@types/react": "~19.1.0",
     "@types/react-native": "^0.72.8",
+    "eslint": "^10.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
