@@ -222,9 +222,11 @@ export const getMeals = async (): Promise<Meal[]> => {
             timeStamp: data.createdAt ? new Date(data.createdAt) : new Date(),
             notes: data.notes || '',
             photoURL: data.photoURL || '',
-            items: data.items || []
+            items: data.items || [],
+            deleted: data.deleted || false
           } as Meal;
         })
+        .filter((meal: any) => !meal.deleted)
         .sort((a, b) => (b.timeStamp?.getTime() || 0) - (a.timeStamp?.getTime() || 0));
     },
     [],
@@ -685,16 +687,16 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
 
       return {
         allergens: userData?.allergens || [],
         allergensSeverity: userData?.allergensSeverity || []
       };
     },
-    { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
+    { allergens: [], allergensSeverity: []}
   ); 
 };
 
@@ -724,20 +726,18 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
 
-      if (userDocRef) {
-        const currentAllergens = userData?.allergens || [];
-        const currentAllergensSeverity = userData?.allergensSeverity || [];
-        if (!currentAllergens.includes(data.allergen)) {
-          await updateDoc(userDocRef, {
-            allergens: [...currentAllergens, data.allergen],
-            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
-          });
-        }
+      const currentAllergens = userData?.allergens || [];
+      const currentAllergensSeverity = userData?.allergensSeverity || [];
+      
+      if (!currentAllergens.includes(data.allergen)) {
+        await updateDoc(userDocRef, {
+          allergens: [...currentAllergens, data.allergen],
+          allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
+        });
       }
     },
     undefined
@@ -750,12 +750,12 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
       const stored = await AsyncStorage.getItem('@allergyai_allergens');
       const allergens = stored ? JSON.parse(stored) : [];
       const filtered = allergens.filter((a: string) => a !== data.allergen);
-        await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(filtered));
-      } catch (error) {
-        console.error('Failed to remove the allergen from storage:', error);
-        throw error;
-      }
-      return;
+      await AsyncStorage.setItem('@allergyai_allergens', JSON.stringify(filtered));
+    } catch (error) {
+      console.error('Failed to remove the allergen from storage:', error);
+      throw error;
+    }
+    return;
   }
   
   return handleFirebaseCall(
@@ -763,17 +763,17 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
             
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
             
-      if (userDocRef) {
-        const currentAllergens = userData?.allergens || [];
-        await updateDoc(userDocRef, {
-          allergens: currentAllergens.filter((a: string) => a !== data.allergen)
-        });
-      }
+      const currentAllergens = userData?.allergens || [];
+      const currentAllergensSeverity = userData?.allergensSeverity || [];
+      
+      await updateDoc(userDocRef, {
+        allergens: currentAllergens.filter((a: string) => a !== data.allergen),
+        allergensSeverity: currentAllergensSeverity.filter((as: any) => as.name !== data.allergen)
+      });
     },
     undefined
   );
@@ -783,7 +783,7 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
   const newMeal: Meal = {
     id: `meal-${Date.now()}`,
     items: payload.items,
-    note: payload.note,
+    notes: payload.note || '',
     createdAt: new Date().toISOString(),
   };
 
@@ -800,13 +800,40 @@ export async function createMeal(payload: { items: string[]; note?: string }): P
       if (!firebaseUser) throw new Error('User not authenticated');
       
       const docRef = await addDoc(collection(db, 'meals'), {
-        ...newMeal,
-        userId: firebaseUser.uid
+        userId: firebaseUser.uid,
+        items: newMeal.items,
+        notes: newMeal.notes,
+        photoURL: '',
+        createdAt: newMeal.createdAt
       });
       
       return { ...newMeal, id: docRef.id };
     },
     newMeal
+  );
+}
+
+export async function deleteMeal(mealId: string): Promise<void> {
+  if (DEMO_MODE) {
+    const existingRaw = await AsyncStorage.getItem('meals');
+    const existing: Meal[] = existingRaw ? JSON.parse(existingRaw) : [];
+    const filtered = existing.filter(m => m.id !== mealId);
+    await AsyncStorage.setItem('meals', JSON.stringify(filtered));
+    return;
+  }
+
+  return handleFirebaseCall(
+    async () => {
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) throw new Error('User not authenticated');
+      
+      const mealRef = doc(db, 'meals', mealId);
+      await updateDoc(mealRef, {
+        deleted: true,
+        deletedAt: new Date().toISOString()
+      });
+    },
+    undefined
   );
 }
 

@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, logout } from '../api/client'; 
-import { UserProfile } from '../types';
+import { getProfile, logout, getAllergens, getAnalytics } from '../api/client'; 
+import { UserProfile, AllergenWithSeverity } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
 import { ThemeToggle } from '../components';
@@ -10,13 +10,23 @@ import { ThemeToggle } from '../components';
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const loadProfile = useCallback(async () => {
         try {
-            const data = await getProfile();
-            setProfile(data);
+            const [profileData, allergensData, analyticsData] = await Promise.all([
+                getProfile(),
+                getAllergens(),
+                getAnalytics()
+            ]);
+            setProfile({
+                ...profileData,
+                totalMeals: analyticsData.totalMeals || 0,
+                totalAlerts: analyticsData.totalAlerts || 0
+            });
+            setAllergensSeverity(allergensData.allergensSeverity || []);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -119,12 +129,22 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 </View>
                 {profile.allergens.length > 0 ? (
                     <View style={styles.allergensList}>
-                        {profile.allergens.map((allergen, index) => (
-                            <View key={index} style={styles.allergenPill}>
-                                <Ionicons name="alert-circle" size={16} color="#E53935" />
-                                <Text style={styles.allergenText}>{allergen}</Text>
-                            </View>
-                        ))}
+                        {profile.allergens.map((allergen, index) => {
+                            const severityInfo = allergensSeverity.find(a => a.name.toLowerCase() === allergen.toLowerCase());
+                            const severity = severityInfo?.severity || 'moderate';
+                            const colors = {
+                                low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32', icon: '#4CAF50' },
+                                moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100', icon: '#FF9800' },
+                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828', icon: '#E53935' }
+                            };
+                            const color = colors[severity];
+                            return (
+                                <View key={index} style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
+                                    <Ionicons name="alert-circle" size={16} color={color.icon} />
+                                    <Text style={[styles.allergenText, { color: color.text }]}>{allergen}</Text>
+                                </View>
+                            );
+                        })}
                     </View>
                 ) : (
                     <View style={styles.emptyState}>

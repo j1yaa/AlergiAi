@@ -11,6 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useUnreadAlertCount } from '../utils/useUnreadAlertCount';
 
 interface MenuItem {
   id: string;
@@ -36,6 +37,7 @@ const menuItems: MenuItem[] = [
 
 export default function ProfessionalHeader({ navigation, currentScreen }: ProfessionalHeaderProps) {
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const unreadCount = useUnreadAlertCount();
 
   const getCurrentIcon = () => {
     const current = menuItems.find(item => item.screen === currentScreen);
@@ -69,6 +71,11 @@ export default function ProfessionalHeader({ navigation, currentScreen }: Profes
           size={20} 
           color={currentScreen === item.screen ? '#0B63D6' : '#6C757D'} 
         />
+        {item.screen === 'Alerts' && unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount}</Text>
+          </View>
+        )}
       </View>
       <View style={styles.menuTextContainer}>
         <Text style={[
@@ -287,5 +294,22 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#F8F9FA',
     marginHorizontal: 20,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#F44336',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
 });

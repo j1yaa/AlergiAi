@@ -112,6 +112,8 @@ function MainDrawer() {
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
       <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
     </Drawer.Navigator>
   );
 }

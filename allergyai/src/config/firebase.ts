@@ -1,49 +1,42 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
-import '../utils/networkLogger'; // Import network logger to monitor Firebase requests
-import { 
-  FIREBASE_API_KEY,
-  FIREBASE_AUTH_DOMAIN,
-  FIREBASE_PROJECT_ID,
-  FIREBASE_STORAGE_BUCKET,
-  FIREBASE_MESSAGING_SENDER_ID,
-    FIREBASE_APP_ID
-} from '@env';
+import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import '../utils/networkLogger';
 
 const firebaseConfig = {
-  apiKey: FIREBASE_API_KEY,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  projectId: FIREBASE_PROJECT_ID,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID
+  apiKey: 'AIzaSyAGXvMavBvpk4Fdg1ujB2r-MaxbIqZS0ak',
+  authDomain: 'allergiai.firebaseapp.com',
+  projectId: 'allergiai',
+  storageBucket: 'allergiai.firebasestorage.app',
+  messagingSenderId: '1052657724773',
+  appId: '1:1052657724773:web:000923188a61de905f058c'
 };
 
-// Debug config with detailed logging
-console.log('🔥 Firebase config loaded:', {
-  projectId: FIREBASE_PROJECT_ID,
-  authDomain: FIREBASE_AUTH_DOMAIN,
-  hasApiKey: !!FIREBASE_API_KEY,
-  storageBucket: FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-  appId: FIREBASE_APP_ID
-});
-
 let app;
+let auth;
+
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
-  console.log('🔥 Firebase app initialized successfully');
+  console.log('🔥 Firebase app initialized');
+  
+  try {
+    auth = initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage)
+    });
+    console.log('🔥 Auth initialized with persistence');
+  } catch (error) {
+    console.log('⚠️ Auth already initialized, using existing');
+    auth = getAuth(app);
+  }
 } else {
   app = getApps()[0];
+  auth = getAuth(app);
   console.log('🔥 Using existing Firebase app');
 }
 
 export const db = getFirestore(app);
-console.log('🔥 Firestore initialized');
-
-export const auth = getAuth(app);
-console.log('🔥 Firebase Auth initialized');
+export { auth };
 
 // Log auth state changes
 auth.onAuthStateChanged((user) => {
