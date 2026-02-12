@@ -124,7 +124,7 @@ export default function SymptomCorrelationScreen() {
         <Text style={styles.legendTitle}>Risk Indicators</Text>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#f44336' }]} />
-          <Text style={styles.legendText}>High Risk (>70%) - Avoid these allergens</Text>
+          <Text style={styles.legendText}>High Risk (&gt;70%) - Avoid these allergens</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#ff9800' }]} />
@@ -132,7 +132,7 @@ export default function SymptomCorrelationScreen() {
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4caf50' }]} />
-          <Text style={styles.legendText}>Low Risk (<40%) - Generally safe</Text>
+          <Text style={styles.legendText}>Low Risk (&lt;40%) - Generally safe</Text>
         </View>
       </View>
     </ScrollView>
