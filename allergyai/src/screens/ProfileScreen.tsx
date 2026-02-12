@@ -4,8 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { getProfile, logout, getAllergens, getAnalytics } from '../api/client'; 
 import { UserProfile, AllergenWithSeverity } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '../hooks/useTheme';
+import { ThemeToggle } from '../components';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
+    const { colors } = useTheme();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [loading, setLoading] = useState(true);
@@ -76,7 +79,13 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            {/* Theme Toggle */}
+            <View style={styles.themeSection}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
+                <ThemeToggle />
+            </View>
+
             {/* Header */}
             <View style={styles.header}>
                 <View style={styles.profileIcon}>
@@ -84,33 +93,33 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                         {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </Text>
                 </View>
-                <Text style={styles.name}>{profile.name}</Text>
-                <Text style={styles.email}>{profile.email}</Text>
+                <Text style={[styles.name, { color: colors.text }]}>{profile.name}</Text>
+                <Text style={[styles.email, { color: colors.icon }]}>{profile.email}</Text>
             </View>
 
             {/* Stats */}
             <View style={styles.statsContainer}>
-                <View style={styles.statCard}>
-                    <Ionicons name="restaurant-outline" size={24} color="#0B63D6" />
-                    <Text style={styles.statValue}>{profile.totalMeals}</Text>
-                    <Text style={styles.statLabel}>Meals Tracked</Text>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="restaurant-outline" size={24} color={colors.primary} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalMeals}</Text>
+                    <Text style={[styles.statLabel, { color: colors.icon }]}>Meals Tracked</Text>
                 </View>
-                <View style={styles.statCard}>
-                    <Ionicons name="warning-outline" size={24} color="#E53935" />
-                    <Text style={styles.statValue}>{profile.totalAlerts}</Text>
-                    <Text style={styles.statLabel}>Alerts</Text>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="warning-outline" size={24} color={colors.error} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalAlerts}</Text>
+                    <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
                 </View>
-                <View style={styles.statCard}>
-                    <Ionicons name="medical-outline" size={24} color="#FF9800" />
-                    <Text style={styles.statValue}>{profile.allergens.length}</Text>
-                    <Text style={styles.statLabel}>Allergens</Text>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="medical-outline" size={24} color={colors.warning} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.allergens.length}</Text>
+                    <Text style={[styles.statLabel, { color: colors.icon }]}>Allergens</Text>
                 </View>
             </View>
 
             {/* Allergens */}
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Active Allergens</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Allergens</Text>
                     <TouchableOpacity
                         style={styles.manageButton}
                         onPress={() => navigation.navigate('Allergens')}
@@ -168,8 +177,10 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F6F9FF',
         padding: 20,
+    },
+    themeSection: {
+        marginBottom: 24,
     },
     loadingContainer: {
         flex: 1,
@@ -228,12 +239,10 @@ const styles = StyleSheet.create({
     name: {
         fontSize: 24,
         fontWeight: '700',
-        color: '#072B5A',
         marginBottom: 4,
     },
     email: {
         fontSize: 16,
-        color: '#5C6B7A',
     },
     statsContainer: {
         flexDirection: 'row',
@@ -242,7 +251,6 @@ const styles = StyleSheet.create({
     },
     statCard: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 16,
         borderRadius: 12,
         alignItems: 'center',
@@ -255,12 +263,10 @@ const styles = StyleSheet.create({
     statValue: {
         fontSize: 24,
         fontWeight: '700',
-        color: '#072B5A',
         marginTop: 8,
     },
     statLabel: {
         fontSize: 12,
-        color: '#5C6B7A',
         marginTop: 4,
         textAlign: 'center',
     },
@@ -276,7 +282,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#072B5A',
     },
     manageButton: {
         backgroundColor: '#E3F2FD',

@@ -1,0 +1,64 @@
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../hooks/useTheme';
+
+export const ThemeToggle = () => {
+  const { theme, colors, setTheme } = useTheme();
+
+  const options: Array<{ value: 'light' | 'dark' | 'auto'; icon: any; label: string }> = [
+    { value: 'light', icon: 'sunny', label: 'Light' },
+    { value: 'dark', icon: 'moon', label: 'Dark' },
+    { value: 'auto', icon: 'phone-portrait', label: 'Auto' },
+  ];
+
+  return (
+    <View style={styles.container}>
+      {options.map((option) => (
+        <TouchableOpacity
+          key={option.value}
+          style={[
+            styles.option,
+            { backgroundColor: colors.surface },
+            theme === option.value && { backgroundColor: colors.primary },
+          ]}
+          onPress={() => setTheme(option.value)}
+        >
+          <Ionicons
+            name={option.icon}
+            size={20}
+            color={theme === option.value ? '#fff' : colors.icon}
+          />
+          <Text
+            style={[
+              styles.label,
+              { color: theme === option.value ? '#fff' : colors.text },
+            ]}
+          >
+            {option.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+});
