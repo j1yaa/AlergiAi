@@ -19,6 +19,8 @@ import AllergenScreen from '../screens/AllergenScreen';
 import ScannerScreen from '../screens/ScannerScreen';
 import ScanResultScreen from '../screens/ScanResultScreen';
 import MealTrendsScreen from '../screens/MealTrendsScreen';
+import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
+import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
