@@ -57,7 +57,7 @@ export const scheduleReminder = async (reminder: MealReminder) => {
   
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: `Time to log your ${reminder.mealType}! 🍽️`,
+      title: `Time to log your ${reminder.mealType}`,
       body: `Don't forget to track what you're eating to stay safe from allergens.`,
       data: { mealType: reminder.mealType },
     },

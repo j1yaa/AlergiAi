@@ -78,9 +78,9 @@ export default function SymptomCorrelationScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Symptom Correlation</Text>
+        <Text style={styles.title}>Symptom Correlation Analysis</Text>
         <Text style={styles.subtitle}>
-          Relationship between allergen exposure and symptoms
+          Track patterns between allergen exposure and symptom occurrence
         </Text>
       </View>
 
@@ -121,18 +121,18 @@ export default function SymptomCorrelationScreen() {
       )}
 
       <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Correlation Levels</Text>
+        <Text style={styles.legendTitle}>Risk Indicators</Text>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#f44336' }]} />
-          <Text style={styles.legendText}>High (&gt;70%)</Text>
+          <Text style={styles.legendText}>High Risk (>70%) - Avoid these allergens</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#ff9800' }]} />
-          <Text style={styles.legendText}>Medium (40-70%)</Text>
+          <Text style={styles.legendText}>Medium Risk (40-70%) - Monitor closely</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4caf50' }]} />
-          <Text style={styles.legendText}>Low (&lt;40%)</Text>
+          <Text style={styles.legendText}>Low Risk (<40%) - Generally safe</Text>
         </View>
       </View>
     </ScrollView>
