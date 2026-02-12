@@ -27,6 +27,19 @@ export interface AlertSettings {
 
 const SETTINGS_KEY = '@alert_settings';
 
+// Request notification permissions
+export const requestNotificationPermissions = async (): Promise<boolean> => {
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  
+  return finalStatus === 'granted';
+};
+
 export const getAlertSettings = async (): Promise<AlertSettings> => {
   const data = await AsyncStorage.getItem(SETTINGS_KEY);
   return data ? JSON.parse(data) : {
@@ -60,6 +73,9 @@ export const createAlert = async (
 ): Promise<string> => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
+
+  // Request permissions if not already granted
+  await requestNotificationPermissions();
 
   const alert: any = {
     userId: user.uid,

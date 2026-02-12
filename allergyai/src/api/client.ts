@@ -309,21 +309,34 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
       const snapshot = await getDocs(alertsQuery);
       const alerts = snapshot.docs.map(doc => {
         const data = doc.data();
-          return {
-            id: doc.id, 
-            userId: data.userId,
-            message: data.message,
-            type: data.type,
-            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-            read: data.read || false,
-            triggered: data.triggered || false,
-            mealId: data.mealId || '',
-            dateISO: data.timestamp || new Date().toISOString(),
-            allergens: data.allergens || [],
-            severity: data.severity || 'medium',
-            note: data.note || ''
-          } as Alert;
-        });
+        // Handle Firestore timestamp conversion
+        let timestampISO: string;
+        if (data.timestamp?.toDate) {
+          // Firestore Timestamp object
+          timestampISO = data.timestamp.toDate().toISOString();
+        } else if (data.timestamp instanceof Date) {
+          timestampISO = data.timestamp.toISOString();
+        } else if (typeof data.timestamp === 'string') {
+          timestampISO = data.timestamp;
+        } else {
+          timestampISO = new Date().toISOString();
+        }
+        
+        return {
+          id: doc.id, 
+          userId: data.userId,
+          message: data.message,
+          type: data.type,
+          timestamp: new Date(timestampISO),
+          read: data.read || false,
+          triggered: data.triggered || false,
+          mealId: data.mealId || '',
+          dateISO: timestampISO,
+          allergens: data.allergens || [data.allergen].filter(Boolean),
+          severity: data.severity || 'medium',
+          note: data.note || ''
+        } as Alert;
+      });
       
         return {
           items: alerts,
