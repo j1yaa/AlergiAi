@@ -685,17 +685,17 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
 
       return {
         allergens: userData?.allergens || [],
         allergensSeverity: userData?.allergensSeverity || []
       };
     },
-    { allergens: ['Peanuts', 'Shellfish', 'Dairy']}
-  ); 
+    { allergens: ['Peanuts', 'Shellfish', 'Dairy'], allergensSeverity: [] }
+  );
 };
 
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
@@ -724,14 +724,13 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User is not authenticated');
 
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
 
-      if (userDocRef) {
-        const currentAllergens = userData?.allergens || [];
-        const currentAllergensSeverity = userData?.allergensSeverity || [];
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
         if (!currentAllergens.includes(data.allergen)) {
           await updateDoc(userDocRef, {
             allergens: [...currentAllergens, data.allergen],
@@ -762,16 +761,17 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
     async () => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
-            
-      const userQuery = query(collection(db, 'users'), where('uid', '==', firebaseUser.uid));
-      const userDocs = await getDocs(userQuery);
-      const userDocRef = userDocs.docs[0]?.ref;
-      const userData = userDocs.docs[0]?.data();
-            
-      if (userDocRef) {
-        const currentAllergens = userData?.allergens || [];
+
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      const userData = userDoc.exists() ? userDoc.data() : null;
+
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
         await updateDoc(userDocRef, {
-          allergens: currentAllergens.filter((a: string) => a !== data.allergen)
+          allergens: currentAllergens.filter((a: string) => a !== data.allergen),
+          allergensSeverity: currentAllergensSeverity.filter((a: any) => a.name !== data.allergen)
         });
       }
     },
