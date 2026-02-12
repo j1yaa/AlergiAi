@@ -58,25 +58,30 @@ export const calculateRiskScore = (factors: RiskFactors): RiskCalculationResult 
  * @returns Exposure level
  */
 export const determineExposureLevel = (allergen: string, ingredients: string[]): 'trace' | 'low' | 'high' => {
+  const { expandAllergen } = require('./allergenMatcher');
   const normalizedIngredients = ingredients.map(i => i.toLowerCase());
-  const normalizedAllergen = allergen.toLowerCase();
-  
-  // Find all occurrences
-  const matches = normalizedIngredients.filter(ing => ing.includes(normalizedAllergen));
-  const firstMatchIndex = normalizedIngredients.findIndex(ing => ing.includes(normalizedAllergen));
-  
+  const expandedTerms = (expandAllergen(allergen) as string[]).map((t: string) => t.toLowerCase());
+
+  // Find all occurrences using expanded allergen terms
+  const matches = normalizedIngredients.filter(ing =>
+    expandedTerms.some(term => ing.includes(term) || term.includes(ing))
+  );
+  const firstMatchIndex = normalizedIngredients.findIndex(ing =>
+    expandedTerms.some(term => ing.includes(term) || term.includes(ing))
+  );
+
   if (matches.length === 0) return 'trace';
-  
+
   // High exposure: appears multiple times OR appears in first 3 ingredients
   if (matches.length > 1 || firstMatchIndex <= 2) {
     return 'high';
   }
-  
+
   // Low exposure: appears in first half of ingredient list
   if (firstMatchIndex <= normalizedIngredients.length / 2) {
     return 'low';
   }
-  
+
   // Trace: appears later in ingredient list
   return 'trace';
 };

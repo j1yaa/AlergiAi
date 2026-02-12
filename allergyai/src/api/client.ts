@@ -60,10 +60,10 @@ const handleFirebaseCall = async <T>(firebaseCall: () => Promise<T>, fallbackDat
 };
 
 export const register = async (data: RegisterRequest): Promise<AuthResponse> => {
-  console.log('🔥 REGISTER: Starting registration for', data.email);
+  console.log('REGISTER: Starting registration for', data.email);
   
   if (DEMO_MODE) {
-    console.log('🔥 REGISTER: Using demo mode');
+    console.log('REGISTER: Using demo mode');
     const mockToken = 'demo-token-' + Date.now();
     await AsyncStorage.setItem('auth_token', mockToken);
     return {
@@ -80,34 +80,34 @@ export const register = async (data: RegisterRequest): Promise<AuthResponse> => 
   }
 
   try {
-    console.log('🔥 REGISTER: Creating Firebase Auth user...');
+    console.log('REGISTER: Creating Firebase Auth user...');
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
     const firebaseUser = userCredential.user;
-    console.log('🔥 REGISTER: Firebase Auth user created:', firebaseUser.uid);
+    console.log('REGISTER: Firebase Auth user created:', firebaseUser.uid);
         
     try {
-      console.log('🔥 REGISTER: Creating Firestore user document...');
+      console.log('REGISTER: Creating Firestore user document...');
       const userDocData = {
         name: data.name,
         email: data.email,
         allergens: [],
         createdAt: new Date().toISOString()
       };
-      console.log('🔥 REGISTER: User doc data:', userDocData);
+      console.log('REGISTER: User doc data:', userDocData);
       
       await setDoc(doc(db, 'users', firebaseUser.uid), userDocData);
-      console.log('🔥 REGISTER: Firestore user document created successfully');
+      console.log('REGISTER: Firestore user document created successfully');
     } catch (firestoreError: any) {
-      console.error('🔥 REGISTER: Firestore error:', {
+      console.error('REGISTER: Firestore error:', {
         code: firestoreError.code,
         message: firestoreError.message,
         stack: firestoreError.stack
       });
     }
 
-    console.log('🔥 REGISTER: Getting ID token...');
+    console.log('REGISTER: Getting ID token...');
     const token = await firebaseUser.getIdToken();
-    console.log('🔥 REGISTER: Registration completed successfully');
+    console.log('REGISTER: Registration completed successfully');
     
     return {
       token,
@@ -121,7 +121,7 @@ export const register = async (data: RegisterRequest): Promise<AuthResponse> => 
       }
     };
   } catch (authError: any) {
-    console.error('🔥 REGISTER: Auth error:', {
+    console.error('REGISTER: Auth error:', {
       code: authError.code,
       message: authError.message,
       stack: authError.stack
@@ -131,10 +131,10 @@ export const register = async (data: RegisterRequest): Promise<AuthResponse> => 
 };
 
 export const login = async (data: LoginRequest): Promise<AuthResponse> => {
-  console.log('🔥 LOGIN: Starting login for', data.email);
+  console.log('LOGIN: Starting login for', data.email);
   
   if (DEMO_MODE) {
-    console.log('🔥 LOGIN: Using demo mode');
+    console.log('LOGIN: Using demo mode');
     const mockToken = 'demo-token-' + Date.now();
     await AsyncStorage.setItem('auth_token', mockToken);
     return {
@@ -151,21 +151,21 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
   }
 
   try {
-    console.log('🔥 LOGIN: Authenticating with Firebase...');
+    console.log('LOGIN: Authenticating with Firebase...');
     const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
     const firebaseUser = userCredential.user;
-    console.log('🔥 LOGIN: Firebase Auth successful:', firebaseUser.uid);
+    console.log('LOGIN: Firebase Auth successful:', firebaseUser.uid);
         
-    console.log('🔥 LOGIN: Fetching user document from Firestore...');
+    console.log('LOGIN: Fetching user document from Firestore...');
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDoc = await getDoc(userDocRef);
     const userData = userDoc.exists() ? userDoc.data() : null;
-    console.log('🔥 LOGIN: User document exists:', userDoc.exists());
-    console.log('🔥 LOGIN: User data:', userData);
+    console.log('LOGIN: User document exists:', userDoc.exists());
+    console.log('LOGIN: User data:', userData);
 
-    console.log('🔥 LOGIN: Getting ID token...');
+    console.log('LOGIN: Getting ID token...');
     const token = await firebaseUser.getIdToken();
-    console.log('🔥 LOGIN: Login completed successfully');
+    console.log('LOGIN: Login completed successfully');
     
     return {
       token,
@@ -179,7 +179,7 @@ export const login = async (data: LoginRequest): Promise<AuthResponse> => {
       }
     };
   } catch (error: any) {
-    console.error('🔥 LOGIN: Error:', {
+    console.error('LOGIN: Error:', {
       code: error.code,
       message: error.message,
       stack: error.stack
@@ -696,8 +696,8 @@ export const getAllergens = async (): Promise<AllergensResponse> => {
         allergensSeverity: userData?.allergensSeverity || []
       };
     },
-    { allergens: [], allergensSeverity: []}
-  ); 
+    { allergens: ['Peanuts', 'Shellfish', 'Dairy'], allergensSeverity: [] }
+  );
 };
 
 export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
@@ -730,14 +730,15 @@ export const addAllergen = async (data: AddAllergenRequest): Promise<void> => {
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists() ? userDoc.data() : null;
 
-      const currentAllergens = userData?.allergens || [];
-      const currentAllergensSeverity = userData?.allergensSeverity || [];
-      
-      if (!currentAllergens.includes(data.allergen)) {
-        await updateDoc(userDocRef, {
-          allergens: [...currentAllergens, data.allergen],
-          allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
-        });
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
+        if (!currentAllergens.includes(data.allergen)) {
+          await updateDoc(userDocRef, {
+            allergens: [...currentAllergens, data.allergen],
+            allergensSeverity: [...currentAllergensSeverity, { name: data.allergen, severity: data.severity || 'moderate' }]
+          });
+        }
       }
     },
     undefined
@@ -762,18 +763,19 @@ export const removeAllergen = async (data: RemoveAllergenRequest): Promise<void>
     async () => {
       const firebaseUser = auth.currentUser;
       if (!firebaseUser) throw new Error('User not authenticated');
-            
+
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
       const userData = userDoc.exists() ? userDoc.data() : null;
-            
-      const currentAllergens = userData?.allergens || [];
-      const currentAllergensSeverity = userData?.allergensSeverity || [];
-      
-      await updateDoc(userDocRef, {
-        allergens: currentAllergens.filter((a: string) => a !== data.allergen),
-        allergensSeverity: currentAllergensSeverity.filter((as: any) => as.name !== data.allergen)
-      });
+
+      if (userData) {
+        const currentAllergens = userData.allergens || [];
+        const currentAllergensSeverity = userData.allergensSeverity || [];
+        await updateDoc(userDocRef, {
+          allergens: currentAllergens.filter((a: string) => a !== data.allergen),
+          allergensSeverity: currentAllergensSeverity.filter((a: any) => a.name !== data.allergen)
+        });
+      }
     },
     undefined
   );

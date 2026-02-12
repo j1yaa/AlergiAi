@@ -27,11 +27,11 @@ export default function ReminderSettings() {
 
   const getMealIcon = (type: string) => {
     switch(type) {
-      case 'breakfast': return '🌅';
-      case 'lunch': return '☀️';
-      case 'dinner': return '🌙';
-      case 'snack': return '🍎';
-      default: return '🍽️';
+      case 'breakfast': return 'sunrise';
+      case 'lunch': return 'sunny';
+      case 'dinner': return 'moon';
+      case 'snack': return 'nutrition';
+      default: return 'restaurant';
     }
   };
 
@@ -91,7 +91,7 @@ export default function ReminderSettings() {
         <View key={reminder.id} style={styles.reminderCard}>
           <View style={styles.reminderHeader}>
             <View style={styles.reminderInfo}>
-              <Text style={styles.mealIcon}>{getMealIcon(reminder.mealType)}</Text>
+              <Ionicons name={getMealIcon(reminder.mealType)} size={28} color="#2196F3" style={styles.mealIcon} />
               <View>
                 <Text style={styles.mealType}>
                   {reminder.mealType.charAt(0).toUpperCase() + reminder.mealType.slice(1)}
@@ -194,7 +194,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mealIcon: {
-    fontSize: 32,
     marginRight: 15,
   },
   mealType: {

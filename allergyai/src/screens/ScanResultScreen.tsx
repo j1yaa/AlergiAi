@@ -15,6 +15,7 @@ interface RouteParams {
   allergenWarnings: string[]; // allergens from profile that matched
   safeIngredients: string[];
   productName: string;
+  isFood: boolean;
 }
 
 export default function ScanResultScreen() {
@@ -28,19 +29,22 @@ export default function ScanResultScreen() {
       ? params.productName
       : 'Unknown Item';
 
-  // 2) Use shared AI risk helper.
-  //    For now we treat allergenWarnings as "user allergens" because
-  //    they should all be present in detectedIngredients.
+  const isFood = params.isFood !== false;
+  const isUnknown = !isFood && (safeProductName === 'Unknown' || safeProductName === 'Unknown Item');
+
+  // 2) Use shared AI risk helper (only for food items).
   const {
     riskScore,
     matchedAllergens,
     severity,
     riskTier,
     explanation,
-  } = computeRiskScore(
-    params.detectedIngredients ?? [],
-    params.allergenWarnings ?? [],
-  );
+  } = isFood
+    ? computeRiskScore(
+        params.detectedIngredients ?? [],
+        params.allergenWarnings ?? [],
+      )
+    : { riskScore: 0, matchedAllergens: [], severity: 'LOW' as const, riskTier: 'Low Risk' as const, explanation: '' };
 
   const hasAllergens = matchedAllergens.length > 0;
 
@@ -69,39 +73,59 @@ export default function ScanResultScreen() {
         <View
           style={[
             styles.statusCard,
+            isUnknown ? styles.unknownCard :
+            !isFood ? styles.nonFoodCard :
             hasAllergens ? styles.dangerCard : styles.safeCard,
           ]}
         >
           <Ionicons
-            name={hasAllergens ? 'warning' : 'checkmark-circle'}
+            name={
+              isUnknown ? 'help-circle' :
+              !isFood ? 'ban' :
+              hasAllergens ? 'warning' : 'checkmark-circle'
+            }
             size={48}
-            color={hasAllergens ? '#f44336' : '#4CAF50'}
+            color={
+              isUnknown ? '#9E9E9E' :
+              !isFood ? '#FF9800' :
+              hasAllergens ? '#f44336' : '#4CAF50'
+            }
           />
           <Text style={styles.statusTitle}>
-            {hasAllergens ? 'Allergen Detected!' : 'Safe to Consume'}
+            {isUnknown ? 'Unable to Identify' :
+             !isFood ? 'Not a Food Item' :
+             hasAllergens ? 'Allergen Detected!' : 'Safe to Consume'}
           </Text>
           <Text style={styles.statusSubtitle}>
-            {hasAllergens
+            {isUnknown
+              ? 'Could not identify this item. Try scanning again with better lighting'
+              : !isFood
+              ? 'This item is not edible and cannot be analyzed for allergens'
+              : hasAllergens
               ? `Contains ${matchedAllergens.length} allergen(s) from your profile`
               : 'No allergens detected from your profile'}
           </Text>
 
-          {/* Risk score from AI helper */}
-          <Text style={styles.riskScoreText}>
-            Risk Score: {riskScore}% - {riskTier}
-          </Text>
-          <Text style={styles.severityText}>
-            Severity Level: {severity}
-          </Text>
-          {explanation && (
-            <Text style={styles.explanationText}>
-              {explanation}
-            </Text>
+          {/* Risk score from AI helper — only show for food */}
+          {isFood && !isUnknown && (
+            <>
+              <Text style={styles.riskScoreText}>
+                Risk Score: {riskScore}% - {riskTier}
+              </Text>
+              <Text style={styles.severityText}>
+                Severity Level: {severity}
+              </Text>
+              {explanation && (
+                <Text style={styles.explanationText}>
+                  {explanation}
+                </Text>
+              )}
+            </>
           )}
         </View>
 
         {/* Allergen Warnings */}
-        {hasAllergens && (
+        {isFood && hasAllergens && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>⚠️ Allergen Warnings</Text>
             {matchedAllergens.map((allergen, index) => (
@@ -114,7 +138,7 @@ export default function ScanResultScreen() {
         )}
 
         {/* Safe Ingredients */}
-        {params.safeIngredients.length > 0 && (
+        {isFood && params.safeIngredients.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>✓ Safe Ingredients</Text>
             {params.safeIngredients.map((ingredient, index) => (
@@ -131,16 +155,18 @@ export default function ScanResultScreen() {
         )}
 
         {/* All Detected Ingredients */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📋 All Detected Ingredients</Text>
-          <View style={styles.ingredientsList}>
-            {params.detectedIngredients.map((ingredient, index) => (
-              <View key={index} style={styles.ingredientChip}>
-                <Text style={styles.ingredientChipText}>{ingredient}</Text>
-              </View>
-            ))}
+        {isFood && params.detectedIngredients.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📋 All Detected Ingredients</Text>
+            <View style={styles.ingredientsList}>
+              {params.detectedIngredients.map((ingredient, index) => (
+                <View key={index} style={styles.ingredientChip}>
+                  <Text style={styles.ingredientChipText}>{ingredient}</Text>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Note */}
         <View style={styles.noteCard}>
@@ -221,6 +247,12 @@ const styles = StyleSheet.create({
   },
   safeCard: {
     backgroundColor: '#e8f5e9',
+  },
+  nonFoodCard: {
+    backgroundColor: '#fff3e0',
+  },
+  unknownCard: {
+    backgroundColor: '#f5f5f5',
   },
   statusTitle: {
     fontSize: 22,

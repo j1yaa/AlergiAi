@@ -17,7 +17,9 @@ const menuItems: MenuItem[] = [
   { name: 'Trends', label: 'Meal Trends', icon: 'stats-chart' },
   { name: 'Allergens', label: 'Allergens', icon: 'shield' },
   { name: 'Symptoms', label: 'Symptoms', icon: 'medical' },
+  { name: 'SymptomCorrelation', label: 'Symptom Correlation', icon: 'analytics' },
   { name: 'Alerts', label: 'Alerts', icon: 'warning' },
+  { name: 'ReminderSettings', label: 'Meal Reminders', icon: 'notifications' },
   { name: 'Profile', label: 'Profile', icon: 'person' },
 ];
 

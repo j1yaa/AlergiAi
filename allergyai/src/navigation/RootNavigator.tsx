@@ -21,6 +21,7 @@ import ScanResultScreen from '../screens/ScanResultScreen';
 import MealTrendsScreen from '../screens/MealTrendsScreen';
 import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
 import AlertSettingsScreen from '../screens/AlertSettingsScreen';
+import SymptomCorrelationScreen from '../screens/SymptomCorrelationScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -112,8 +113,9 @@ function MainDrawer() {
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
       <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders' }} />
       <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation' }} />
     </Drawer.Navigator>
   );
 }
