@@ -309,21 +309,34 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
       const snapshot = await getDocs(alertsQuery);
       const alerts = snapshot.docs.map(doc => {
         const data = doc.data();
-          return {
-            id: doc.id, 
-            userId: data.userId,
-            message: data.message,
-            type: data.type,
-            timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-            read: data.read || false,
-            triggered: data.triggered || false,
-            mealId: data.mealId || '',
-            dateISO: data.timestamp || new Date().toISOString(),
-            allergens: data.allergens || [],
-            severity: data.severity || 'medium',
-            note: data.note || ''
-          } as Alert;
-        });
+        // Handle Firestore timestamp conversion
+        let timestampISO: string;
+        if (data.timestamp?.toDate) {
+          // Firestore Timestamp object
+          timestampISO = data.timestamp.toDate().toISOString();
+        } else if (data.timestamp instanceof Date) {
+          timestampISO = data.timestamp.toISOString();
+        } else if (typeof data.timestamp === 'string') {
+          timestampISO = data.timestamp;
+        } else {
+          timestampISO = new Date().toISOString();
+        }
+        
+        return {
+          id: doc.id, 
+          userId: data.userId,
+          message: data.message,
+          type: data.type,
+          timestamp: new Date(timestampISO),
+          read: data.read || false,
+          triggered: data.triggered || false,
+          mealId: data.mealId || '',
+          dateISO: timestampISO,
+          allergens: data.allergens || [data.allergen].filter(Boolean),
+          severity: data.severity || 'medium',
+          note: data.note || ''
+        } as Alert;
+      });
       
         return {
           items: alerts,
@@ -345,7 +358,9 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
       const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
       const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
 
-      const meals = mealsSnapshot.docs.map(doc => doc.data());
+      const meals = mealsSnapshot.docs
+        .map(doc => doc.data())
+        .filter((meal: any) => !meal.deleted);
       const totalMeals = meals.length;
       const safeMeals = meals.filter((meal: any) => (meal.riskScore || 0) < 50).length;
       const safeMealsPct = totalMeals > 0 ? Math.round((safeMeals / totalMeals) * 100) : 0;
@@ -874,7 +889,7 @@ export async function getMealTrends() {
     count: Math.floor(Math.random() * 5) + 1 // Mock data
   }));
 
-  // Top 3 allergens
+  // Top 3 allergens - only count non-deleted meals
   const allergenCounts: { [key: string]: number } = {};
   meals.forEach(meal => {
     meal.detectedAllergens?.forEach(allergen => {

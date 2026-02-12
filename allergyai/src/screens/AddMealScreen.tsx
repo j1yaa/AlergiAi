@@ -179,6 +179,17 @@ export default function AddMealScreen() {
       // Create alerts for detected allergens
       if (allergensToAlert.length > 0) {
         console.log('Creating alerts for allergens:', allergensToAlert);
+        
+        // Show immediate alert to user
+        const allergenList = allergensToAlert.join(', ');
+        const riskLevel = riskScore > 70 ? 'HIGH' : riskScore > 30 ? 'MODERATE' : 'LOW';
+        Alert.alert(
+          '⚠️ Allergen Detected!',
+          `${riskLevel} RISK: This meal contains ${allergenList}.\n\nRisk Score: ${riskScore}%\n\nPlease review carefully before consuming.`,
+          [{ text: 'OK', style: 'default' }]
+        );
+        
+        // Create alerts in database
         for (const allergen of allergensToAlert) {
           const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
           console.log(`Creating alert: ${allergen} - ${severity}`);
@@ -186,9 +197,8 @@ export default function AddMealScreen() {
         }
       } else {
         console.log('No allergens detected');
+        Alert.alert('Saved', 'Your meal was logged.');
       }
-
-      Alert.alert('Saved', 'Your meal was logged.');
       setMealName('');
       setDescription('');
       setResult(null);
