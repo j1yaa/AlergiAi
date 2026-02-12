@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { analyzeImg } from '../utils/geminiService';
 import { getAllergens } from '../api/client';
+import { matchIngredientsWallergens } from '../utils/allergenMatcher';
 
 type RootStackParamList = {
     ScanResult: {
@@ -20,6 +21,7 @@ type RootStackParamList = {
         detectedIngredients: string[];
         allergenWarnings: string[];
         safeIngredients: string[];
+        isFood: boolean;
     };
 };
 
@@ -72,24 +74,21 @@ export default function ScannerScreen() {
             const allergenResponse = await getAllergens();
             const userAllergens = allergenResponse.allergens || [];
 
-            // Compare ingredients with user allergens
-            const allergenWarnings = geminiResult.detectedIngredients.filter(ingredient =>
-                userAllergens.some(allergen =>
-                    ingredient.toLowerCase().includes(allergen.toLowerCase()) ||
-                    allergen.toLowerCase().includes(ingredient.toLowerCase())
-                )
-            );
-
-            const safeIngredients = geminiResult.detectedIngredients.filter(
-                ingredient => !allergenWarnings.includes(ingredient)
-            );
+            // Compare ingredients with user allergens (using category-aware matching + AI categories)
+            const { matches: allergenWarnings, safe: safeIngredients } =
+                matchIngredientsWallergens(
+                    geminiResult.detectedIngredients,
+                    userAllergens,
+                    geminiResult.allergenCategories
+                );
 
             // Go to the result screen
             navigation.navigate('ScanResult', {
                 productName: geminiResult.productName || 'Unknown Product',
                 detectedIngredients: geminiResult.detectedIngredients,
-                allergenWarnings: allergenWarnings,
-                safeIngredients: safeIngredients,
+                allergenWarnings,
+                safeIngredients,
+                isFood: geminiResult.isFood,
             });
             
             setIsScanning(false);
