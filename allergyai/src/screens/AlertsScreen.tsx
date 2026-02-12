@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert as RNAlert } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
+import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
 
 export default function AlertsScreen() {
+  const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -19,6 +22,13 @@ export default function AlertsScreen() {
     try {
       const response = await getAlerts();
       setAlerts(response.items);
+      
+      // Check for exposure patterns
+      const uniqueAllergens = [...new Set(response.items.map(a => a.allergens).flat())];
+      for (const allergen of uniqueAllergens) {
+        const pattern = await checkExposurePattern(allergen);
+        if (pattern) console.log(pattern);
+      }
     } catch (error) {
       console.error('Failed to load alerts:', error);
     } finally {
@@ -44,13 +54,43 @@ export default function AlertsScreen() {
     });
   };
 
+  const handleMarkRead = async (alertId: string) => {
+    await markAlertRead(alertId);
+    loadAlerts();
+  };
+
+  const handleAcknowledge = (alertId: string) => {
+    RNAlert.alert(
+      'Acknowledge Alert',
+      'What action did you take?',
+      [
+        { text: 'Avoided food', onPress: () => acknowledgeAlertWithAction(alertId, 'avoided') },
+        { text: 'Ate anyway', onPress: () => acknowledgeAlertWithAction(alertId, 'consumed') },
+        { text: 'Took medication', onPress: () => acknowledgeAlertWithAction(alertId, 'medicated') },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const acknowledgeAlertWithAction = async (alertId: string, action: string) => {
+    await acknowledgeAlert(alertId, action);
+    loadAlerts();
+  };
+
+  const filteredAlerts = filter === 'all' 
+    ? alerts 
+    : alerts.filter(a => a.severity === filter);
+
+  const unreadCount = alerts.filter(a => !a.read).length;
+
   const renderAlert = ({ item }: { item: Alert }) => (
-    <View style={styles.alertCard}>
+    <View style={[styles.alertCard, !item.read && styles.unreadCard]}>
       <View style={styles.alertHeader}>
         <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
           <Ionicons name="warning" size={16} color="#fff" />
         </View>
         <Text style={styles.date}>{formatDate(item.dateISO)}</Text>
+        {!item.read && <View style={styles.unreadDot} />}
       </View>
       <Text style={styles.message}>{item.message}</Text>
       {item.allergens.length > 0 && (
@@ -62,6 +102,27 @@ export default function AlertsScreen() {
           ))}
         </View>
       )}
+      
+      <View style={styles.actions}>
+        {!item.read && (
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleMarkRead(item.id)}
+          >
+            <Ionicons name="checkmark" size={16} color="#4CAF50" />
+            <Text style={styles.actionText}>Mark Read</Text>
+          </TouchableOpacity>
+        )}
+        {!item.acknowledged && (
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => handleAcknowledge(item.id)}
+          >
+            <Ionicons name="hand-left" size={16} color="#2196F3" />
+            <Text style={styles.actionText}>Acknowledge</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 
@@ -75,9 +136,36 @@ export default function AlertsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Alerts</Text>
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.title}>Alerts</Text>
+          {unreadCount > 0 && (
+            <Text style={styles.unreadCount}>{unreadCount} unread</Text>
+          )}
+        </View>
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('AlertSettings' as never)}
+        >
+          <Ionicons name="settings-outline" size={24} color="#666" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.filterRow}>
+        {['all', 'high', 'medium', 'low'].map((f) => (
+          <TouchableOpacity
+            key={f}
+            style={[styles.filterButton, filter === f && styles.filterButtonActive]}
+            onPress={() => setFilter(f as any)}
+          >
+            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+              {f.toUpperCase()}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       
-      {alerts.length === 0 ? (
+      {filteredAlerts.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
           <Text style={styles.emptyText}>No alerts yet</Text>
@@ -85,7 +173,7 @@ export default function AlertsScreen() {
         </View>
       ) : (
         <FlatList
-          data={alerts}
+          data={filteredAlerts}
           renderItem={renderAlert}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
@@ -104,7 +192,45 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  unreadCount: {
+    fontSize: 14,
+    color: '#F44336',
+    marginTop: 4,
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 15,
+  },
+  filterButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  filterButtonActive: {
+    backgroundColor: '#2196F3',
+    borderColor: '#2196F3',
+  },
+  filterText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterTextActive: {
+    color: '#fff',
   },
   alertCard: {
     backgroundColor: '#f5f5f5',
@@ -114,10 +240,22 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#F44336',
   },
+  unreadCard: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#2196F3',
+  },
   alertHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#2196F3',
+    marginLeft: 'auto',
   },
   severityBadge: {
     flexDirection: 'row',
@@ -151,6 +289,30 @@ const styles = StyleSheet.create({
   allergenText: {
     color: '#d32f2f',
     fontSize: 12,
+    fontWeight: '500',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  actionText: {
+    fontSize: 12,
+    marginLeft: 4,
+    color: '#666',
     fontWeight: '500',
   },
   emptyState: {
