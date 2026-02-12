@@ -358,7 +358,9 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
       const mealsSnapshot = await getDocs(query(collection(db, 'meals'), where('userId', '==', firebaseUser.uid)));
       const alertsSnapshot = await getDocs(query(collection(db, 'alerts'), where('userId', '==', firebaseUser.uid)));
 
-      const meals = mealsSnapshot.docs.map(doc => doc.data());
+      const meals = mealsSnapshot.docs
+        .map(doc => doc.data())
+        .filter((meal: any) => !meal.deleted);
       const totalMeals = meals.length;
       const safeMeals = meals.filter((meal: any) => (meal.riskScore || 0) < 50).length;
       const safeMealsPct = totalMeals > 0 ? Math.round((safeMeals / totalMeals) * 100) : 0;
@@ -887,7 +889,7 @@ export async function getMealTrends() {
     count: Math.floor(Math.random() * 5) + 1 // Mock data
   }));
 
-  // Top 3 allergens
+  // Top 3 allergens - only count non-deleted meals
   const allergenCounts: { [key: string]: number } = {};
   meals.forEach(meal => {
     meal.detectedAllergens?.forEach(allergen => {
