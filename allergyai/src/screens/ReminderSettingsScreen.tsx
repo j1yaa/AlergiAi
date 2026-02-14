@@ -8,8 +8,10 @@ import {
   updateReminder, 
   requestPermissions 
 } from '../utils/reminderService';
+import { useTheme } from '../hooks/useTheme';
 
 export default function ReminderSettings() {
+  const { colors } = useTheme();
   const [reminders, setReminders] = useState<MealReminder[]>([]);
   const [showTimePicker, setShowTimePicker] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -69,11 +71,11 @@ export default function ReminderSettings() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Ionicons name="notifications" size={32} color="#2196F3" />
-        <Text style={styles.title}>Meal Reminders</Text>
-        <Text style={styles.subtitle}>
+        <Ionicons name="notifications" size={32} color={colors.primary} />
+        <Text style={[styles.title, { color: colors.text }]}>Meal Reminders</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>
           Get notified when it's time to log your meals
         </Text>
       </View>
@@ -88,20 +90,20 @@ export default function ReminderSettings() {
       )}
 
       {reminders.map(reminder => (
-        <View key={reminder.id} style={styles.reminderCard}>
+        <View key={reminder.id} style={[styles.reminderCard, { backgroundColor: colors.surface }]}>
           <View style={styles.reminderHeader}>
             <View style={styles.reminderInfo}>
-              <Ionicons name={getMealIcon(reminder.mealType)} size={28} color="#2196F3" style={styles.mealIcon} />
+              <Ionicons name={getMealIcon(reminder.mealType)} size={28} color={colors.primary} style={styles.mealIcon} />
               <View>
-                <Text style={styles.mealType}>
+                <Text style={[styles.mealType, { color: colors.text }]}>
                   {reminder.mealType.charAt(0).toUpperCase() + reminder.mealType.slice(1)}
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setShowTimePicker(reminder.id)}
                   style={styles.timeButton}
                 >
-                  <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.timeText}>{reminder.time}</Text>
+                  <Ionicons name="time-outline" size={16} color={colors.icon} />
+                  <Text style={[styles.timeText, { color: colors.icon }]}>{reminder.time}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -132,8 +134,8 @@ export default function ReminderSettings() {
       ))}
 
       <View style={styles.infoBox}>
-        <Ionicons name="information-circle" size={20} color="#2196F3" />
-        <Text style={styles.infoText}>
+        <Ionicons name="information-circle" size={20} color={colors.primary} />
+        <Text style={[styles.infoText, { color: colors.primary }]}>
           Reminders help you stay consistent with meal logging and allergen tracking
         </Text>
       </View>
@@ -144,7 +146,6 @@ export default function ReminderSettings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   header: {
@@ -155,11 +156,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 10,
-    color: '#333',
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
     marginTop: 5,
     textAlign: 'center',
   },
@@ -178,7 +177,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reminderCard: {
-    backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
@@ -199,7 +197,6 @@ const styles = StyleSheet.create({
   mealType: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   timeButton: {
@@ -208,7 +205,6 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    color: '#666',
     marginLeft: 4,
   },
   infoBox: {
@@ -220,7 +216,6 @@ const styles = StyleSheet.create({
   },
   infoText: {
     marginLeft: 10,
-    color: '#1565c0',
     fontSize: 13,
     flex: 1,
   },

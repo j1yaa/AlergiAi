@@ -1,9 +1,11 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { getAllergens, addAllergen, removeAllergen } from '../api/client';
-import {isWeb } from '../utils/platform';   
+import {isWeb } from '../utils/platform';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AllergenScreen() {
+    const { colors } = useTheme();
     const [allergens, setAllergens] = useState<string[]>([]);
     const [allergensSeverity, setAllergensSeverity] = useState<any[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
@@ -88,15 +90,16 @@ export default function AllergenScreen() {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>Manage Allergens</Text>
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+            <Text style={[styles.title, { color: colors.text }]}>Manage Allergens</Text>
 
             <View style={styles.inputSection}>
-                <Text style={styles.sectionTitle}>Add New Allergen</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Add New Allergen</Text>
                 <View style={styles.inputContainer}>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
                         placeholder="Enter name for the allergen:"
+                        placeholderTextColor={colors.icon}
                         value={newAllergen}
                         onChangeText={setNewAllergen}
                         autoCapitalize="words"
@@ -143,7 +146,7 @@ export default function AllergenScreen() {
             </View>
 
             <View style={styles.listSection}>
-                <Text style={styles.sectionTitle}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
                     Your Allergens ({allergens.length})
                 </Text>
                 {loading ? (
@@ -185,7 +188,7 @@ export default function AllergenScreen() {
             </View>
 
             <View style={styles.infoSection}>
-                <Text style={styles.infoTitle}>Common Allergens</Text>
+                <Text style={[styles.infoTitle, { color: colors.text }]}>Common Allergens</Text>
                 <View style={styles.commonAllergens}>
                     {['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Shellfish', 'Fish', 'Soy', 'Wheat'].map((common, index) => (
                         <TouchableOpacity
@@ -205,14 +208,12 @@ export default function AllergenScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
         padding: 20,
     },
     title: {
         fontSize: 28,
         fontWeight: 'bold',
         marginBottom: 24,
-        color: '#333',
     },
     inputSection: {
         marginBottom: 32,
@@ -221,7 +222,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 12,
-        color: '#333',
     },
     inputContainer: {
         flexDirection: 'row',
@@ -230,11 +230,9 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        backgroundColor: '#fff',
         ...Platform.select({
             web: {outlineStyle: 'none' as any,
             },
@@ -327,7 +325,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 12,
-        color: '#333',
     },
     commonAllergens: {
         flexDirection: 'row',
@@ -357,7 +354,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginBottom: 12,
-        color: '#333',
     },
     severityButtons: {
         flexDirection: 'row',
