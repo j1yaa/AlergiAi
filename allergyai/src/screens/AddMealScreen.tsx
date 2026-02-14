@@ -6,8 +6,10 @@ import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { createAlert } from '../utils/allergenAlertService';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AddMealScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [mealName, setMealName] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -219,9 +221,9 @@ export default function AddMealScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <Text style={styles.title}>Add Meal</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Add Meal</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={styles.reminderButton}
@@ -239,15 +241,16 @@ export default function AddMealScreen() {
         </View>
       </View>
 
-      <Text style={styles.label}>Meal Name</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Meal Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
         value={mealName}
         onChangeText={(text) => {
           console.log('TextInput onChange:', `"${text}"`);
           setMealName(text);
         }}
         placeholder="Enter meal name..."
+        placeholderTextColor={colors.icon}
         testID="mealNameInput"
       />
 
@@ -273,8 +276,9 @@ export default function AddMealScreen() {
       </View>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
         placeholder="Describe your meal..."
+        placeholderTextColor={colors.icon}
         value={description}
         onChangeText={setDescription}
         multiline
@@ -302,11 +306,11 @@ export default function AddMealScreen() {
       </TouchableOpacity>
 
       {result && (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>Analysis Result</Text>
+        <View style={[styles.resultCard, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.resultTitle, { color: colors.text }]}>Analysis Result</Text>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ingredients:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Ingredients:</Text>
             <View style={styles.pillContainer}>
               {result.ingredients.map((ingredient, index) => (
                 <View key={index} style={styles.pill}>
@@ -317,7 +321,7 @@ export default function AddMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Allergens:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Allergens:</Text>
             <View style={styles.pillContainer}>
               {result.allergens.length > 0 ? (
                 result.allergens.map((allergen, index) => (
@@ -332,7 +336,7 @@ export default function AddMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Risk Assessment</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Risk Assessment</Text>
             <View style={styles.riskContainer}>
               <Text style={styles.riskScoreText}>Risk Score: {result.riskScore}%</Text>
               <View style={[
@@ -359,9 +363,9 @@ export default function AddMealScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Meal History</Text>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Meal History</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setShowHistory(false)}
@@ -400,7 +404,6 @@ export default function AddMealScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   title: {
@@ -411,12 +414,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     padding: 15,
     borderRadius: 8,
     fontSize: 16,
@@ -448,7 +449,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   resultCard: {
-    backgroundColor: '#f5f5f5',
     padding: 20,
     borderRadius: 8,
   },
@@ -600,7 +600,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -608,7 +607,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 20,

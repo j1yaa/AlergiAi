@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { saveSymptom } from '../api/client';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AddSymptomScreen() {
+  const { colors } = useTheme();
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(3);
   const [loading, setLoading] = useState(false);
@@ -55,12 +57,13 @@ export default function AddSymptomScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Log Symptom</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Log Symptom</Text>
       
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
         placeholder="Describe your symptom..."
+        placeholderTextColor={colors.icon}
         value={description}
         onChangeText={setDescription}
         multiline
@@ -68,7 +71,7 @@ export default function AddSymptomScreen() {
       />
       
       <View style={styles.severityContainer}>
-        <Text style={styles.label}>Severity (1-5)</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Severity (1-5)</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -113,7 +116,6 @@ export default function AddSymptomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   title: {
@@ -123,7 +125,6 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     padding: 15,
     borderRadius: 8,
     fontSize: 16,

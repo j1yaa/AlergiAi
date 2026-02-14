@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 
 export const ThemeToggle = () => {
   const { theme, colors, setTheme } = useTheme();
+  const screenWidth = Dimensions.get('window').width;
 
   const options: Array<{ value: 'light' | 'dark' | 'auto'; icon: any; label: string }> = [
     { value: 'light', icon: 'sunny', label: 'Light' },
@@ -13,7 +14,7 @@ export const ThemeToggle = () => {
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { maxWidth: screenWidth - 40 }]}>
       {options.map((option) => (
         <TouchableOpacity
           key={option.value}
@@ -34,6 +35,7 @@ export const ThemeToggle = () => {
               styles.label,
               { color: theme === option.value ? '#fff' : colors.text },
             ]}
+            numberOfLines={1}
           >
             {option.label}
           </Text>
@@ -47,6 +49,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     marginTop: 8,
+    flexWrap: 'wrap',
   },
   option: {
     flexDirection: 'row',
@@ -55,6 +58,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     marginRight: 8,
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,

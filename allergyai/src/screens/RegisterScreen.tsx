@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { register } from '../api/client';
+import { useTheme } from '../hooks/useTheme';
 
 export default function RegisterScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
+  const { colors } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,22 +75,24 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.form}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join AllergyAI to track your meals safely</Text>
+        <Text style={[styles.title, { color: colors.primary }]}>Create Account</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>Join AllergyAI to track your meals safely</Text>
         
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
           placeholder="Full Name"
+          placeholderTextColor={colors.icon}
           value={name}
           onChangeText={setName}
           autoCapitalize="words"
         />
         
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
           placeholder="Email Address"
+          placeholderTextColor={colors.icon}
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -96,16 +100,18 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
         />
         
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
           placeholder="Password (min 6 characters)"
+          placeholderTextColor={colors.icon}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
         />
         
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.icon }]}
           placeholder="Confirm Password"
+          placeholderTextColor={colors.icon}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
@@ -137,7 +143,6 @@ export default function RegisterScreen({ navigation, onLogin }: { navigation: an
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   form: {
     flex: 1,
@@ -150,17 +155,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
-    color: '#2196F3',
   },
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 40,
-    color: '#666',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     padding: 15,
     marginBottom: 15,
     borderRadius: 8,

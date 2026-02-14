@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
 import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AlertsScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,10 +137,10 @@ export default function AlertsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>Alerts</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Alerts</Text>
           {unreadCount > 0 && (
             <Text style={styles.unreadCount}>{unreadCount} unread</Text>
           )}
@@ -186,7 +188,6 @@ export default function AlertsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   title: {

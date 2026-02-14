@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { getMeals, getSymptoms } from '../api/client';
 import { Meal, Symptom } from '../types';
+import { useTheme } from '../hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 
@@ -13,6 +14,7 @@ interface CorrelationData {
 }
 
 export default function SymptomCorrelationScreen() {
+  const { colors } = useTheme();
   const [loading, setLoading] = useState(true);
   const [correlations, setCorrelations] = useState<CorrelationData[]>([]);
 
@@ -69,25 +71,25 @@ export default function SymptomCorrelationScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Symptom Correlation Analysis</Text>
-        <Text style={styles.subtitle}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Symptom Correlation Analysis</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>
           Track patterns between allergen exposure and symptom occurrence
         </Text>
       </View>
 
       {correlations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No correlation data available</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: colors.icon }]}>No correlation data available</Text>
+          <Text style={[styles.emptySubtext, { color: colors.icon }]}>
             Log more meals and symptoms to see patterns
           </Text>
         </View>
@@ -96,8 +98,8 @@ export default function SymptomCorrelationScreen() {
           {correlations.map((item, index) => (
             <View key={index} style={styles.barContainer}>
               <View style={styles.labelContainer}>
-                <Text style={styles.allergenLabel}>{item.allergen}</Text>
-                <Text style={styles.countLabel}>
+                <Text style={[styles.allergenLabel, { color: colors.text }]}>{item.allergen}</Text>
+                <Text style={[styles.countLabel, { color: colors.icon }]}>
                   {item.mealCount} meals • {item.symptomCount} symptoms
                 </Text>
               </View>
@@ -111,7 +113,7 @@ export default function SymptomCorrelationScreen() {
                     }
                   ]}
                 />
-                <Text style={styles.percentLabel}>
+                <Text style={[styles.percentLabel, { color: colors.text }]}>
                   {item.correlation.toFixed(0)}%
                 </Text>
               </View>
@@ -120,19 +122,19 @@ export default function SymptomCorrelationScreen() {
         </View>
       )}
 
-      <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Risk Indicators</Text>
+      <View style={[styles.legend, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.legendTitle, { color: colors.text }]}>Risk Indicators</Text>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#f44336' }]} />
-          <Text style={styles.legendText}>High Risk (&gt;70%) - Avoid these allergens</Text>
+          <Text style={[styles.legendText, { color: colors.icon }]}>High Risk (&gt;70%) - Avoid these allergens</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#ff9800' }]} />
-          <Text style={styles.legendText}>Medium Risk (40-70%) - Monitor closely</Text>
+          <Text style={[styles.legendText, { color: colors.icon }]}>Medium Risk (40-70%) - Monitor closely</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4caf50' }]} />
-          <Text style={styles.legendText}>Low Risk (&lt;40%) - Generally safe</Text>
+          <Text style={[styles.legendText, { color: colors.icon }]}>Low Risk (&lt;40%) - Generally safe</Text>
         </View>
       </View>
     </ScrollView>
@@ -142,7 +144,6 @@ export default function SymptomCorrelationScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
@@ -151,16 +152,13 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
     marginTop: 5,
   },
   emptyState: {
@@ -169,12 +167,10 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
     textAlign: 'center',
   },
   chartContainer: {
@@ -189,11 +185,9 @@ const styles = StyleSheet.create({
   allergenLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
   countLabel: {
     fontSize: 12,
-    color: '#666',
     marginTop: 2,
   },
   barWrapper: {
@@ -210,19 +204,16 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
   },
   legend: {
     margin: 20,
     padding: 15,
-    backgroundColor: '#f5f5f5',
     borderRadius: 8,
   },
   legendTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
-    color: '#333',
   },
   legendItem: {
     flexDirection: 'row',
@@ -237,6 +228,5 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 14,
-    color: '#666',
   },
 });

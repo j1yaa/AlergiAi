@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTheme } from '../hooks/useTheme';
 
 interface RouteParams {
   detectedIngredients: string[];
@@ -19,6 +20,8 @@ interface RouteParams {
 }
 
 export default function ScanResultScreen() {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const navigation = useNavigation();
   const route = useRoute();
   const params = route.params as RouteParams;
@@ -65,8 +68,8 @@ export default function ScanResultScreen() {
 
       <ScrollView style={styles.content}>
         {/* Product Name */}
-        <View style={styles.productCard}>
-          <Text style={styles.productName}>{safeProductName}</Text>
+        <View style={[styles.productCard, { backgroundColor: colors.card }]}>
+          <Text style={[styles.productName, { color: colors.text }]}>{safeProductName}</Text>
         </View>
 
         {/* Allergen Status + Risk score */}
@@ -86,17 +89,17 @@ export default function ScanResultScreen() {
             }
             size={48}
             color={
-              isUnknown ? '#9E9E9E' :
+              isUnknown ? colors.secondaryText :
               !isFood ? '#FF9800' :
               hasAllergens ? '#f44336' : '#4CAF50'
             }
           />
-          <Text style={styles.statusTitle}>
+          <Text style={[styles.statusTitle, { color: colors.text }]}>
             {isUnknown ? 'Unable to Identify' :
              !isFood ? 'Not a Food Item' :
              hasAllergens ? 'Allergen Detected!' : 'Safe to Consume'}
           </Text>
-          <Text style={styles.statusSubtitle}>
+          <Text style={[styles.statusSubtitle, { color: colors.secondaryText }]}>
             {isUnknown
               ? 'Could not identify this item. Try scanning again with better lighting'
               : !isFood
@@ -109,14 +112,14 @@ export default function ScanResultScreen() {
           {/* Risk score from AI helper — only show for food */}
           {isFood && !isUnknown && (
             <>
-              <Text style={styles.riskScoreText}>
+              <Text style={[styles.riskScoreText, { color: colors.text }]}>
                 Risk Score: {riskScore}% - {riskTier}
               </Text>
-              <Text style={styles.severityText}>
+              <Text style={[styles.severityText, { color: colors.secondaryText }]}>
                 Severity Level: {severity}
               </Text>
               {explanation && (
-                <Text style={styles.explanationText}>
+                <Text style={[styles.explanationText, { color: colors.secondaryText }]}>
                   {explanation}
                 </Text>
               )}
@@ -126,8 +129,8 @@ export default function ScanResultScreen() {
 
         {/* Allergen Warnings */}
         {isFood && hasAllergens && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⚠️ Allergen Warnings</Text>
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>⚠️ Allergen Warnings</Text>
             {matchedAllergens.map((allergen, index) => (
               <View key={index} style={styles.allergenItem}>
                 <Ionicons name="alert-circle" size={24} color="#f44336" />
@@ -139,8 +142,8 @@ export default function ScanResultScreen() {
 
         {/* Safe Ingredients */}
         {isFood && params.safeIngredients.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>✓ Safe Ingredients</Text>
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>✓ Safe Ingredients</Text>
             {params.safeIngredients.map((ingredient, index) => (
               <View key={index} style={styles.safeItem}>
                 <Ionicons
@@ -148,7 +151,7 @@ export default function ScanResultScreen() {
                   size={20}
                   color="#4CAF50"
                 />
-                <Text style={styles.safeText}>{ingredient}</Text>
+                <Text style={[styles.safeText, { color: colors.text }]}>{ingredient}</Text>
               </View>
             ))}
           </View>
@@ -156,12 +159,12 @@ export default function ScanResultScreen() {
 
         {/* All Detected Ingredients */}
         {isFood && params.detectedIngredients.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 All Detected Ingredients</Text>
+          <View style={[styles.section, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>📋 All Detected Ingredients</Text>
             <View style={styles.ingredientsList}>
               {params.detectedIngredients.map((ingredient, index) => (
-                <View key={index} style={styles.ingredientChip}>
-                  <Text style={styles.ingredientChipText}>{ingredient}</Text>
+                <View key={index} style={[styles.ingredientChip, { backgroundColor: colors.inputBackground }]}>
+                  <Text style={[styles.ingredientChipText, { color: colors.accent }]}>{ingredient}</Text>
                 </View>
               ))}
             </View>
@@ -169,13 +172,13 @@ export default function ScanResultScreen() {
         )}
 
         {/* Note */}
-        <View style={styles.noteCard}>
+        <View style={[styles.noteCard, { backgroundColor: colors.card }]}>
           <Ionicons
             name="information-circle-outline"
             size={20}
-            color="#666"
+            color={colors.secondaryText}
           />
-          <Text style={styles.noteText}>
+          <Text style={[styles.noteText, { color: colors.secondaryText }]}>
             Powered by Gemini AI. Results are based on ingredient detection and
             food.
           </Text>
@@ -183,16 +186,16 @@ export default function ScanResultScreen() {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
+      <View style={[styles.bottomActions, { backgroundColor: colors.card }]}>
         <TouchableOpacity
-          style={styles.scanAgainButton}
+          style={[styles.scanAgainButton, { borderColor: colors.accent }]}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="camera" size={20} color="#2196F3" />
-          <Text style={styles.scanAgainText}>Scan Again</Text>
+          <Ionicons name="camera" size={20} color={colors.accent} />
+          <Text style={[styles.scanAgainText, { color: colors.accent }]}>Scan Again</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
+        <TouchableOpacity style={[styles.doneButton, { backgroundColor: colors.accent }]} onPress={handleDone}>
           <Text style={styles.doneButtonText}>Done</Text>
         </TouchableOpacity>
       </View>
@@ -200,10 +203,10 @@ export default function ScanResultScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -212,20 +215,20 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 15,
-    backgroundColor: '#fff',
+    backgroundColor: colors.card,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: colors.border,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
+    color: colors.text,
   },
   content: {
     flex: 1,
     padding: 20,
   },
   productCard: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 12,
     marginBottom: 15,
@@ -234,7 +237,6 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   statusCard: {
     padding: 30,
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff3e0',
   },
   unknownCard: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.inputBackground,
   },
   statusTitle: {
     fontSize: 22,
@@ -262,31 +264,26 @@ const styles = StyleSheet.create({
   },
   statusSubtitle: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
   },
   riskScoreText: {
     marginTop: 10,
     fontSize: 16,
     fontWeight: '600',
-    color: '#444',
   },
   severityText: {
     marginTop: 5,
     fontSize: 14,
     fontWeight: '500',
-    color: '#666',
   },
   explanationText: {
     marginTop: 8,
     fontSize: 12,
-    color: '#888',
     fontStyle: 'italic',
     textAlign: 'center',
     paddingHorizontal: 10,
   },
   section: {
-    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 12,
     marginBottom: 15,
@@ -295,7 +292,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 15,
-    color: '#333',
   },
   allergenItem: {
     flexDirection: 'row',
@@ -320,7 +316,6 @@ const styles = StyleSheet.create({
   },
   safeText: {
     fontSize: 14,
-    color: '#666',
     marginLeft: 10,
   },
   ingredientsList: {
@@ -329,7 +324,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ingredientChip: {
-    backgroundColor: '#e3f2fd',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
@@ -338,11 +332,9 @@ const styles = StyleSheet.create({
   },
   ingredientChipText: {
     fontSize: 13,
-    color: '#1976d2',
   },
   noteCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff9e6',
     padding: 15,
     borderRadius: 8,
     marginBottom: 20,
@@ -350,7 +342,6 @@ const styles = StyleSheet.create({
   noteText: {
     flex: 1,
     fontSize: 13,
-    color: '#666',
     marginLeft: 10,
     lineHeight: 18,
   },
@@ -358,9 +349,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: 20,
     paddingBottom: 35,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.border,
     gap: 10,
   },
   scanAgainButton: {
@@ -371,11 +361,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#2196F3',
     gap: 8,
   },
   scanAgainText: {
-    color: '#2196F3',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -385,7 +373,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderRadius: 10,
-    backgroundColor: '#2196F3',
   },
   doneButtonText: {
     color: '#fff',

@@ -4,6 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { getSymptoms, getMeals } from '../api/client';
 import { Symptom, Meal } from '../types';
 import SymptomCorrelationChart from '../components/SymptomCorrelationChart';
+import { useTheme } from '../hooks/useTheme';
 
 // Placeholder function for deleting symptoms
 const deleteSymptom = async (id: string) => {
@@ -13,6 +14,7 @@ const deleteSymptom = async (id: string) => {
 };
 
 export default function SymptomHistoryScreen() {
+  const { colors } = useTheme();
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [correlationData, setCorrelationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,9 +151,9 @@ export default function SymptomHistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Symptom History</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Symptom History</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={() => navigation.navigate('AddSymptom' as never)}
@@ -179,7 +181,6 @@ export default function SymptomHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   header: {
