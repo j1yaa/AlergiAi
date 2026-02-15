@@ -100,6 +100,8 @@ function MainDrawer() {
           width: 280,
         },
         overlayColor: 'rgba(0,0,0,0.5)',
+        swipeEnabled: true,
+        swipeEdgeWidth: 50,
       })}
     >
       <Drawer.Screen name="Dashboard" component={DashboardScreen} />

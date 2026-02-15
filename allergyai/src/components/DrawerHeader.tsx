@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DrawerHeaderProps {
   navigation: any;
@@ -16,27 +17,33 @@ export default function DrawerHeader({ navigation, title }: DrawerHeaderProps) {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity
-          style={[styles.menuButton, { backgroundColor: colors.surface }]}
-          onPress={() => navigation.toggleDrawer()}
-        >
+    <>
+      <StatusBar 
+        barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background }
+      />
+      <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
+          <TouchableOpacity
+            style={[styles.menuButton, { backgroundColor: colors.surface }]}
+            onPress={() => navigation.toggleDrawer()}
+          >
           <Ionicons name="menu" size={24} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <TouchableOpacity
-          style={[styles.themeButton, { backgroundColor: colors.surface }]}
-          onPress={toggleTheme}
-        >
-          <Ionicons 
-            name={colorScheme === 'dark' ? 'sunny' : 'moon'} 
-            size={20} 
-            color={colors.text} 
-          />
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+          </TouchableOpacity>
+          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <TouchableOpacity
+            style={[styles.themeButton, { backgroundColor: colors.surface }]}
+            onPress={toggleTheme}
+          >
+            <Ionicons 
+              name={colorScheme === 'dark' ? 'sunny' : 'moon'} 
+              size={20} 
+              color={colors.text} 
+            />
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
 
