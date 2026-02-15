@@ -223,6 +223,7 @@ export const getMeals = async (): Promise<Meal[]> => {
             notes: data.notes || '',
             photoURL: data.photoURL || '',
             items: data.items || [],
+            allergens: data.allergens || [],
             deleted: data.deleted || false
           } as Meal;
         })
@@ -892,7 +893,7 @@ export async function getMealTrends() {
   // Top 3 allergens - only count non-deleted meals
   const allergenCounts: { [key: string]: number } = {};
   meals.forEach(meal => {
-    meal.detectedAllergens?.forEach(allergen => {
+    meal.allergens?.forEach(allergen => {
       allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
     });
   });

@@ -17,6 +17,7 @@ export interface Meal {
   dateISO?: string;
   description?: string;
   ingredients?: string[];
+  allergens?: string[];
   createdAt?: string;
   note?: string;
 }

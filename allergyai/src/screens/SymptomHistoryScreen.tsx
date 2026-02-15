@@ -54,10 +54,11 @@ export default function SymptomHistoryScreen() {
       });
 
       recentMeals.forEach(meal => {
-        const ingredients = meal.ingredients || meal.items || [];
-          ingredients.forEach(ingredient => {
-            const current = allergenMap.get(ingredient) || { count: 0, totalSeverity: 0 };
-            allergenMap.set(ingredient, {
+        const foodItems = meal.allergens || meal.ingredients || meal.items || [];
+          foodItems.forEach(item => {
+            if (!item || typeof item !== 'string') return;
+            const current = allergenMap.get(item) || { count: 0, totalSeverity: 0 };
+            allergenMap.set(item, {
               count: current.count + 1,
               totalSeverity: current.totalSeverity + symptom.severity
             });
@@ -87,7 +88,7 @@ export default function SymptomHistoryScreen() {
           onPress: async () => {
             try {
               await deleteSymptom(symptom.id);
-              setSymptoms(prev => prev.filter(s => s.id !== symptom.id));
+              setSymptoms((prev: Symptom[]) => prev.filter((s: Symptom) => s.id !== symptom.id));
               Alert.alert('Success', 'Symptom deleted successfully');
             } catch (error) {
               console.error('Failed to delete symptom:', error);
@@ -167,7 +168,7 @@ export default function SymptomHistoryScreen() {
       ) : (
          <ScrollView showsVerticalScrollIndicator={false}>
            <SymptomCorrelationChart data={correlationData} />
-             {symptoms.map((item) => (
+             {symptoms.map((item: Symptom) => (
                  <View key={item.id}>{renderSymptom({ item })}</View>
              ))}
         </ScrollView>

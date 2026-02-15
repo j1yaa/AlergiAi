@@ -26,31 +26,42 @@ export default function SymptomCorrelationScreen() {
       const symptomsResponse = await getSymptoms();
       const symptoms = symptomsResponse.items;
 
-      const allergenMap: { [key: string]: { meals: number; symptoms: number } } = {};
+      const allergenMap: { [key: string]: { mealIds: Set<string>; symptomIds: Set<string> } } = {};
 
       meals.forEach(meal => {
-        meal.detectedAllergens?.forEach(allergen => {
+        let allergens: string[] = [];
+        if (Array.isArray(meal.allergens)) {
+          allergens = meal.allergens;
+        } else if (typeof meal.allergens === 'string') {
+          allergens = [meal.allergens];
+        } else if (meal.items) {
+          allergens = meal.items;
+        }
+
+        allergens.forEach(allergen => {
+          if (!allergen || typeof allergen !== 'string') return;
+
           if (!allergenMap[allergen]) {
-            allergenMap[allergen] = { meals: 0, symptoms: 0 };
+            allergenMap[allergen] = { mealIds: new Set(), symptomIds: new Set() };
           }
-          allergenMap[allergen].meals++;
+          allergenMap[allergen].mealIds.add(meal.id);
 
-          const mealTime = new Date(meal.timeStamp || meal.createdAt).getTime();
-          const relatedSymptoms = symptoms.filter(s => {
-            const symptomTime = new Date(s.dateISO || s.timestamp).getTime();
+          const mealTime = new Date(meal.timeStamp || meal.createdAt || new Date()).getTime();
+          symptoms.forEach(s => {
+            const symptomTime = new Date(s.dateISO).getTime();
             const timeDiff = symptomTime - mealTime;
-            return timeDiff > 0 && timeDiff < 24 * 60 * 60 * 1000;
+            if (timeDiff > 0 && timeDiff < 24 * 60 * 60 * 1000) {
+              allergenMap[allergen].symptomIds.add(s.id);
+            }
           });
-
-          allergenMap[allergen].symptoms += relatedSymptoms.length;
         });
       });
 
       const correlationData = Object.entries(allergenMap).map(([allergen, data]) => ({
         allergen,
-        mealCount: data.meals,
-        symptomCount: data.symptoms,
-        correlation: data.meals > 0 ? (data.symptoms / data.meals) * 100 : 0
+        mealCount: data.mealIds.size,
+        symptomCount: data.symptomIds.size,
+        correlation: data.mealIds.size > 0 ? Math.min((data.symptomIds.size / data.mealIds.size) * 100, 100) : 0
       })).sort((a, b) => b.correlation - a.correlation);
 
       setCorrelations(correlationData);
@@ -84,6 +95,17 @@ export default function SymptomCorrelationScreen() {
         </Text>
       </View>
 
+      <View style={styles.infoCard}>
+        <Text style={styles.infoTitle}>How This Works</Text>
+        <Text style={styles.infoText}>
+          This analysis tracks for meals consumed within 24 hours before each symptom report.
+          The correlation percentage shows how often a specific allergen was present when symptoms occurred.
+        </Text>
+          <Text style={styles.infoExample}>
+            Example: 100% means that every time you ate that food, you experienced symptoms within 24 hours.
+          </Text>
+      </View>
+
       {correlations.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No correlation data available</Text>
@@ -93,7 +115,7 @@ export default function SymptomCorrelationScreen() {
         </View>
       ) : (
         <View style={styles.chartContainer}>
-          {correlations.map((item, index) => (
+          {correlations.map((item: CorrelationData, index: number) => (
             <View key={index} style={styles.barContainer}>
               <View style={styles.labelContainer}>
                 <Text style={styles.allergenLabel}>{item.allergen}</Text>
@@ -106,7 +128,7 @@ export default function SymptomCorrelationScreen() {
                   style={[
                     styles.bar,
                     {
-                      width: `${Math.min(item.correlation, 100)}%`,
+                      width: ((width - 120) * item.correlation) / 100,
                       backgroundColor: getBarColor(item.correlation)
                     }
                   ]}
@@ -200,11 +222,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 30,
+    width: '100%',
   },
   bar: {
     height: '100%',
     borderRadius: 4,
     minWidth: 2,
+    maxWidth: width - 120,
   },
   percentLabel: {
     marginLeft: 10,
@@ -238,5 +262,32 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 14,
     color: '#666',
+  },
+  infoCard: {
+    margin: 20,
+    marginTop: 0,
+    padding: 16,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#1976D2',
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#424242',
+    marginBottom: 8,
+    lineHeight: 20,
+  },
+  infoExample: {
+    fontSize: 13,
+    color: '#616161',
+    fontStyle: 'italic',
+    lineHeight: 18,
   },
 });

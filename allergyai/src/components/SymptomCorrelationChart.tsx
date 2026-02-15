@@ -23,6 +23,7 @@ export default function SymptomCorrelationChart({ data }: Props) {
 	return (
 		<View style={styles.container}>
 			<Text style={styles.title}>Symptom-Allergen Correlation</Text>
+			<Text style={styles.subtitle}>Food eaten withing 24 hours before symptoms</Text>
 			{data.length === 0 ? (
 				<Text style={styles.emptyText}>No correlation data available</Text>
 			) : (
@@ -57,7 +58,12 @@ const styles = StyleSheet.create({
 	title: {
 		fontSize: 18,
 		fontWeight: 'bold',
+		marginBottom: 4,
+	},
+	subtitle: {
+		color: '#666',
 		marginBottom: 12,
+		fontSize: 12,
 	},
 	emptyText: {
 		color: '#666',
