@@ -120,10 +120,17 @@ export default function ReminderSettings() {
               is24Hour={false}
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={(event, selectedTime) => {
-                if (selectedTime) {
-                  handleTimeChange(reminder.id, selectedTime);
-                } else {
+                if (Platform.OS === 'android') {
                   setShowTimePicker(null);
+                  if (event.type === 'set' && selectedTime) {
+                    handleTimeChange(reminder.id, selectedTime);
+                  }
+                } else {
+                  if (selectedTime) {
+                    handleTimeChange(reminder.id, selectedTime);
+                  } else {
+                    setShowTimePicker(null);
+                  }
                 }
               }}
             />
