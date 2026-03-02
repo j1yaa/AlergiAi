@@ -6,6 +6,8 @@ import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { createAlert } from '../utils/allergenAlertService';
+import { computeRiskScore } from '../utils/smartAnalyzer';
+import { getAlertSeverityFromScore } from '../utils/riskConstants';
 
 export default function AddMealScreen() {
   const navigation = useNavigation();
@@ -140,7 +142,7 @@ export default function AddMealScreen() {
     const finalName = nameFromName || nameFromDesc;
     
     const ing = Array.isArray(result?.ingredients)
-      ? result.ingredients
+      ? result!.ingredients
       : (description ?? '').split(',').map(i => i.trim()).filter(Boolean);
 
     if (!finalName && ing.length === 0) {
@@ -157,20 +159,23 @@ export default function AddMealScreen() {
         note: finalName || 'Unnamed Meal'
       });
 
-      // Check for allergens - either from analysis result or by analyzing ingredients
+      // Check for allergens using a risk score thats consistant 
       let allergensToAlert: string[] = [];
       let riskScore = 0;
+      let riskTier = 'Low Risk';
 
       if (result?.allergens && result.allergens.length > 0) {
         // Use analysis result if available
         allergensToAlert = result.allergens;
         riskScore = result.riskScore;
+        riskTier = result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk';
       } else if (ing.length > 0) {
         // Analyze ingredients against user's allergen profile
         try {
           const response = await analyzeMeal({ description: ing.join(', ') });
           allergensToAlert = response.allergens;
           riskScore = response.riskScore;
+          riskTier = response.riskScore <= 30 ? 'Low Risk' : response.riskScore <= 70 ? 'Moderate Risk' : 'High Risk';
         } catch (error) {
           console.log('Could not analyze ingredients:', error);
         }
@@ -179,21 +184,24 @@ export default function AddMealScreen() {
       // Create alerts for detected allergens
       if (allergensToAlert.length > 0) {
         console.log('Creating alerts for allergens:', allergensToAlert);
-        
+
+        // Consistant risk score alert
+        const alertSeverity = getAlertSeverityFromScore(riskScore);
+
         // Show immediate alert to user
         const allergenList = allergensToAlert.join(', ');
         const riskLevel = riskScore > 70 ? 'HIGH' : riskScore > 30 ? 'MODERATE' : 'LOW';
         Alert.alert(
           '⚠️ Allergen Detected!',
-          `${riskLevel} RISK: This meal contains ${allergenList}.\n\nRisk Score: ${riskScore}%\n\nPlease review carefully before consuming.`,
+          `${riskTier.toUpperCase()} RISK: This meal contains ${allergenList}.\n\nRisk Score: ${riskScore}%\n\nPlease review carefully before consuming.`,
           [{ text: 'OK', style: 'default' }]
         );
         
         // Create alerts in database
         for (const allergen of allergensToAlert) {
           const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
-          console.log(`Creating alert: ${allergen} - ${severity}`);
-          await createAlert(allergen, severity, 'meal');
+          console.log(`Creating alert: ${allergen} - ${alertSeverity}`);
+          await createAlert(allergen, alertSeverity, 'meal');
         }
       } else {
         console.log('No allergens detected');

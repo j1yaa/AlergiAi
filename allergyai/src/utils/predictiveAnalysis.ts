@@ -1,5 +1,6 @@
 import { Symptom, Meal } from '../types';
-
+import {computeRiskScore } from './smartAnalyzer';
+import { RISKTHRES } from './riskConstants';
 interface PredictionResult {
     allergen: string;
     riskScore: number;
@@ -39,8 +40,13 @@ export const predictAllergenRisks = (
 
     allergenFrequency.forEach((data, allergen) => {
         const avgSeverity = data.totalSeverity / data.count;
-        const frequency = data.count / symptoms.length;
-        const riskScore = Math.min(100, (avgSeverity * 15 + frequency * 100));
+        const frequency = data.count / Math.max(symptoms.length, 1);
+
+        // Consistant risk score calculations
+        const severityLvl = avgSeverity >= 4 ? 'high' : avgSeverity >= 2.5 ? 'moderate' : 'low';
+        const { riskScore } = computeRiskScore([allergen], [{ allergen, severity: severityLvl, sensitivity: 'moderate' }]);
+
+        const adjustedRiskScore = Math.min(100, riskScore * (1 + frequency * 0.5));
         const confidence = Math.min(95, data.count * 20);
 
         let reason = '';
@@ -52,8 +58,8 @@ export const predictAllergenRisks = (
             reason = 'Potential trigger';
         }
 
-        if (riskScore > 30) {
-            predictions.push({ allergen, riskScore, confidence, reason });
+        if (adjustedRiskScore > RISKTHRES.LOWMAX) {
+            predictions.push({ allergen, riskScore: Math.round(adjustedRiskScore), confidence, reason });
         }
     });
 

@@ -27,7 +27,7 @@ export default function ReminderSettings() {
 
   const getMealIcon = (type: string) => {
     switch(type) {
-      case 'breakfast': return 'sunrise';
+      case 'breakfast': return 'sunny-outline';
       case 'lunch': return 'sunny';
       case 'dinner': return 'moon';
       case 'snack': return 'nutrition';

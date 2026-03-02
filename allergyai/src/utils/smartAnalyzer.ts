@@ -1,12 +1,14 @@
 // Smart AI-powered meal analysis utilities
 import { calculateRiskScore, determineExposureLevel, RiskFactors } from './riskCalculator';
 import { expandAllergen } from './allergenMatcher';
+import { RISKTHRES, getRiskTier, getAlertSeverityFromScore } from './riskConstants';
 
 export interface RiskScoreResult {
   riskScore: number;            // 0–100
   matchedAllergens: string[];   // allergens found in this meal
   severity: 'LOW' | 'MODERATE' | 'HIGH';
   riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk';
+  alertSeverity: 'low' | 'medium' | 'high';
   explanation?: string;
 }
 
@@ -74,6 +76,7 @@ export const computeRiskScore = (
       matchedAllergens: [],
       severity: 'LOW',
       riskTier: 'Low Risk',
+      alertSeverity: 'low',
       explanation: 'No known allergens detected in ingredients.'
     };
   }
@@ -82,10 +85,10 @@ export const computeRiskScore = (
   let severity: RiskScoreResult['severity'];
   let riskTier: RiskScoreResult['riskTier'];
   
-  if (maxRiskScore <= 30) {
+  if (maxRiskScore <= RISKTHRES.LOWMAX) {
     severity = 'LOW';
     riskTier = 'Low Risk';
-  } else if (maxRiskScore <= 70) {
+  } else if (maxRiskScore <= RISKTHRES.MODERATEMAX) {
     severity = 'MODERATE';
     riskTier = 'Moderate Risk';
   } else {
@@ -98,6 +101,7 @@ export const computeRiskScore = (
     matchedAllergens,
     severity,
     riskTier,
+    alertSeverity: getAlertSeverityFromScore(maxRiskScore),
     explanation: riskExplanation
   };
 };
