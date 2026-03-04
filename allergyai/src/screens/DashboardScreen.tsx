@@ -48,28 +48,37 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.welcomeSection}>
-        <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back</Text>
-        <Text style={[styles.subtitle, { color: colors.icon }]}>Here's your allergy overview</Text>
+        <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back! 👋</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>Here's your health overview</Text>
       </View>
       
       <View style={styles.statsContainer}>
-        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.safeMealsPct}%</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+          <View style={[styles.statIconContainer, { backgroundColor: `${colors.success}15` }]}>
+            <Ionicons name="checkmark-circle" size={24} color={colors.success} />
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>{analytics.safeMealsPct}%</Text>
           <Text style={[styles.statLabel, { color: colors.icon }]}>Safe Meals</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.totalMeals}</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+          <View style={[styles.statIconContainer, { backgroundColor: `${colors.secondary}15` }]}>
+            <Ionicons name="restaurant" size={24} color={colors.secondary} />
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalMeals}</Text>
           <Text style={[styles.statLabel, { color: colors.icon }]}>Total Meals</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.statValue, { color: colors.primary }]}>{analytics.totalAlerts}</Text>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+          <View style={[styles.statIconContainer, { backgroundColor: `${colors.warning}15` }]}>
+            <Ionicons name="notifications" size={24} color={colors.warning} />
+          </View>
+          <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalAlerts}</Text>
           <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
         </View>
       </View>
 
       <View style={styles.quickActions}>
         <TouchableOpacity 
-          style={[styles.actionCard, styles.logMealCard]}
+          style={[styles.actionCard, { backgroundColor: colors.success }]}
           onPress={() => navigation.navigate('AddMeal' as never)}
         >
           <View style={styles.actionIconContainer}>
@@ -80,11 +89,11 @@ export default function DashboardScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.actionCard, styles.scanCard]}
+          style={[styles.actionCard, { backgroundColor: colors.secondary }]}
           onPress={() => navigation.navigate('Scanner' as never)}
         >
           <View style={styles.actionIconContainer}>
-            <Ionicons name="camera" size={28} color="#FFFFFF" />
+            <Ionicons name="scan" size={28} color="#FFFFFF" />
           </View>
           <Text style={styles.actionTitle}>Scan Food</Text>
           <Text style={styles.actionSubtitle}>Check ingredients</Text>
@@ -93,54 +102,70 @@ export default function DashboardScreen() {
 
       <View style={styles.quickActions}>
         <TouchableOpacity 
-          style={[styles.actionCard, styles.symptomsCard]}
+          style={[styles.actionCard, { backgroundColor: colors.warning }]}
           onPress={() => navigation.navigate('Symptoms' as never)}
         >
           <View style={styles.actionIconContainer}>
-            <Ionicons name="medical" size={28} color="#FFFFFF" />
+            <Ionicons name="fitness" size={28} color="#FFFFFF" />
           </View>
           <Text style={styles.actionTitle}>Symptoms</Text>
           <Text style={styles.actionSubtitle}>Log reactions</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.actionCard, styles.alertsCard]}
-          onPress={() => navigation.navigate('Alerts' as never)}
+          style={[styles.actionCard, { backgroundColor: colors.accent }]}
+          onPress={() => navigation.navigate('Trends' as never)}
         >
           <View style={styles.actionIconContainer}>
-            <Ionicons name="warning" size={28} color="#FFFFFF" />
+            <Ionicons name="trending-up" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>Alerts</Text>
-          <Text style={styles.actionSubtitle}>View warnings</Text>
+          <Text style={styles.actionTitle}>Trends</Text>
+          <Text style={styles.actionSubtitle}>View insights</Text>
         </TouchableOpacity>
       </View>
 
       <PredictiveInsights predictions={predictions} />
 
-      <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.chartTitle, { color: colors.text }]}>Weekly Exposure Trends</Text>
+      <View style={[styles.chartContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+        <View style={styles.chartHeader}>
+          <Ionicons name="bar-chart" size={24} color={colors.primary} />
+          <Text style={[styles.chartTitle, { color: colors.text }]}>Weekly Exposure</Text>
+        </View>
         <View style={styles.chartPlaceholder}>
-          {analytics.weeklyExposure.map((item, index) => (
-            <View key={index} style={styles.barItem}>
-              <Text style={[styles.barLabel, { color: colors.icon }]}>{item.week}</Text>
-              <View style={[styles.bar, { height: Math.max(item.count * 20, 5), backgroundColor: item.count > 0 ? '#E53935' : '#4CAF50' }]} />
-              <Text style={[styles.barValue, { color: colors.text }]}>{item.count}</Text>
-            </View>
-          ))}
+          {analytics.weeklyExposure.map((item, index) => {
+            const maxCount = Math.max(...analytics.weeklyExposure.map(w => w.count), 1);
+            const barHeight = Math.max((item.count / maxCount) * 100, 10);
+            return (
+              <View key={index} style={styles.barWrapper}>
+                <Text style={[styles.barValue, { color: colors.text }]}>{item.count}</Text>
+                <View style={[
+                  styles.bar,
+                  {
+                    height: barHeight,
+                    backgroundColor: item.count > 0 ? colors.error : colors.success
+                  }
+                ]} />
+                <Text style={[styles.barLabel, { color: colors.icon }]}>{item.week}</Text>
+              </View>
+            );
+          })}
         </View>
       </View>
 
-      <View style={[styles.chartContainer, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.chartTitle, { color: colors.text }]}>Most Common Allergens</Text>
+      <View style={[styles.chartContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+        <View style={styles.chartHeader}>
+          <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
+          <Text style={[styles.chartTitle, { color: colors.text }]}>Top Allergens</Text>
+        </View>
         <View style={styles.allergenList}>
           {analytics.topAllergens.map((item, index) => (
-            <View key={index} style={styles.allergenItem}>
+            <View key={index} style={[styles.allergenItem, { borderBottomColor: colors.cardBorder }]}>
               <View style={styles.allergenInfo}>
                 <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
                 <Text style={[styles.allergenSubtext, { color: colors.icon }]}>{item.count} exposures</Text>
               </View>
-              <View style={styles.allergenBadge}>
-                <Text style={styles.allergenCount}>{item.count}</Text>
+              <View style={[styles.allergenBadge, { backgroundColor: `${colors.error}15` }]}>
+                <Text style={[styles.allergenCount, { color: colors.error }]}>{item.count}</Text>
               </View>
             </View>
           ))}
@@ -161,45 +186,34 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: 28,
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   subtitle: {
     fontSize: 16,
+    fontWeight: '500',
   },
   quickActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 16,
+    gap: 12,
   },
   actionCard: {
     padding: 20,
-    borderRadius: 20,
+    borderRadius: 16,
     alignItems: 'center',
-    flex: 0.48,
-    marginBottom: 16,
+    flex: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  logMealCard: {
-    backgroundColor: '#4CAF50',
-  },
-  scanCard: {
-    backgroundColor: '#2196F3',
-  },
-  symptomsCard: {
-    backgroundColor: '#FF9800',
-  },
-  alertsCard: {
-    backgroundColor: '#F44336',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   actionIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -212,86 +226,102 @@ const styles = StyleSheet.create({
   },
   actionSubtitle: {
     fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: 'rgba(255, 255, 255, 0.95)',
     textAlign: 'center',
+    fontWeight: '500',
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
-    flexWrap: 'wrap',
+    gap: 12,
   },
   statCard: {
-    padding: 18,
-    borderRadius: 20,
+    padding: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    flex: 0.31,
-    marginBottom: 10,
+    flex: 1,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   statValue: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
+    marginBottom: 4,
   },
   statLabel: {
-    fontSize: 13,
-    marginTop: 6,
+    fontSize: 12,
     textAlign: 'center',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   chartContainer: {
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
+    borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    gap: 8,
   },
   chartTitle: {
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 16,
   },
   chartPlaceholder: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    height: 150,
-    paddingBottom: 20,
+    height: 160,
+    paddingTop: 20,
   },
-  barItem: {
+  barWrapper: {
     alignItems: 'center',
+    flex: 1,
   },
   bar: {
     width: 32,
-    backgroundColor: '#FF6B6B',
+    borderRadius: 6,
     marginVertical: 8,
-    borderRadius: 4,
-  },
-  barLabel: {
-    fontSize: 12,
-    fontWeight: '500',
   },
   barValue: {
-    fontSize: 12,
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  barLabel: {
+    fontSize: 11,
     fontWeight: '600',
+    marginTop: 6,
   },
   allergenList: {
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   allergenItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#F8F9FA',
   },
   allergenInfo: {
     flex: 1,
@@ -299,20 +329,19 @@ const styles = StyleSheet.create({
   allergenName: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 4,
   },
   allergenSubtext: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 13,
+    fontWeight: '500',
   },
   allergenBadge: {
-    backgroundColor: '#E8F5E8',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
   allergenCount: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#00C853',
+    fontWeight: '700',
   },
 });

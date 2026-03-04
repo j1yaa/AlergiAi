@@ -12,15 +12,13 @@ interface MenuItem {
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', label: 'Dashboard', icon: 'home' },
-  { name: 'AddMeal', label: 'Add Meal', icon: 'restaurant' },
-  { name: 'Scanner', label: 'Scan Food', icon: 'camera' },
-  { name: 'Trends', label: 'Meal Trends', icon: 'stats-chart' },
-  { name: 'Allergens', label: 'Allergens', icon: 'shield' },
-  { name: 'Symptoms', label: 'Symptoms', icon: 'medical' },
-  { name: 'SymptomCorrelation', label: 'Symptom Correlation', icon: 'analytics' },
-  { name: 'Alerts', label: 'Alerts', icon: 'warning' },
-  { name: 'ReminderSettings', label: 'Meal Reminders', icon: 'notifications' },
-  { name: 'Profile', label: 'Profile', icon: 'person' },
+  { name: 'AddMeal', label: 'Log Meal', icon: 'restaurant' },
+  { name: 'Scanner', label: 'Scan Food', icon: 'scan' },
+  { name: 'Trends', label: 'Trends & Insights', icon: 'trending-up' },
+  { name: 'Allergens', label: 'My Allergens', icon: 'shield-checkmark' },
+  { name: 'Symptoms', label: 'Symptoms', icon: 'fitness' },
+  { name: 'Alerts', label: 'Alerts', icon: 'notifications' },
+  { name: 'Profile', label: 'Profile', icon: 'person-circle' },
 ];
 
 export default function CustomDrawer(props: any) {
@@ -30,12 +28,12 @@ export default function CustomDrawer(props: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.surface }]}>
-        <View style={[styles.logoContainer, { backgroundColor: colors.surface }]}>
-          <Ionicons name="leaf" size={32} color="#4CAF50" />
+      <View style={[styles.header, { backgroundColor: colors.primary, borderBottomColor: colors.cardBorder }]}>
+        <View style={styles.logoContainer}>
+          <Ionicons name="leaf" size={36} color="#FFFFFF" />
         </View>
-        <Text style={[styles.appName, { color: colors.text }]}>AllergyAI</Text>
-        <Text style={[styles.tagline, { color: colors.icon }]}>Your Health Guardian</Text>
+        <Text style={styles.appName}>AllergyAI</Text>
+        <Text style={styles.tagline}>Your Health Guardian</Text>
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
@@ -44,26 +42,34 @@ export default function CustomDrawer(props: any) {
           return (
             <TouchableOpacity
               key={item.name}
-              style={[styles.menuItem, isActive && { backgroundColor: colors.surface }]}
+              style={[
+                styles.menuItem,
+                isActive && [styles.menuItemActive, { backgroundColor: `${colors.primary}15` }]
+              ]}
               onPress={() => navigation.navigate(item.name)}
             >
-              <View style={styles.iconWrapper}>
+              <View style={[
+                styles.iconWrapper,
+                isActive && { backgroundColor: colors.primary }
+              ]}>
                 <Ionicons
                   name={item.icon}
-                  size={20}
-                  color={isActive ? colors.primary : colors.icon}
+                  size={22}
+                  color={isActive ? '#FFFFFF' : colors.icon}
                 />
               </View>
-              <Text style={[styles.menuLabel, { color: isActive ? colors.primary : colors.text }]}>
+              <Text style={[
+                styles.menuLabel,
+                { color: isActive ? colors.primary : colors.text }
+              ]}>
                 {item.label}
               </Text>
-              {isActive && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      <View style={[styles.footer, { borderTopColor: colors.surface }]}>
+      <View style={[styles.footer, { borderTopColor: colors.cardBorder, backgroundColor: colors.surface }]}>
         <Text style={[styles.version, { color: colors.icon }]}>Version 1.0.0</Text>
       </View>
     </View>
@@ -75,65 +81,69 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+    borderBottomWidth: 0,
+    alignItems: 'center',
   },
   logoContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   appName: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   tagline: {
-    fontSize: 12,
+    fontSize: 13,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   menuContainer: {
     flex: 1,
-    paddingTop: 10,
+    paddingTop: 16,
+    paddingHorizontal: 12,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    marginHorizontal: 8,
-    marginBottom: 2,
-    borderRadius: 8,
+    marginBottom: 4,
+    borderRadius: 12,
+  },
+  menuItemActive: {
+    borderRadius: 12,
   },
   iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
   },
   menuLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     flex: 1,
   },
-  activeIndicator: {
-    width: 3,
-    height: 20,
-    borderRadius: 2,
-  },
   footer: {
-    padding: 16,
+    padding: 20,
     borderTopWidth: 1,
+    alignItems: 'center',
   },
   version: {
-    fontSize: 11,
-    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

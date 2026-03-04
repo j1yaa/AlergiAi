@@ -366,23 +366,44 @@ export const getAnalytics = async (): Promise<AnalyticsSummary> => {
       const safeMeals = meals.filter((meal: any) => (meal.riskScore || 0) < 50).length;
       const safeMealsPct = totalMeals > 0 ? Math.round((safeMeals / totalMeals) * 100) : 0;
    
+      // Calculate actual weekly exposure from alerts
+      const now = new Date();
+      const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
+      const alerts = alertsSnapshot.docs.map(doc => doc.data());
+      
+      const weeklyExposure = [];
+      for (let i = 3; i >= 0; i--) {
+        const weekStart = new Date(now.getTime() - (i + 1) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = new Date(now.getTime() - i * 7 * 24 * 60 * 60 * 1000);
+        const count = alerts.filter((alert: any) => {
+          const alertDate = alert.timestamp?.toDate ? alert.timestamp.toDate() : new Date(alert.timestamp);
+          return alertDate >= weekStart && alertDate < weekEnd;
+        }).length;
+        weeklyExposure.push({ week: `W${4 - i}`, count });
+      }
+
+      // Calculate top allergens from alerts
+      const allergenCounts: { [key: string]: number } = {};
+      alerts.forEach((alert: any) => {
+        const allergens = alert.allergens || [alert.allergen].filter(Boolean);
+        allergens.forEach((allergen: string) => {
+          allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
+        });
+      });
+      
+      const topAllergens = Object.entries(allergenCounts)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 3)
+        .map(([name, count]) => ({ name, count: count as number }));
+
       return {
         totalMeals,
         totalAlerts: alertsSnapshot.size,
         riskScore: 2.5,
         weeklyTrend: [1, 3, 2, 4, 2, 1, 3],
         safeMealsPct,
-          weeklyExposure: [
-            { week: 'Week 1', count: 1 },
-            { week: 'Week 2', count: 3 },
-            { week: 'Week 3', count: 2 },
-            { week: 'Week 4', count: 4 }
-          ],
-        topAllergens: [
-          { name: 'Peanuts', count: 3 },
-          { name: 'Dairy', count: 2 },
-          { name: 'Shellfish', count: 1 }
-        ]
+        weeklyExposure,
+        topAllergens: topAllergens.length > 0 ? topAllergens : [{ name: 'No exposures', count: 0 }]
       };
     },
     { totalMeals: 0, totalAlerts: 0, riskScore: 0, weeklyTrend: [], safeMealsPct: 0, weeklyExposure: [], topAllergens: [] }
@@ -878,17 +899,25 @@ export const logout = async (): Promise<void> => {
 };
 
 
-export async function getMealTrends() {
+export const getMealTrends = async () => {
   const meals = await getMeals();
   const symptomsResponse = await getSymptoms();
   const symptoms = symptomsResponse.items || [];
   
-  // Last 7 days meals
+  // Last 7 days meals - calculate from actual data
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const dailyMeals = days.map(day => ({
-    day,
-    count: Math.floor(Math.random() * 5) + 1 // Mock data
-  }));
+  const now = new Date();
+  const dailyMeals = days.map((day, index) => {
+    const targetDate = new Date(now.getTime() - (6 - index) * 24 * 60 * 60 * 1000);
+    const count = meals.filter(meal => {
+      const mealDate = meal.createdAt ? new Date(meal.createdAt) : meal.timeStamp;
+      if (!mealDate) return false;
+      const mealTime = mealDate instanceof Date ? mealDate.getTime() : new Date(mealDate).getTime();
+      const targetTime = targetDate.getTime();
+      return Math.abs(mealTime - targetTime) < 24 * 60 * 60 * 1000;
+    }).length;
+    return { day, count };
+  });
 
   // Top 3 allergens - only count non-deleted meals
   const allergenCounts: { [key: string]: number } = {};
@@ -904,9 +933,8 @@ export async function getMealTrends() {
     .map(([name, count]) => ({ name, count }));
 
   // Reactions this week vs last week
-  const now = Date.now();
-  const weekAgo = now - 7 * 24 * 60 * 60 * 1000;
-  const twoWeeksAgo = now - 14 * 24 * 60 * 60 * 1000;
+  const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const twoWeeksAgo = now.getTime() - 14 * 24 * 60 * 60 * 1000;
 
   const reactionsThisWeek = symptoms.filter(s => 
     new Date(s.timestamp).getTime() > weekAgo
@@ -923,4 +951,4 @@ export async function getMealTrends() {
     reactionsThisWeek,
     reactionsLastWeek
   };
-}
+};

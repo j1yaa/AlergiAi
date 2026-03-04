@@ -68,6 +68,13 @@ export default function ReminderSettings() {
     return date;
   };
 
+  const formatTime12Hour = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -101,7 +108,7 @@ export default function ReminderSettings() {
                   style={styles.timeButton}
                 >
                   <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.timeText}>{reminder.time}</Text>
+                  <Text style={styles.timeText}>{formatTime12Hour(reminder.time)}</Text>
                 </TouchableOpacity>
               </View>
             </View>

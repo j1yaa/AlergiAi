@@ -20,25 +20,25 @@ export default function DrawerHeader({ navigation, title }: DrawerHeaderProps) {
     <>
       <StatusBar 
         barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
-        backgroundColor={colors.background }
+        backgroundColor={colors.background}
       />
       <SafeAreaView edges={['top']} style={[styles.safeArea, { backgroundColor: colors.background }]}>
-        <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.cardBorder }]}>
           <TouchableOpacity
-            style={[styles.menuButton, { backgroundColor: colors.surface }]}
+            style={[styles.menuButton, { backgroundColor: `${colors.primary}15` }]}
             onPress={() => navigation.toggleDrawer()}
           >
-          <Ionicons name="menu" size={24} color={colors.text} />
+          <Ionicons name="menu" size={24} color={colors.primary} />
           </TouchableOpacity>
           <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
           <TouchableOpacity
-            style={[styles.themeButton, { backgroundColor: colors.surface }]}
+            style={[styles.themeButton, { backgroundColor: `${colors.primary}15` }]}
             onPress={toggleTheme}
           >
             <Ionicons 
               name={colorScheme === 'dark' ? 'sunny' : 'moon'} 
               size={20} 
-              color={colors.text} 
+              color={colors.primary} 
             />
           </TouchableOpacity>
         </View>
@@ -50,33 +50,34 @@ export default function DrawerHeader({ navigation, title }: DrawerHeaderProps) {
 const styles = StyleSheet.create({
   safeArea: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
   },
   menuButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   themeButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

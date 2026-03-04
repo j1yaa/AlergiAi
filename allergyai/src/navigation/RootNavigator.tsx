@@ -105,19 +105,19 @@ function MainDrawer() {
       })}
     >
       <Drawer.Screen name="Dashboard" component={DashboardScreen} />
-      <Drawer.Screen name="AddMeal" component={AddMealScreen} />
+      <Drawer.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Log Meal' }} />
       <Drawer.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
-      <Drawer.Screen name="Trends" component={MealTrendsScreen} />
-      <Drawer.Screen name="Allergens" component={AllergenScreen} />
+      <Drawer.Screen name="Trends" component={MealTrendsScreen} options={{ title: 'Trends & Insights' }} />
+      <Drawer.Screen name="Allergens" component={AllergenScreen} options={{ title: 'My Allergens' }} />
       <Drawer.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
       <Drawer.Screen name="Alerts" component={AlertsScreen} />
       <Drawer.Screen name="Profile">
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
       <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders' }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders', drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation' }} />
+      <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation', drawerItemStyle: { display: 'none' } }} />
     </Drawer.Navigator>
   );
 }

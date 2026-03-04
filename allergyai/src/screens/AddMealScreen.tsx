@@ -8,8 +8,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { createAlert } from '../utils/allergenAlertService';
 import { computeRiskScore } from '../utils/smartAnalyzer';
 import { getAlertSeverityFromScore } from '../utils/riskConstants';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AddMealScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [mealName, setMealName] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -91,35 +93,33 @@ export default function AddMealScreen() {
   };
 
   const renderMeal = ({ item }: { item: Meal }) => {
-    // Skip rendering if meal has no name and no ingredients
     if (!item.notes && !item.note && !item.description && (!item.items || item.items.length === 0)) {
       return null;
     }
     
     console.log('Rendering meal item:', JSON.stringify(item, null, 2));
     return (
-    <View style={styles.mealCard}>
+    <View style={[styles.mealCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
       <View style={styles.mealHeader}>
-        <Text style={styles.mealDate}>
+        <Text style={[styles.mealDate, { color: colors.icon }]}>
           {item.createdAt ? formatDate(item.createdAt) : 
            item.timeStamp ? formatDate(item.timeStamp.toString()) : 
            item.dateISO ? formatDate(item.dateISO) :
            'No date'}
         </Text>
-        <Ionicons name="restaurant-outline" size={20} color="#666" />
       </View>
       
       {(item.note || item.notes || item.description) && (
-        <Text style={styles.mealName}>{item.note || item.notes || item.description}</Text>
+        <Text style={[styles.mealName, { color: colors.text }]}>{item.note || item.notes || item.description}</Text>
       )}
       
       {item.items && item.items.length > 0 && (
         <View style={styles.mealIngredientsContainer}>
-          <Text style={styles.mealIngredientsLabel}>Ingredients:</Text>
+          <Text style={[styles.mealIngredientsLabel, { color: colors.icon }]}>Ingredients:</Text>
           <View style={styles.mealIngredientsList}>
             {item.items.map((ingredient, index) => (
-              <View key={index} style={styles.mealIngredientPill}>
-                <Text style={styles.mealIngredientText}>{ingredient}</Text>
+              <View key={index} style={[styles.mealIngredientPill, { backgroundColor: `${colors.secondary}15` }]}>
+                <Text style={[styles.mealIngredientText, { color: colors.secondary }]}>{ingredient}</Text>
               </View>
             ))}
           </View>
@@ -127,10 +127,10 @@ export default function AddMealScreen() {
       )}
       
       <TouchableOpacity 
-        style={styles.deleteButton}
+        style={[styles.deleteButton, { backgroundColor: `${colors.error}15` }]}
         onPress={() => handleDeleteMeal(item.id)}
       >
-        <Ionicons name="trash-outline" size={18} color="#F44336" />
+        <Ionicons name="trash-outline" size={18} color={colors.error} />
       </TouchableOpacity>
     </View>
   );
@@ -159,18 +159,15 @@ export default function AddMealScreen() {
         note: finalName || 'Unnamed Meal'
       });
 
-      // Check for allergens using a risk score thats consistant 
       let allergensToAlert: string[] = [];
       let riskScore = 0;
       let riskTier = 'Low Risk';
 
       if (result?.allergens && result.allergens.length > 0) {
-        // Use analysis result if available
         allergensToAlert = result.allergens;
         riskScore = result.riskScore;
         riskTier = result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk';
       } else if (ing.length > 0) {
-        // Analyze ingredients against user's allergen profile
         try {
           const response = await analyzeMeal({ description: ing.join(', ') });
           allergensToAlert = response.allergens;
@@ -181,14 +178,11 @@ export default function AddMealScreen() {
         }
       }
 
-      // Create alerts for detected allergens
       if (allergensToAlert.length > 0) {
         console.log('Creating alerts for allergens:', allergensToAlert);
 
-        // Consistant risk score alert
         const alertSeverity = getAlertSeverityFromScore(riskScore);
 
-        // Show immediate alert to user
         const allergenList = allergensToAlert.join(', ');
         const riskLevel = riskScore > 70 ? 'HIGH' : riskScore > 30 ? 'MODERATE' : 'LOW';
         Alert.alert(
@@ -197,7 +191,6 @@ export default function AddMealScreen() {
           [{ text: 'OK', style: 'default' }]
         );
         
-        // Create alerts in database
         for (const allergen of allergensToAlert) {
           const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
           console.log(`Creating alert: ${allergen} - ${alertSeverity}`);
@@ -223,66 +216,67 @@ export default function AddMealScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
+      style={{ flex: 1, backgroundColor: colors.background }} 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <Text style={styles.title}>Add Meal</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Log Your Meal</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
-            style={styles.reminderButton}
+            style={[styles.reminderButton, { backgroundColor: `${colors.warning}15`, borderColor: colors.warning }]}
             onPress={() => navigation.navigate('ReminderSettings' as never)}
           >
-            <Ionicons name="notifications-outline" size={18} color="#FF9800" />
+            <Ionicons name="notifications-outline" size={18} color={colors.warning} />
           </TouchableOpacity>
           <TouchableOpacity 
-            style={styles.historyButton}
+            style={[styles.historyButton, { backgroundColor: `${colors.secondary}15`, borderColor: colors.secondary }]}
             onPress={handleViewHistory}
           >
-            <Ionicons name="time-outline" size={18} color="#2196F3" />
-            <Text style={styles.historyButtonText}>History</Text>
+            <Ionicons name="time-outline" size={18} color={colors.secondary} />
+            <Text style={[styles.historyButtonText, { color: colors.secondary }]}>History</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <Text style={styles.label}>Meal Name</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Meal Name</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.cardBorder, color: colors.text }]}
         value={mealName}
         onChangeText={(text) => {
           console.log('TextInput onChange:', `"${text}"`);
           setMealName(text);
         }}
         placeholder="Enter meal name..."
+        placeholderTextColor={colors.icon}
         testID="mealNameInput"
       />
 
-      {/* Scan Button Card */}
       <TouchableOpacity
-        style={styles.scanCard}
+        style={[styles.scanCard, { backgroundColor: `${colors.secondary}10`, borderColor: colors.secondary }]}
         onPress={() => navigation.navigate('Scanner' as never)}
       >
-        <View style={styles.scanIconContainer}>
-          <Ionicons name="scan" size={32} color="#2196F3" />
+        <View style={[styles.scanIconContainer, { backgroundColor: `${colors.secondary}20` }]}>
+          <Ionicons name="scan" size={32} color={colors.secondary} />
         </View>
         <View style={styles.scanTextContainer}>
-          <Text style={styles.scanTitle}>📷 Scan Food Label</Text>
-          <Text style={styles.scanSubtitle}>Quick allergen detection with camera</Text>
+          <Text style={[styles.scanTitle, { color: colors.text }]}>📷 Scan Food Label</Text>
+          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>Quick allergen detection with camera</Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#999" />
+        <Ionicons name="chevron-forward" size={24} color={colors.icon} />
       </TouchableOpacity>
 
       <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>OR</Text>
-        <View style={styles.dividerLine} />
+        <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
+        <Text style={[styles.dividerText, { color: colors.icon }]}>OR</Text>
+        <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
       </View>
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.cardBorder, color: colors.text }]}
         placeholder="Describe your meal..."
+        placeholderTextColor={colors.icon}
         value={description}
         onChangeText={setDescription}
         multiline
@@ -290,7 +284,7 @@ export default function AddMealScreen() {
       />
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, { backgroundColor: colors.secondary }]}
         onPress={handleAnalyze}
         disabled={loading || !description.trim()}
       >
@@ -300,7 +294,7 @@ export default function AddMealScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.saveBtn]}
+        style={[styles.saveBtn, { backgroundColor: colors.success }]}
         onPress={handleSave}
         disabled={saving}
       >
@@ -310,55 +304,61 @@ export default function AddMealScreen() {
       </TouchableOpacity>
 
       {result && (
-        <View style={styles.resultCard}>
-          <Text style={styles.resultTitle}>Analysis Result</Text>
+        <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+          <Text style={[styles.resultTitle, { color: colors.text }]}>Analysis Result</Text>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ingredients:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Ingredients:</Text>
             <View style={styles.pillContainer}>
               {result.ingredients.map((ingredient, index) => (
-                <View key={index} style={styles.pill}>
-                  <Text style={styles.pillText}>{ingredient}</Text>
+                <View key={index} style={[styles.pill, { backgroundColor: `${colors.secondary}15` }]}>
+                  <Text style={[styles.pillText, { color: colors.secondary }]}>{ingredient}</Text>
                 </View>
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Allergens:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Allergens:</Text>
             <View style={styles.pillContainer}>
               {result.allergens.length > 0 ? (
                 result.allergens.map((allergen, index) => (
-                  <View key={index} style={[styles.pill, styles.allergenPill]}>
-                    <Text style={styles.allergenText}>{allergen}</Text>
+                  <View key={index} style={[styles.pill, { backgroundColor: `${colors.error}15` }]}>
+                    <Text style={[styles.allergenText, { color: colors.error }]}>{allergen}</Text>
                   </View>
                 ))
               ) : (
-                <Text style={styles.noAllergens}>No allergens detected</Text>
+                <Text style={[styles.noAllergens, { color: colors.success }]}>No allergens detected</Text>
               )}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Risk Assessment</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Risk Assessment</Text>
             <View style={styles.riskContainer}>
-              <Text style={styles.riskScoreText}>Risk Score: {result.riskScore}%</Text>
+              <Text style={[styles.riskScoreText, { color: colors.text }]}>Risk Score: {result.riskScore}%</Text>
               <View style={[
-                styles.riskBar, 
-                { backgroundColor: result.riskScore <= 30 ? '#4CAF50' : result.riskScore <= 70 ? '#FF9800' : '#f44336' }
+                styles.riskBar,
+                { backgroundColor: `${result.riskScore <= 30 ? colors.success : result.riskScore <= 70 ? colors.warning : colors.error}20` }
               ]}>
-                <View style={[styles.riskFill, { width: `${result.riskScore}%` }]} />
+                <View style={[
+                  styles.riskFill,
+                  {
+                    width: `${result.riskScore}%`,
+                    backgroundColor: result.riskScore <= 30 ? colors.success : result.riskScore <= 70 ? colors.warning : colors.error
+                  }
+                ]} />
               </View>
               <Text style={[
                 styles.riskTierText,
-                { color: result.riskScore <= 30 ? '#4CAF50' : result.riskScore <= 70 ? '#FF9800' : '#f44336' }
+                { color: result.riskScore <= 30 ? colors.success : result.riskScore <= 70 ? colors.warning : colors.error }
               ]}>
                 {result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk'}
               </Text>
             </View>
           </View>
 
-          <Text style={styles.advice}>{result.advice}</Text>
+          <Text style={[styles.advice, { color: colors.icon }]}>{result.advice}</Text>
         </View>
       )}
 
@@ -367,26 +367,26 @@ export default function AddMealScreen() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Meal History</Text>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Meal History</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setShowHistory(false)}
             >
-              <Ionicons name="close" size={24} color="#666" />
+              <Ionicons name="close" size={24} color={colors.icon} />
             </TouchableOpacity>
           </View>
           
           {loadingMeals ? (
             <View style={styles.loadingContainer}>
-              <Text>Loading meals...</Text>
+              <Text style={{ color: colors.text }}>Loading meals...</Text>
             </View>
           ) : meals.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="restaurant-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>No meals logged yet</Text>
-              <Text style={styles.emptySubtext}>Start tracking your meals to monitor allergen exposure</Text>
+              <Ionicons name="restaurant-outline" size={64} color={colors.icon} />
+              <Text style={[styles.emptyText, { color: colors.icon }]}>No meals logged yet</Text>
+              <Text style={[styles.emptySubtext, { color: colors.icon }]}>Start tracking your meals to monitor allergen exposure</Text>
             </View>
           ) : (
             <FlatList
@@ -408,153 +408,154 @@ export default function AddMealScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    fontWeight: '700',
   },
   label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '600',
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     fontSize: 16,
     marginBottom: 20,
+  },
+  textArea: {
     textAlignVertical: 'top',
+    minHeight: 100,
   },
   button: {
-    backgroundColor: '#2196F3',
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   saveBtn: {
-    backgroundColor: '#2e7d32',
-    padding: 15,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   saveBtnText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   resultCard: {
-    backgroundColor: '#f5f5f5',
     padding: 20,
-    borderRadius: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 20,
   },
   resultTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
   },
   section: {
-    marginBottom: 15,
+    marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontWeight: '600',
+    marginBottom: 10,
   },
   pillContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   pill: {
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   pillText: {
-    color: '#1976d2',
     fontSize: 14,
-  },
-  allergenPill: {
-    backgroundColor: '#ffebee',
+    fontWeight: '600',
   },
   allergenText: {
-    color: '#d32f2f',
     fontSize: 14,
+    fontWeight: '600',
   },
   noAllergens: {
-    color: '#4caf50',
     fontStyle: 'italic',
+    fontSize: 14,
+    fontWeight: '500',
   },
   riskContainer: {
     alignItems: 'center',
   },
   riskScoreText: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
+    fontWeight: '700',
+    marginBottom: 10,
   },
   riskBar: {
-    height: 12,
+    height: 10,
     width: '100%',
-    borderRadius: 6,
+    borderRadius: 5,
     overflow: 'hidden',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   riskFill: {
     height: '100%',
-    backgroundColor: 'rgba(255,255,255,0.3)',
   },
   riskTierText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   advice: {
     fontSize: 14,
     fontStyle: 'italic',
-    color: '#666',
-    marginTop: 10,
+    marginTop: 8,
+    lineHeight: 20,
   },
   scanCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
-    padding: 20,
-    borderRadius: 12,
+    padding: 18,
+    borderRadius: 16,
     marginBottom: 20,
     borderWidth: 2,
-    borderColor: '#2196F3',
   },
   scanIconContainer: {
-    marginRight: 15,
+    marginRight: 14,
+    padding: 10,
+    borderRadius: 12,
   },
   scanTextContainer: {
     flex: 1,
   },
   scanTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 17,
+    fontWeight: '700',
     marginBottom: 4,
   },
   scanSubtitle: {
     fontSize: 13,
-    color: '#666',
+    fontWeight: '500',
   },
   divider: {
     flexDirection: 'row',
@@ -564,51 +565,43 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ddd',
   },
   dividerText: {
-    marginHorizontal: 15,
-    color: '#999',
+    marginHorizontal: 16,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   headerButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   reminderButton: {
-    backgroundColor: '#fff3e0',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#FF9800',
+    borderRadius: 10,
+    borderWidth: 1.5,
   },
   historyButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#2196F3',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    gap: 6,
   },
   historyButtonText: {
-    color: '#2196F3',
     fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 4,
+    fontWeight: '700',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -616,11 +609,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   modalTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   closeButton: {
     padding: 4,
@@ -638,13 +630,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
     marginTop: 16,
     fontWeight: '600',
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
     marginTop: 8,
     textAlign: 'center',
   },
@@ -652,18 +642,17 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   mealCard: {
-    backgroundColor: '#f5f5f5',
     padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
+    borderRadius: 12,
+    marginBottom: 12,
     position: 'relative',
+    borderWidth: 1,
   },
   deleteButton: {
     position: 'absolute',
     top: 15,
     right: 15,
     padding: 8,
-    backgroundColor: '#ffebee',
     borderRadius: 20,
   },
   mealHeader: {
@@ -673,14 +662,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   mealDate: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    fontWeight: '500',
   },
   mealName: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
   },
   mealIngredientsContainer: {
     marginTop: 8,
@@ -688,24 +676,20 @@ const styles = StyleSheet.create({
   mealIngredientsLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#666',
     marginBottom: 6,
   },
   mealIngredientsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 4,
   },
   mealIngredientPill: {
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 10,
-    marginRight: 4,
-    marginBottom: 4,
   },
   mealIngredientText: {
-    color: '#1976d2',
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
