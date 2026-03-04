@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { getSymptoms, getMeals } from '../api/client';
 import { Symptom, Meal } from '../types';
 import SymptomCorrelationChart from '../components/SymptomCorrelationChart';
+import { useTheme } from '../hooks/useTheme';
 
 // Placeholder function for deleting symptoms
 const deleteSymptom = async (id: string) => {
@@ -16,7 +18,9 @@ export default function SymptomHistoryScreen() {
   const [symptoms, setSymptoms] = useState<Symptom[]>([]);
   const [correlationData, setCorrelationData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCorrelation, setShowCorrelation] = useState(false);
   const navigation = useNavigation();
+  const { colors } = useTheme();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -143,33 +147,57 @@ export default function SymptomHistoryScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading symptoms...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>Loading symptoms...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Symptom History</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={() => navigation.navigate('AddSymptom' as never)}
-        >
-          <Text style={styles.addButtonText}>+ Log Symptom</Text>
-        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Symptoms</Text>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={[styles.toggleButton, showCorrelation && { backgroundColor: colors.primary }]}
+            onPress={() => setShowCorrelation(!showCorrelation)}
+          >
+            <Ionicons name="analytics" size={20} color={showCorrelation ? '#fff' : colors.icon} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.addButton, { backgroundColor: colors.primary }]}
+            onPress={() => navigation.navigate('AddSymptom' as never)}
+          >
+            <Text style={styles.addButtonText}>+ Log</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       
       {symptoms.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No symptoms logged yet</Text>
+          <Text style={[styles.emptyText, { color: colors.icon }]}>No symptoms logged yet</Text>
         </View>
       ) : (
          <ScrollView showsVerticalScrollIndicator={false}>
-           <SymptomCorrelationChart data={correlationData} />
+           {showCorrelation && <SymptomCorrelationChart data={correlationData} />}
              {symptoms.map((item: Symptom) => (
-                 <View key={item.id}>{renderSymptom({ item })}</View>
+                 <View key={item.id} style={[styles.symptomCard, { backgroundColor: colors.surface }]}>
+                   <View style={styles.symptomHeader}>
+                     <Text style={[styles.date, { color: colors.icon }]}>{formatDate(item.dateISO)}</Text>
+                     <View style={styles.headerRight}>
+                       <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
+                         <Text style={styles.severityText}>{getSeverityLabel(item.severity)}</Text>
+                       </View>
+                       <TouchableOpacity 
+                         style={styles.deleteButton}
+                         onPress={() => handleDeleteSymptom(item)}
+                       >
+                         <Text style={styles.deleteButtonText}>×</Text>
+                       </TouchableOpacity>
+                     </View>
+                   </View>
+                   <Text style={[styles.description, { color: colors.text }]}>{item.description}</Text>
+                 </View>
              ))}
         </ScrollView>
       )}
@@ -180,7 +208,6 @@ export default function SymptomHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   header: {
@@ -192,6 +219,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   addButton: {
     backgroundColor: '#2196F3',
@@ -205,7 +243,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   symptomCard: {
-    backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 8,
     marginBottom: 10,
