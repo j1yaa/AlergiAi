@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
 import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
+import { useTheme } from '../hooks/useTheme';
 
 export default function AlertsScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,15 +86,15 @@ export default function AlertsScreen() {
   const unreadCount = alerts.filter(a => !a.read).length;
 
   const renderAlert = ({ item }: { item: Alert }) => (
-    <View style={[styles.alertCard, !item.read && styles.unreadCard]}>
+    <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderWidth: 1, borderColor: colors.primary }]}>
       <View style={styles.alertHeader}>
         <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
           <Ionicons name="warning" size={16} color="#fff" />
         </View>
-        <Text style={styles.date}>{formatDate(item.dateISO)}</Text>
-        {!item.read && <View style={styles.unreadDot} />}
+        <Text style={[styles.date, { color: colors.icon }]}>{formatDate(item.dateISO)}</Text>
+        {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
       </View>
-      <Text style={styles.message}>{item.message}</Text>
+      <Text style={[styles.message, { color: colors.text }]}>{item.message}</Text>
       {item.allergens.length > 0 && (
         <View style={styles.allergenContainer}>
           {item.allergens.map((allergen, index) => (
@@ -106,20 +108,20 @@ export default function AlertsScreen() {
       <View style={styles.actions}>
         {!item.read && (
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.icon + '40' }]}
             onPress={() => handleMarkRead(item.id)}
           >
             <Ionicons name="checkmark" size={16} color="#4CAF50" />
-            <Text style={styles.actionText}>Mark Read</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>Mark Read</Text>
           </TouchableOpacity>
         )}
         {!item.acknowledged && (
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.icon + '40' }]}
             onPress={() => handleAcknowledge(item.id)}
           >
             <Ionicons name="hand-left" size={16} color="#2196F3" />
-            <Text style={styles.actionText}>Acknowledge</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>Acknowledge</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -128,26 +130,26 @@ export default function AlertsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text>Loading alerts...</Text>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={{ color: colors.text }}>Loading alerts...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.title}>Alerts</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Alerts</Text>
           {unreadCount > 0 && (
-            <Text style={styles.unreadCount}>{unreadCount} unread</Text>
+            <Text style={[styles.unreadCount, { color: colors.error }]}>{unreadCount} unread</Text>
           )}
         </View>
         <TouchableOpacity 
           style={styles.settingsButton}
           onPress={() => navigation.navigate('AlertSettings' as never)}
         >
-          <Ionicons name="settings-outline" size={24} color="#666" />
+          <Ionicons name="settings-outline" size={24} color={colors.icon} />
         </TouchableOpacity>
       </View>
 
@@ -155,10 +157,14 @@ export default function AlertsScreen() {
         {['all', 'high', 'medium', 'low'].map((f) => (
           <TouchableOpacity
             key={f}
-            style={[styles.filterButton, filter === f && styles.filterButtonActive]}
+            style={[
+              styles.filterButton,
+              { backgroundColor: colors.surface, borderColor: colors.icon + '40' },
+              filter === f && { backgroundColor: colors.primary, borderColor: colors.primary }
+            ]}
             onPress={() => setFilter(f as any)}
           >
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+            <Text style={[styles.filterText, { color: colors.icon }, filter === f && styles.filterTextActive]}>
               {f.toUpperCase()}
             </Text>
           </TouchableOpacity>
@@ -167,9 +173,9 @@ export default function AlertsScreen() {
       
       {filteredAlerts.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>No alerts yet</Text>
-          <Text style={styles.emptySubtext}>Alerts will appear here when allergens are detected</Text>
+          <Ionicons name="notifications-off-outline" size={64} color={colors.icon} />
+          <Text style={[styles.emptyText, { color: colors.icon }]}>No alerts yet</Text>
+          <Text style={[styles.emptySubtext, { color: colors.icon }]}>Alerts will appear here when allergens are detected</Text>
         </View>
       ) : (
         <FlatList
