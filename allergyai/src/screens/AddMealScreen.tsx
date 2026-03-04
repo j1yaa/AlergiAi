@@ -253,26 +253,6 @@ export default function AddMealScreen() {
         testID="mealNameInput"
       />
 
-      <TouchableOpacity
-        style={[styles.scanCard, { backgroundColor: `${colors.secondary}10`, borderColor: colors.secondary }]}
-        onPress={() => navigation.navigate('Scanner' as never)}
-      >
-        <View style={[styles.scanIconContainer, { backgroundColor: `${colors.secondary}20` }]}>
-          <Ionicons name="scan" size={32} color={colors.secondary} />
-        </View>
-        <View style={styles.scanTextContainer}>
-          <Text style={[styles.scanTitle, { color: colors.text }]}>📷 Scan Food Label</Text>
-          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>Quick allergen detection with camera</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color={colors.icon} />
-      </TouchableOpacity>
-
-      <View style={styles.divider}>
-        <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
-        <Text style={[styles.dividerText, { color: colors.icon }]}>OR</Text>
-        <View style={[styles.dividerLine, { backgroundColor: colors.cardBorder }]} />
-      </View>
-
       <TextInput
         style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.cardBorder, color: colors.text }]}
         placeholder="Describe your meal..."
@@ -361,6 +341,20 @@ export default function AddMealScreen() {
           <Text style={[styles.advice, { color: colors.icon }]}>{result.advice}</Text>
         </View>
       )}
+
+      <TouchableOpacity
+        style={[styles.scanCard, { backgroundColor: `${colors.secondary}10`, borderColor: colors.secondary }]}
+        onPress={() => navigation.navigate('Scanner' as never)}
+      >
+        <View style={[styles.scanIconContainer, { backgroundColor: `${colors.secondary}20` }]}>
+          <Ionicons name="scan" size={32} color={colors.secondary} />
+        </View>
+        <View style={styles.scanTextContainer}>
+          <Text style={[styles.scanTitle, { color: colors.text }]}>📷 Scan Food Label</Text>
+          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>Quick allergen detection with camera</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color={colors.icon} />
+      </TouchableOpacity>
 
       <Modal
         visible={showHistory}
