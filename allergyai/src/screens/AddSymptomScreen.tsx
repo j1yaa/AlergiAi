@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { saveSymptom } from '../api/client';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AddSymptomScreen() {
+  const navigation = useNavigation();
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(3);
   const [loading, setLoading] = useState(false);
@@ -56,7 +59,12 @@ export default function AddSymptomScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Log Symptom</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Log Symptom</Text>
+      </View>
       
       <TextInput
         style={styles.input}
@@ -116,10 +124,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    marginRight: 15,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
   },
   input: {
     borderWidth: 1,
