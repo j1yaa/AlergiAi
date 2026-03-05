@@ -143,12 +143,6 @@ export default function AlertsScreen() {
             <Text style={styles.unreadCount}>{unreadCount} unread</Text>
           )}
         </View>
-        <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('Profile' as never)}
-        >
-          <Ionicons name="settings-outline" size={24} color="#666" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.filterRow}>

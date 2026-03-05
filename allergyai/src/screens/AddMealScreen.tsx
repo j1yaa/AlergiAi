@@ -225,12 +225,6 @@ export default function AddMealScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Log Your Meal</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
-            style={[styles.reminderButton, { backgroundColor: `${colors.warning}15`, borderColor: colors.warning }]}
-            onPress={() => navigation.navigate('Profile' as never)}
-          >
-            <Ionicons name="notifications-outline" size={18} color={colors.warning} />
-          </TouchableOpacity>
-          <TouchableOpacity 
             style={[styles.historyButton, { backgroundColor: `${colors.secondary}15`, borderColor: colors.secondary }]}
             onPress={handleViewHistory}
           >

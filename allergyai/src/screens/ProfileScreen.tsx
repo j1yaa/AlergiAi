@@ -149,24 +149,6 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Ionicons name="chevron-forward" size={20} color={colors.icon} />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
-                    onPress={() => navigation.navigate('ReminderSettings')}
-                >
-                    <Ionicons name="alarm-outline" size={22} color={colors.icon} />
-                    <Text style={[styles.menuItemText, { color: colors.text }]}>Meal Reminders</Text>
-                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
-                    onPress={() => navigation.navigate('AlertSettings')}
-                >
-                    <Ionicons name="warning-outline" size={22} color={colors.icon} />
-                    <Text style={[styles.menuItemText, { color: colors.text }]}>Alert Settings</Text>
-                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-                </TouchableOpacity>
-
                 <View style={[styles.menuItem, { backgroundColor: colors.surface }]}>
                     <Ionicons name="notifications-outline" size={22} color={colors.icon} />
                     <Text style={[styles.menuItemText, { color: colors.text }]}>Push Notifications</Text>
@@ -177,6 +159,28 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                         thumbColor={pushEnabled ? '#4caf50' : '#f4f3f4'}
                     />
                 </View>
+
+                {pushEnabled && (
+                    <>
+                        <TouchableOpacity
+                            style={[styles.subMenuItem, { backgroundColor: colors.surface }]}
+                            onPress={() => navigation.navigate('ReminderSettings')}
+                        >
+                            <Ionicons name="alarm-outline" size={20} color={colors.icon} />
+                            <Text style={[styles.subMenuItemText, { color: colors.text }]}>Meal Reminders</Text>
+                            <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.subMenuItem, { backgroundColor: colors.surface }]}
+                            onPress={() => navigation.navigate('AlertSettings')}
+                        >
+                            <Ionicons name="warning-outline" size={20} color={colors.icon} />
+                            <Text style={[styles.subMenuItemText, { color: colors.text }]}>Alert Settings</Text>
+                            <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                        </TouchableOpacity>
+                    </>
+                )}
             </View>
         </View>
     );
@@ -276,6 +280,19 @@ const styles = StyleSheet.create({
     menuItemText: {
         fontSize: 16,
         fontWeight: '600',
+        flex: 1,
+    },
+    subMenuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 14,
+        paddingLeft: 50,
+        borderRadius: 12,
+        gap: 12,
+    },
+    subMenuItemText: {
+        fontSize: 15,
+        fontWeight: '500',
         flex: 1,
     },
 });
