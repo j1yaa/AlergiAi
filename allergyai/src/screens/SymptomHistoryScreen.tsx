@@ -221,10 +221,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    flex: 1,
+    flexShrink: 1,
   },
   headerButtons: {
     flexDirection: 'row',
     gap: 10,
+    flexShrink: 0,
   },
   toggleButton: {
     paddingHorizontal: 12,

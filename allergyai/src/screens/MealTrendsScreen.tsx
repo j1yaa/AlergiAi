@@ -68,7 +68,7 @@ export default function MealTrendsScreen() {
   const alertLevel = trends.reactionsThisWeek >= 4 ? 'high' : trends.reactionsThisWeek >= 2 ? 'medium' : 'low';
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
       {/* Quick Insights */}
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
@@ -223,8 +223,9 @@ export default function MealTrendsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
-    alignItems: 'center',
   },
   card: {
     borderRadius: 16,

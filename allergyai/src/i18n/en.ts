@@ -225,6 +225,13 @@ export default {
     allDetectedIngredients: 'All Detected Ingredients',
     aiNote: 'Powered by Gemini AI. Results are based on ingredient detection and food.',
     done: 'Done',
+    riskTierLow: 'Low Risk',
+    riskTierModerate: 'Moderate Risk',
+    riskTierHigh: 'High Risk',
+    severityLow: 'LOW',
+    severityModerate: 'MODERATE',
+    severityHigh: 'HIGH',
+    noKnownAllergens: 'No known allergens detected in ingredients.',
   },
 
   // AllergenScreen
@@ -312,7 +319,7 @@ export default {
 
   // MealTrendsScreen
   trends: {
-    trendsInsights: 'Trends & Insights',
+    trendsInsights: 'Track your weekly patterns',
     thisWeek: 'This Week',
     mealStats: 'Meal Stats',
     totalMeals: 'Total Meals',
@@ -455,6 +462,9 @@ export default {
     title: 'Predictive Insights',
     emptyText: 'Log meals and symptoms to see predictions',
     confidence: 'Confidence: %{percent}%',
+    frequentCorrelation: 'Frequent correlation (%{count} times)',
+    highSeverity: 'High severity reactions',
+    potentialTrigger: 'Potential trigger',
   },
 
   // General common strings

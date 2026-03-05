@@ -4,6 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
+import { translateAllergen } from '../utils/allergenTranslation';
 
 import { getAnalytics, getSymptoms, getMeals } from '../api/client';
 import { AnalyticsSummary } from '../types';
@@ -12,7 +13,7 @@ import { predictAllergenRisks } from '../utils/predictiveAnalysis';
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   console.log('=== DashboardScreen rendered ===');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [predictions, setPredictions] = useState<any[]>([]);
@@ -121,7 +122,7 @@ export default function DashboardScreen() {
           <View style={styles.actionIconContainer}>
             <Ionicons name="trending-up" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>{t('nav.Trends')}</Text>
+          <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit>{t('nav.Trends')}</Text>
           <Text style={styles.actionSubtitle}>{t('trends.trendsInsights')}</Text>
         </TouchableOpacity>
       </View>
@@ -163,7 +164,7 @@ export default function DashboardScreen() {
           {analytics.topAllergens.map((item, index) => (
             <View key={index} style={[styles.allergenItem, { borderBottomColor: colors.cardBorder }]}>
               <View style={styles.allergenInfo}>
-                <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.allergenName, { color: colors.text }]}>{translateAllergen(item.name, language)}</Text>
                 <Text style={[styles.allergenSubtext, { color: colors.icon }]}>{item.count} {t('dashboard.exposures')}</Text>
               </View>
               <View style={[styles.allergenBadge, { backgroundColor: `${colors.error}15` }]}>

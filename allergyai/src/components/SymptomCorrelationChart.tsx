@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
+import { translateAllergen } from '../utils/allergenTranslation';
 
 interface CorrelationData {
 	allergen: string;
@@ -13,7 +14,7 @@ interface Props {
 }
 
 export default function SymptomCorrelationChart({ data }: Props) {
-	const { t } = useLanguage();
+	const { t, language } = useLanguage();
 	const maxCount = Math.max(...data.map(d => d.count), 1);
 
 	const getSeverityColor = (severity: number) => {
@@ -31,7 +32,7 @@ export default function SymptomCorrelationChart({ data }: Props) {
 			) : (
 					data.map((item, index) => (
 						<View key={index} style={styles.row}>
-							<Text style={styles.label}>{item.allergen}</Text>
+							<Text style={styles.label}>{translateAllergen(item.allergen, language)}</Text>
 							<View style={styles.barContainer}>
 								<View
 									style={[

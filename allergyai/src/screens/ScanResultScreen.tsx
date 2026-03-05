@@ -113,14 +113,25 @@ export default function ScanResultScreen() {
           {isFood && !isUnknown && (
             <>
               <Text style={styles.riskScoreText}>
-                {t('scanResult.riskScoreDisplay', { score: riskScore, tier: riskTier })}
+                {t('scanResult.riskScoreDisplay', {
+                  score: riskScore,
+                  tier: riskTier === 'Low Risk' ? t('scanResult.riskTierLow')
+                      : riskTier === 'Moderate Risk' ? t('scanResult.riskTierModerate')
+                      : t('scanResult.riskTierHigh'),
+                })}
               </Text>
               <Text style={styles.severityText}>
-                {t('scanResult.severityLevel', { level: severity })}
+                {t('scanResult.severityLevel', {
+                  level: severity === 'LOW' ? t('scanResult.severityLow')
+                       : severity === 'MODERATE' ? t('scanResult.severityModerate')
+                       : t('scanResult.severityHigh'),
+                })}
               </Text>
               {explanation && (
                 <Text style={styles.explanationText}>
-                  {explanation}
+                  {explanation === 'No known allergens detected in ingredients.'
+                    ? t('scanResult.noKnownAllergens')
+                    : explanation}
                 </Text>
               )}
             </>

@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
-import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
+import { markAlertRead, acknowledgeAlert } from '../utils/allergenAlertService';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -26,13 +26,6 @@ export default function AlertsScreen() {
     try {
       const response = await getAlerts();
       setAlerts(response.items);
-      
-      // Check for exposure patterns
-      const uniqueAllergens = [...new Set(response.items.map(a => a.allergens).flat())];
-      for (const allergen of uniqueAllergens) {
-        const pattern = await checkExposurePattern(allergen);
-        if (pattern) console.log(pattern);
-      }
     } catch (error) {
       console.error('Failed to load alerts:', error);
     } finally {
