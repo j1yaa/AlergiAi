@@ -34,7 +34,7 @@ export default function ScannerScreen() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [flashOn, setFlashOn] = useState(false);
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     useEffect(() => {
         (async () => {
@@ -72,7 +72,7 @@ export default function ScannerScreen() {
             const base64Img = await convertImgToBase64(imageUri);
 
             // Analyze the image
-            const geminiResult = await analyzeImg(base64Img);
+            const geminiResult = await analyzeImg(base64Img, language);
 
             // Get users allergens
             const allergenResponse = await getAllergens();

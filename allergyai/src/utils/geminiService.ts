@@ -14,7 +14,9 @@ export interface GeminiScanResult {
     isFood: boolean;
 }
 
-export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> => {
+export const analyzeImg = async (base64Img: string, language: string = 'en'): Promise<GeminiScanResult> => {
+  const responseLang = language === 'es' ? 'Spanish' : 'English';
+
   try {
     const prompt = `
       You are an allergy-scanner assistant.
@@ -68,6 +70,10 @@ export const analyzeImg = async (base64Img: string): Promise<GeminiScanResult> =
         An ingredient can belong to multiple categories.
         Examples: milk -> dairy, shrimp -> shellfish, flour -> wheat/gluten,
         cheese -> dairy, almond -> tree nuts, mayo -> eggs.
+
+      Language rules:
+      - Return "productName" in ${responseLang}.
+      - Keep "detectedIngredients" and "allergenCategories" in English (used for allergen matching).
 
       Return ONLY the JSON. No explanations, no markdown fences, no backticks.
     `;
