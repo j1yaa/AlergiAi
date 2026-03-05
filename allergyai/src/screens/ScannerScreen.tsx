@@ -104,7 +104,7 @@ export default function ScannerScreen() {
 
     const handleScan = async () => {
         if (!cameraRef.current) {
-            Alert.alert('Error', 'Camera not available');
+            Alert.alert('Error', 'Camera not available. Try using the Gallery option instead.');
             return;
         }
 
@@ -113,7 +113,7 @@ export default function ScannerScreen() {
             await processImage(photo.uri);
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take the photo');
+            Alert.alert('Error', 'Failed to take the photo. Try using the Gallery option instead.');
         }
     };
 
@@ -148,12 +148,14 @@ export default function ScannerScreen() {
         return (
             <View style={styles.container}>
                 <Ionicons name="eye-off" size={64} color="#999" />
-                <Text style={styles.noPermissionText}>No access to camera</Text>
+                <Text style={styles.noPermissionText}>Camera access denied</Text>
+                <Text style={styles.permissionSubtext}>Use Gallery to scan food labels</Text>
                 <TouchableOpacity
-                    style={styles.permissionButton}
-                    onPress={() => Camera.requestCameraPermissionsAsync()}
+                    style={styles.galleryFallbackButton}
+                    onPress={pickImageFromGallery}
                 >
-                    <Text style={styles.permissionButtonText}>Grant Permission</Text>
+                    <Ionicons name="images" size={24} color="#2196F3" />
+                    <Text style={styles.galleryFallbackText}>Open Gallery</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -372,7 +374,29 @@ const styles = StyleSheet.create({
         color: '#999',
         fontSize: 16,
         marginTop: 20,
+        marginBottom: 10,
+    },
+    permissionSubtext: {
+        color: '#666',
+        fontSize: 14,
         marginBottom: 30,
+        textAlign: 'center',
+    },
+    galleryFallbackButton: {
+        backgroundColor: '#f0f8ff',
+        paddingHorizontal: 30,
+        paddingVertical: 15,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#2196F3',
+    },
+    galleryFallbackText: {
+        color: '#2196F3',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 10,
     },
     permissionButton: {
         backgroundColor: '#2196F3',
