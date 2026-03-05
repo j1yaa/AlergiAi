@@ -97,6 +97,16 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 <Text style={[styles.email, { color: colors.icon }]}>{profile.email}</Text>
             </View>
 
+            {/* Settings Button */}
+            <TouchableOpacity
+                style={[styles.settingsButton, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
+                onPress={() => navigation.navigate('Settings')}
+            >
+                <Ionicons name="settings-outline" size={22} color={colors.primary} />
+                <Text style={[styles.settingsButtonText, { color: colors.text }]}>Settings</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+            </TouchableOpacity>
+
             {/* Stats */}
             <View style={styles.statsContainer}>
                 <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
@@ -243,6 +253,20 @@ const styles = StyleSheet.create({
     },
     email: {
         fontSize: 16,
+    },
+    settingsButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 24,
+        gap: 12,
+    },
+    settingsButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+        flex: 1,
     },
     statsContainer: {
         flexDirection: 'row',

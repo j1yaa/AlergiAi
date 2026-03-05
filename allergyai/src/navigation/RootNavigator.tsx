@@ -22,6 +22,7 @@ import MealTrendsScreen from '../screens/MealTrendsScreen';
 import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
 import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 import SymptomCorrelationScreen from '../screens/SymptomCorrelationScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -118,6 +119,11 @@ function MainDrawer() {
       <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders', drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation', drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="Settings" component={SettingsScreen} options={({ navigation }) => ({
+        title: 'Settings',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Settings" backButton />,
+      })} />
     </Drawer.Navigator>
   );
 }
