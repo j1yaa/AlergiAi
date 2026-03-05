@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface DrawerHeaderProps {
@@ -12,6 +13,7 @@ interface DrawerHeaderProps {
 
 export default function DrawerHeader({ navigation, title, backButton }: DrawerHeaderProps) {
   const { colorScheme, setTheme, colors } = useTheme();
+  const { t } = useLanguage();
 
   const toggleTheme = () => {
     setTheme(colorScheme === 'dark' ? 'light' : 'dark');
@@ -31,7 +33,7 @@ export default function DrawerHeader({ navigation, title, backButton }: DrawerHe
           >
           <Ionicons name={backButton ? "arrow-back" : "menu"} size={24} color={colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t(`nav.${title}`)}</Text>
           <TouchableOpacity
             style={[styles.themeButton, { backgroundColor: `${colors.primary}15` }]}
             onPress={toggleTheme}

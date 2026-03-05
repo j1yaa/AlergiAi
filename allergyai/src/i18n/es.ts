@@ -1,4 +1,81 @@
 export default {
+  // Navigation titles
+  nav: {
+    Dashboard: 'Panel',
+    AddMeal: 'Registrar Comida',
+    Scanner: 'Escáner',
+    Trends: 'Tendencias',
+    Allergens: 'Mis Alérgenos',
+    Symptoms: 'Síntomas',
+    Alerts: 'Alertas',
+    Profile: 'Configuración',
+    ScanResult: 'Resultado del Escaneo',
+    ReminderSettings: 'Recordatorios de Comida',
+    AlertSettings: 'Configuración de Alertas',
+    SymptomCorrelation: 'Correlación de Síntomas',
+    UserProfile: 'Perfil de Usuario',
+    ChangePassword: 'Cambiar Contraseña',
+  },
+
+  // CustomDrawer
+  drawer: {
+    tagline: 'Tu Guardián de Salud',
+    dashboard: 'Panel',
+    logMeal: 'Registrar Comida',
+    scanFood: 'Escanear Comida',
+    trendsInsights: 'Tendencias',
+    myAllergens: 'Mis Alérgenos',
+    symptoms: 'Síntomas',
+    alerts: 'Alertas',
+    settings: 'Configuración',
+  },
+
+  // LoginScreen
+  login: {
+    subtitle: 'Entiende tu entorno. Reduce sorpresas.',
+    email: 'Correo electrónico',
+    password: 'Contraseña',
+    rememberMe: 'Recuérdame',
+    loginButton: 'Iniciar Sesión',
+    forgotPassword: '¿Olvidaste tu contraseña?',
+    createAccount: 'Crear cuenta',
+    or: 'o',
+    continueGoogle: 'Continuar con Google',
+    footer: 'Información de alergias con privacidad \u2022 Datos almacenados de forma segura',
+    validationError: 'Error de Validación',
+    emailRequired: 'El correo electrónico es obligatorio',
+    invalidEmail: 'Ingresa una dirección de correo electrónico válida',
+    passwordRequired: 'La contraseña es obligatoria',
+    loginFailed: 'Inicio de Sesión Fallido',
+  },
+
+  // RegisterScreen
+  register: {
+    title: 'Crear Cuenta',
+    subtitle: 'Únete a AllergyAI para registrar tus comidas de forma segura',
+    fullName: 'Nombre Completo',
+    emailAddress: 'Correo Electrónico',
+    password: 'Contraseña (mín. 6 caracteres)',
+    confirmPassword: 'Confirmar Contraseña',
+    createAccount: 'Crear Cuenta',
+    creatingAccount: 'Creando Cuenta...',
+    alreadyHaveAccount: '¿Ya tienes una cuenta? Iniciar Sesión',
+    success: 'Éxito',
+    accountCreated: '¡Cuenta creada exitosamente!',
+    ok: 'OK',
+    validationError: 'Error de Validación',
+    nameRequired: 'El nombre es obligatorio',
+    emailRequired: 'El correo electrónico es obligatorio',
+    invalidEmail: 'Ingresa una dirección de correo electrónico válida',
+    weakPassword: 'La contraseña debe tener al menos 6 caracteres',
+    passwordMismatch: 'Las contraseñas no coinciden',
+    registrationFailed: 'Registro Fallido',
+    registrationError: 'El registro falló. Inténtalo de nuevo.',
+    emailInUse: 'Este correo ya está registrado. Usa otro correo o intenta iniciar sesión.',
+    weakPasswordFirebase: 'La contraseña es muy débil. Usa al menos 6 caracteres.',
+    invalidEmailFirebase: 'Ingresa una dirección de correo electrónico válida.',
+  },
+
   // ProfileScreen (Settings)
   settings: {
     welcome: 'Bienvenido',
@@ -22,6 +99,7 @@ export default {
     notificationsDisabledMessage: 'Habilita las notificaciones en la configuración de tu dispositivo para recibir alertas de alérgenos.',
     openSettings: 'Abrir Configuración',
   },
+
   languages: {
     en: 'Inglés',
     es: 'Español',

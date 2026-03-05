@@ -120,23 +120,23 @@ function MainDrawer() {
       <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={({ navigation }) => ({
         title: 'Meal Reminders',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Meal Reminders" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="ReminderSettings" backButton />,
       })} />
       <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={({ navigation }) => ({
         title: 'Alert Settings',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Alert Settings" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="AlertSettings" backButton />,
       })} />
       <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation', drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="UserProfile" component={SettingsScreen} options={({ navigation }) => ({
         title: 'User Profile',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="User Profile" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="UserProfile" backButton />,
       })} />
       <Drawer.Screen name="ChangePassword" component={ChangePasswordScreen} options={({ navigation }) => ({
         title: 'Change Password',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Change Password" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="ChangePassword" backButton />,
       })} />
     </Drawer.Navigator>
   );

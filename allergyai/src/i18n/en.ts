@@ -1,4 +1,81 @@
 export default {
+  // Navigation titles (used by DrawerHeader)
+  nav: {
+    Dashboard: 'Dashboard',
+    AddMeal: 'Log Meal',
+    Scanner: 'Scanner',
+    Trends: 'Trends & Insights',
+    Allergens: 'My Allergens',
+    Symptoms: 'Symptoms',
+    Alerts: 'Alerts',
+    Profile: 'Settings',
+    ScanResult: 'Scan Result',
+    ReminderSettings: 'Meal Reminders',
+    AlertSettings: 'Alert Settings',
+    SymptomCorrelation: 'Symptom Correlation',
+    UserProfile: 'User Profile',
+    ChangePassword: 'Change Password',
+  },
+
+  // CustomDrawer
+  drawer: {
+    tagline: 'Your Health Guardian',
+    dashboard: 'Dashboard',
+    logMeal: 'Log Meal',
+    scanFood: 'Scan Food',
+    trendsInsights: 'Trends & Insights',
+    myAllergens: 'My Allergens',
+    symptoms: 'Symptoms',
+    alerts: 'Alerts',
+    settings: 'Settings',
+  },
+
+  // LoginScreen
+  login: {
+    subtitle: 'Understand your environment. Reduce surprises.',
+    email: 'Email',
+    password: 'Password',
+    rememberMe: 'Remember me',
+    loginButton: 'Login',
+    forgotPassword: 'Forgot password?',
+    createAccount: 'Create account',
+    or: 'or',
+    continueGoogle: 'Continue with Google',
+    footer: 'Privacy-first allergy insights \u2022 Data stored securely',
+    validationError: 'Validation Error',
+    emailRequired: 'Email is required',
+    invalidEmail: 'Please enter a valid email address',
+    passwordRequired: 'Password is required',
+    loginFailed: 'Login Failed',
+  },
+
+  // RegisterScreen
+  register: {
+    title: 'Create Account',
+    subtitle: 'Join AllergyAI to track your meals safely',
+    fullName: 'Full Name',
+    emailAddress: 'Email Address',
+    password: 'Password (min 6 characters)',
+    confirmPassword: 'Confirm Password',
+    createAccount: 'Create Account',
+    creatingAccount: 'Creating Account...',
+    alreadyHaveAccount: 'Already have an account? Sign In',
+    success: 'Success',
+    accountCreated: 'Account created successfully!',
+    ok: 'OK',
+    validationError: 'Validation Error',
+    nameRequired: 'Name is required',
+    emailRequired: 'Email is required',
+    invalidEmail: 'Please enter a valid email address',
+    weakPassword: 'Password must be at least 6 characters',
+    passwordMismatch: 'Passwords do not match',
+    registrationFailed: 'Registration Failed',
+    registrationError: 'Registration failed. Please try again.',
+    emailInUse: 'This email is already registered. Please use a different email or try logging in.',
+    weakPasswordFirebase: 'Password is too weak. Please use at least 6 characters.',
+    invalidEmailFirebase: 'Please enter a valid email address.',
+  },
+
   // ProfileScreen (Settings)
   settings: {
     welcome: 'Welcome',
@@ -22,6 +99,7 @@ export default {
     notificationsDisabledMessage: 'Please enable notifications in your device settings to receive allergen alerts.',
     openSettings: 'Open Settings',
   },
+
   languages: {
     en: 'English',
     es: 'Spanish',
