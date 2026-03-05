@@ -11,8 +11,8 @@ export const getRiskTier = (score: number): 'Low Risk' | 'Moderate Risk' | 'High
 };
 
 export const getAlertSeverity = (riskTier: string): 'low' | 'medium' | 'high' => {
-    if (riskTier <= 'High Risk') return 'high';
-    if (riskTier <= 'Moderate Risk') return 'medium';
+    if (riskTier === 'High Risk') return 'high';
+    if (riskTier === 'Moderate Risk') return 'medium';
     return 'low';
 };
 
