@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
+import { translateAllergen } from '../utils/allergenTranslation';
 
 interface Prediction {
     allergen: string;
     riskScore: number;
     confidence: number;
-    reason: string;
+    reasonKey: 'frequentCorrelation' | 'highSeverity' | 'potentialTrigger';
+    reasonCount?: number;
 }
 
 interface Props {
@@ -13,6 +16,7 @@ interface Props {
 }
 
 export default function PredictiveInsights({ predictions }: Props) {
+    const { t, language } = useLanguage();
     const getRiskColor = (score: number) => {
         if (score >= 70) return '#F44336';
         if (score >= 50) return '#FF9800';
@@ -22,26 +26,32 @@ export default function PredictiveInsights({ predictions }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
-                <Text style={styles.title}> Predictive Insights</Text>
+                <Text style={styles.title}> {t('predictions.title')}</Text>
                 <View style={styles.betaBadge}>
                     <Text style={styles.betaText}>AI</Text>
                 </View>
             </View>
             {predictions.length === 0 ? (
                 <View style={styles.emptyCard}>
-                    <Text style={styles.emptyText}>Log meals and symptoms to see predictions</Text>
+                    <Text style={styles.emptyText}>{t('predictions.emptyText')}</Text>
                 </View>
             ) : (
                     predictions.map((pred, index) => (
                         <View key={index} style={styles.predictionCard}>
                             <View style={styles.header}>
-                                <Text style={styles.allergen}>{pred.allergen}</Text>
+                                <Text style={styles.allergen}>{translateAllergen(pred.allergen, language)}</Text>
                                 <View style={[styles.badge, { backgroundColor: getRiskColor(pred.riskScore) }]}>
                                 <Text style={styles.badgeText}>{Math.round(pred.riskScore)}%</Text>
                             </View>
                         </View>
-                            <Text style={styles.reason}>{pred.reason}</Text>
-                          <Text style={styles.confidence}>Confidence: {pred.confidence}%</Text>
+                            <Text style={styles.reason}>
+                                {pred.reasonKey === 'frequentCorrelation'
+                                    ? t('predictions.frequentCorrelation', { count: pred.reasonCount })
+                                    : pred.reasonKey === 'highSeverity'
+                                    ? t('predictions.highSeverity')
+                                    : t('predictions.potentialTrigger')}
+                            </Text>
+                          <Text style={styles.confidence}>{t('predictions.confidence', { percent: pred.confidence })}</Text>
                         </View >
                     ))
             )}

@@ -3,26 +3,28 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface MenuItem {
   name: string;
-  label: string;
+  labelKey: string;
   icon: keyof typeof Ionicons.glyphMap;
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Dashboard', label: 'Dashboard', icon: 'home' },
-  { name: 'AddMeal', label: 'Log Meal', icon: 'restaurant' },
-  { name: 'Scanner', label: 'Scan Food', icon: 'scan' },
-  { name: 'Trends', label: 'Trends & Insights', icon: 'trending-up' },
-  { name: 'Allergens', label: 'My Allergens', icon: 'shield-checkmark' },
-  { name: 'Symptoms', label: 'Symptoms', icon: 'fitness' },
-  { name: 'Alerts', label: 'Alerts', icon: 'notifications' },
-  { name: 'Profile', label: 'Profile', icon: 'person-circle' },
+  { name: 'Dashboard', labelKey: 'drawer.dashboard', icon: 'home' },
+  { name: 'AddMeal', labelKey: 'drawer.logMeal', icon: 'restaurant' },
+  { name: 'Scanner', labelKey: 'drawer.scanFood', icon: 'scan' },
+  { name: 'Trends', labelKey: 'drawer.trendsInsights', icon: 'trending-up' },
+  { name: 'Allergens', labelKey: 'drawer.myAllergens', icon: 'shield-checkmark' },
+  { name: 'Symptoms', labelKey: 'drawer.symptoms', icon: 'fitness' },
+  { name: 'Alerts', labelKey: 'drawer.alerts', icon: 'notifications' },
+  { name: 'Profile', labelKey: 'drawer.settings', icon: 'settings' },
 ];
 
 export default function CustomDrawer(props: any) {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const { state, navigation } = props;
   const currentRoute = state.routes[state.index].name;
 
@@ -33,7 +35,7 @@ export default function CustomDrawer(props: any) {
           <Ionicons name="leaf" size={36} color="#FFFFFF" />
         </View>
         <Text style={styles.appName}>AllergyAI</Text>
-        <Text style={styles.tagline}>Your Health Guardian</Text>
+        <Text style={styles.tagline}>{t('drawer.tagline')}</Text>
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
@@ -62,7 +64,7 @@ export default function CustomDrawer(props: any) {
                 styles.menuLabel,
                 { color: isActive ? colors.primary : colors.text }
               ]}>
-                {item.label}
+                {t(item.labelKey)}
               </Text>
             </TouchableOpacity>
           );

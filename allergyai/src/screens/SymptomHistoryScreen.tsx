@@ -6,6 +6,7 @@ import { getSymptoms, getMeals } from '../api/client';
 import { Symptom, Meal } from '../types';
 import SymptomCorrelationChart from '../components/SymptomCorrelationChart';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 // Placeholder function for deleting symptoms
 const deleteSymptom = async (id: string) => {
@@ -21,6 +22,7 @@ export default function SymptomHistoryScreen() {
   const [showCorrelation, setShowCorrelation] = useState(false);
   const navigation = useNavigation();
   const { colors } = useTheme();
+  const { t, language } = useLanguage();
 
   useFocusEffect(
     React.useCallback(() => {
@@ -82,21 +84,21 @@ export default function SymptomHistoryScreen() {
 
   const handleDeleteSymptom = (symptom: Symptom) => {
     Alert.alert(
-      'Delete Symptom',
-      `Are you sure you want to delete this symptom?\n\n"${symptom.description}"`,
+      t('symptoms.deleteSymptom'),
+      t('symptoms.deleteSymptomConfirm', { description: symptom.description }),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteSymptom(symptom.id);
               setSymptoms((prev: Symptom[]) => prev.filter((s: Symptom) => s.id !== symptom.id));
-              Alert.alert('Success', 'Symptom deleted successfully');
+              Alert.alert(t('common.success'), t('symptoms.symptomDeleted'));
             } catch (error) {
               console.error('Failed to delete symptom:', error);
-              Alert.alert('Error', 'Failed to delete symptom. Please try again.');
+              Alert.alert(t('common.error'), t('symptoms.failedToDelete'));
             }
           }
         }
@@ -111,13 +113,13 @@ export default function SymptomHistoryScreen() {
   };
 
   const getSeverityLabel = (severity: number) => {
-    if (severity <= 2) return 'Mild';
-    if (severity <= 3) return 'Moderate';
-    return 'Severe';
+    if (severity <= 2) return t('symptoms.mild');
+    if (severity <= 3) return t('symptoms.moderate');
+    return t('symptoms.severe');
   };
 
   const formatDate = (dateISO: string) => {
-    return new Date(dateISO).toLocaleDateString('en-US', {
+    return new Date(dateISO).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -148,7 +150,7 @@ export default function SymptomHistoryScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Loading symptoms...</Text>
+        <Text style={{ color: colors.text }}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -156,7 +158,7 @@ export default function SymptomHistoryScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Symptoms</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('symptoms.symptomHistory')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.toggleButton, showCorrelation && { backgroundColor: colors.primary }]}
@@ -168,14 +170,14 @@ export default function SymptomHistoryScreen() {
             style={[styles.addButton, { backgroundColor: colors.primary }]}
             onPress={() => navigation.navigate('AddSymptom' as never)}
           >
-            <Text style={styles.addButtonText}>+ Log</Text>
+            <Text style={styles.addButtonText}>{t('symptoms.log')}</Text>
           </TouchableOpacity>
         </View>
       </View>
       
       {symptoms.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyText, { color: colors.icon }]}>No symptoms logged yet</Text>
+          <Text style={[styles.emptyText, { color: colors.icon }]}>{t('symptoms.noSymptoms')}</Text>
         </View>
       ) : (
          <ScrollView showsVerticalScrollIndicator={false}>
@@ -219,10 +221,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    flex: 1,
+    flexShrink: 1,
   },
   headerButtons: {
     flexDirection: 'row',
     gap: 10,
+    flexShrink: 0,
   },
   toggleButton: {
     paddingHorizontal: 12,

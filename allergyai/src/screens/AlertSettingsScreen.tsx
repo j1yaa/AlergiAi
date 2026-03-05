@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Switch, TextInput, ScrollView, TouchableOpacity
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAlertSettings, saveAlertSettings, AlertSettings } from '../utils/allergenAlertService';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AlertSettingsScreen() {
   const [settings, setSettings] = useState<AlertSettings>({
@@ -13,6 +14,7 @@ export default function AlertSettingsScreen() {
   });
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadSettings();
@@ -44,15 +46,15 @@ export default function AlertSettingsScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="notifications" size={32} color="#F44336" />
-        <Text style={styles.title}>Alert Settings</Text>
-        <Text style={styles.subtitle}>Customize your allergen notifications</Text>
+        <Text style={styles.title}>{t('alertSettings.alertSettings')}</Text>
+        <Text style={styles.subtitle}>{t('alertSettings.customizeNotifications')}</Text>
       </View>
 
       <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Enable Alerts</Text>
-            <Text style={styles.description}>Receive notifications for allergen detection</Text>
+            <Text style={styles.label}>{t('alertSettings.enableAlerts')}</Text>
+            <Text style={styles.description}>{t('alertSettings.enableAlertsDescription')}</Text>
           </View>
           <Switch
             value={settings.enabled}
@@ -64,8 +66,8 @@ export default function AlertSettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Severity Threshold</Text>
-        <Text style={styles.description}>Only notify for alerts at or above this level</Text>
+        <Text style={styles.sectionTitle}>{t('alertSettings.severityThreshold')}</Text>
+        <Text style={styles.description}>{t('alertSettings.severityThresholdDescription')}</Text>
         
         <View style={styles.thresholdButtons}>
           {['low', 'medium', 'high'].map((level) => (
@@ -84,7 +86,7 @@ export default function AlertSettingsScreen() {
                 styles.thresholdText,
                 settings.severityThreshold === level && styles.thresholdTextActive
               ]}>
-                {level.toUpperCase()}
+                {t('alertSettings.' + level)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -92,12 +94,12 @@ export default function AlertSettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quiet Hours</Text>
-        <Text style={styles.description}>No alerts during these hours</Text>
+        <Text style={styles.sectionTitle}>{t('alertSettings.quietHours')}</Text>
+        <Text style={styles.description}>{t('alertSettings.quietHoursDescription')}</Text>
         
         <View style={styles.timeRow}>
           <View style={styles.timeItem}>
-            <Text style={styles.timeLabel}>Start</Text>
+            <Text style={styles.timeLabel}>{t('alertSettings.start')}</Text>
             <TouchableOpacity 
               style={styles.timeButton}
               onPress={() => setShowStartPicker(true)}
@@ -108,7 +110,7 @@ export default function AlertSettingsScreen() {
           </View>
 
           <View style={styles.timeItem}>
-            <Text style={styles.timeLabel}>End</Text>
+            <Text style={styles.timeLabel}>{t('alertSettings.end')}</Text>
             <TouchableOpacity 
               style={styles.timeButton}
               onPress={() => setShowEndPicker(true)}
@@ -155,8 +157,8 @@ export default function AlertSettingsScreen() {
       <View style={styles.section}>
         <View style={styles.row}>
           <View style={styles.labelContainer}>
-            <Text style={styles.label}>Emergency Contact</Text>
-            <Text style={styles.description}>Notify contact for high-risk alerts</Text>
+            <Text style={styles.label}>{t('alertSettings.emergencyContact')}</Text>
+            <Text style={styles.description}>{t('alertSettings.emergencyContactDescription')}</Text>
           </View>
           <Switch
             value={settings.notifyEmergencyContact}
@@ -169,7 +171,7 @@ export default function AlertSettingsScreen() {
         {settings.notifyEmergencyContact && (
           <TextInput
             style={styles.input}
-            placeholder="Emergency contact phone"
+            placeholder={t('alertSettings.emergencyContactPhone')}
             value={settings.emergencyContactPhone}
             onChangeText={(phone) => updateSettings({ emergencyContactPhone: phone })}
             keyboardType="phone-pad"
@@ -180,7 +182,7 @@ export default function AlertSettingsScreen() {
       <View style={styles.infoBox}>
         <Ionicons name="information-circle" size={20} color="#2196F3" />
         <Text style={styles.infoText}>
-          Alerts help you avoid allergen exposure and track patterns over time
+          {t('alertSettings.infoText')}
         </Text>
       </View>
     </ScrollView>

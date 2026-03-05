@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
+import { translateAllergen } from '../utils/allergenTranslation';
 
 import { getAnalytics, getSymptoms, getMeals } from '../api/client';
 import { AnalyticsSummary } from '../types';
@@ -11,6 +13,7 @@ import { predictAllergenRisks } from '../utils/predictiveAnalysis';
 
 export default function DashboardScreen() {
   const { colors } = useTheme();
+  const { t, language } = useLanguage();
   console.log('=== DashboardScreen rendered ===');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [predictions, setPredictions] = useState<any[]>([]);
@@ -40,7 +43,7 @@ export default function DashboardScreen() {
   if (!analytics) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Loading...</Text>
+        <Text style={{ color: colors.text }}>{t('dashboard.loading')}</Text>
       </View>
     );
   }
@@ -48,8 +51,8 @@ export default function DashboardScreen() {
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.welcomeSection}>
-        <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome back! 👋</Text>
-        <Text style={[styles.subtitle, { color: colors.icon }]}>Here's your health overview</Text>
+        <Text style={[styles.welcomeText, { color: colors.text }]}>{t('dashboard.welcomeBack')}</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>{t('dashboard.healthOverview')}</Text>
       </View>
       
       <View style={styles.statsContainer}>
@@ -58,21 +61,21 @@ export default function DashboardScreen() {
             <Ionicons name="checkmark-circle" size={24} color={colors.success} />
           </View>
           <Text style={[styles.statValue, { color: colors.text }]}>{analytics.safeMealsPct}%</Text>
-          <Text style={[styles.statLabel, { color: colors.icon }]}>Safe Meals</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>{t('dashboard.safeMeals')}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
           <View style={[styles.statIconContainer, { backgroundColor: `${colors.secondary}15` }]}>
             <Ionicons name="restaurant" size={24} color={colors.secondary} />
           </View>
           <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalMeals}</Text>
-          <Text style={[styles.statLabel, { color: colors.icon }]}>Total Meals</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>{t('dashboard.totalMeals')}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
           <View style={[styles.statIconContainer, { backgroundColor: `${colors.warning}15` }]}>
             <Ionicons name="notifications" size={24} color={colors.warning} />
           </View>
           <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalAlerts}</Text>
-          <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
+          <Text style={[styles.statLabel, { color: colors.icon }]}>{t('dashboard.alerts')}</Text>
         </View>
       </View>
 
@@ -84,8 +87,8 @@ export default function DashboardScreen() {
           <View style={styles.actionIconContainer}>
             <Ionicons name="restaurant" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>Log Meal</Text>
-          <Text style={styles.actionSubtitle}>Track your food</Text>
+          <Text style={styles.actionTitle}>{t('dashboard.logMeal')}</Text>
+          <Text style={styles.actionSubtitle}>{t('dashboard.trackYourFood')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -95,8 +98,8 @@ export default function DashboardScreen() {
           <View style={styles.actionIconContainer}>
             <Ionicons name="scan" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>Scan Food</Text>
-          <Text style={styles.actionSubtitle}>Check ingredients</Text>
+          <Text style={styles.actionTitle}>{t('dashboard.scanFood')}</Text>
+          <Text style={styles.actionSubtitle}>{t('dashboard.quickAllergenDetection')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -108,8 +111,8 @@ export default function DashboardScreen() {
           <View style={styles.actionIconContainer}>
             <Ionicons name="fitness" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>Symptoms</Text>
-          <Text style={styles.actionSubtitle}>Log reactions</Text>
+          <Text style={styles.actionTitle}>{t('nav.Symptoms')}</Text>
+          <Text style={styles.actionSubtitle}>{t('symptoms.logSymptom')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -119,8 +122,8 @@ export default function DashboardScreen() {
           <View style={styles.actionIconContainer}>
             <Ionicons name="trending-up" size={28} color="#FFFFFF" />
           </View>
-          <Text style={styles.actionTitle}>Trends</Text>
-          <Text style={styles.actionSubtitle}>View insights</Text>
+          <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit>{t('nav.Trends')}</Text>
+          <Text style={styles.actionSubtitle}>{t('trends.trendsInsights')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -129,7 +132,7 @@ export default function DashboardScreen() {
       <View style={[styles.chartContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
         <View style={styles.chartHeader}>
           <Ionicons name="bar-chart" size={24} color={colors.primary} />
-          <Text style={[styles.chartTitle, { color: colors.text }]}>Weekly Exposure</Text>
+          <Text style={[styles.chartTitle, { color: colors.text }]}>{t('dashboard.weeklyExposure')}</Text>
         </View>
         <View style={styles.chartPlaceholder}>
           {analytics.weeklyExposure.map((item, index) => {
@@ -155,14 +158,14 @@ export default function DashboardScreen() {
       <View style={[styles.chartContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
         <View style={styles.chartHeader}>
           <Ionicons name="shield-checkmark" size={24} color={colors.primary} />
-          <Text style={[styles.chartTitle, { color: colors.text }]}>Top Allergens</Text>
+          <Text style={[styles.chartTitle, { color: colors.text }]}>{t('dashboard.topAllergens')}</Text>
         </View>
         <View style={styles.allergenList}>
           {analytics.topAllergens.map((item, index) => (
             <View key={index} style={[styles.allergenItem, { borderBottomColor: colors.cardBorder }]}>
               <View style={styles.allergenInfo}>
-                <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.allergenSubtext, { color: colors.icon }]}>{item.count} exposures</Text>
+                <Text style={[styles.allergenName, { color: colors.text }]}>{translateAllergen(item.name, language)}</Text>
+                <Text style={[styles.allergenSubtext, { color: colors.icon }]}>{item.count} {t('dashboard.exposures')}</Text>
               </View>
               <View style={[styles.allergenBadge, { backgroundColor: `${colors.error}15` }]}>
                 <Text style={[styles.allergenCount, { color: colors.error }]}>{item.count}</Text>

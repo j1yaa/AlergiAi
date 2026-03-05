@@ -41,33 +41,36 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-  [
-    "expo-splash-screen",
-    {
-      "backgroundColor": "#ffffff",
-      "image": "./assets/images/splash-icon.png",
-      "imageWidth": 200
-    }
-  ],
-  [
-    "expo-camera",
-    {
-      "cameraPermission": "Allow AllergyAI to access your camera to scan food labels for allergens.",
-      "microphonePermission": "Allow AllergyAI to access your microphone."
-    }
-  ],
-  [
-    "expo-notifications",
-    {
-      "icon": "./assets/images/icon.png",
-      "color": "#2196F3",
-      "sounds": [],
-      "androidMode": "default",
-      "androidCollapsedTitle": "Meal Reminder"
-    }
-  ]
-],
-
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#ffffff",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow AllergyAI to access your camera to scan food labels for allergens.",
+          "microphonePermission": "Allow AllergyAI to access your microphone."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2196F3",
+          "sounds": [],
+          "androidMode": "default",
+          "androidCollapsedTitle": "Meal Reminder"
+        }
+      ],
+      "expo-localization",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
     "extra": {
       "eas": {
         "projectId": "b6cdc972-fa6b-454c-89d9-195e98c87704"

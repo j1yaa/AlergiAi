@@ -3,9 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { getAllergens, addAllergen, removeAllergen } from '../api/client';
 import {isWeb } from '../utils/platform';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AllergenScreen() {
     const { colors } = useTheme();
+    const { t } = useLanguage();
     const [allergens, setAllergens] = useState<string[]>([]);
     const [allergensSeverity, setAllergensSeverity] = useState<any[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
@@ -39,7 +41,7 @@ export default function AllergenScreen() {
         const allergenName = newAllergen.trim();
 
         if (allergens.some((a: string) => a.toLowerCase() === allergenName.toLowerCase())) {
-            showAlert('Duplicate', 'This allergen is already in your list');
+            showAlert(t('allergen.duplicate'), t('allergen.alreadyInList'));
             return;
         }
 
@@ -55,19 +57,19 @@ export default function AllergenScreen() {
             // Revert on error
             setAllergens(allergens);
             setAllergensSeverity(allergensSeverity);
-            showAlert('Error', 'Failed to add allergen');
+            showAlert(t('common.error'), t('allergen.failedToAdd'));
             console.error('Failed to add allergen:', error);
         }
     };
 
     const handleRemoveAllergen = async (allergen: string) => {
         showAlert(
-            'Remove Allergen',
-            `WARNING: Removing "${allergen}" from your allergen list means the app will no longer alert you about this ingredient in food products.\n\nThis could put you at risk of accidental exposure. Are you absolutely sure you want to proceed?`,
+            t('allergen.removeAllergen'),
+            t('allergen.removeWarning', { name: allergen }),
             [
-                { text: 'Cancel', style: 'cancel', onPress: () => console.log('Cancel') },
+                { text: t('common.cancel'), style: 'cancel', onPress: () => console.log('Cancel') },
                 {
-                    text: 'Remove Anyway',
+                    text: t('allergen.remove'),
                     style: 'destructive',
                     onPress: async () => {
                         // Optimistic update - remove immediately
@@ -76,11 +78,11 @@ export default function AllergenScreen() {
                         
                         try {
                             await removeAllergen({ allergen });
-                            showAlert('Success', 'Allergen successfully removed!');
+                            showAlert(t('common.success'), t('allergen.allergenRemoved'));
                         } catch (error) {
                             // Revert on error
                             setAllergens(originalAllergens);
-                            showAlert('Error', 'Failed to remove allergen');
+                            showAlert(t('common.error'), t('allergen.failedToRemove'));
                             console.error('Failed to remove allergen:', error);
                         }
                     },
@@ -91,14 +93,14 @@ export default function AllergenScreen() {
 
     return (
         <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-            <Text style={[styles.title, { color: colors.text }]}>Manage Allergens</Text>
+            <Text style={[styles.title, { color: colors.text }]}>{t('allergen.manageAllergens')}</Text>
 
             <View style={styles.inputSection}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Add New Allergen</Text>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('allergen.addNewAllergen')}</Text>
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.icon + '40', color: colors.text }]}
-                        placeholder="Enter name for the allergen:"
+                        placeholder={t('allergen.enterAllergenName')}
                         placeholderTextColor={colors.icon}
                         value={newAllergen}
                         onChangeText={setNewAllergen}
@@ -109,12 +111,12 @@ export default function AllergenScreen() {
                         onPress={handleAddAllergen}
                         disabled={!newAllergen.trim()}
                     >
-                        <Text style={styles.addButtonText}>Add</Text>
+                        <Text style={styles.addButtonText}>{t('allergen.add')}</Text>
                     </TouchableOpacity>
                 </View>
                 
                 <View style={[styles.severitySection, { backgroundColor: colors.surface }]}>
-                    <Text style={[styles.severityLabel, { color: colors.text }]}>Reaction Severity:</Text>
+                    <Text style={[styles.severityLabel, { color: colors.text }]}>{t('allergen.reactionSeverity')}</Text>
                     <View style={styles.severityButtons}>
                         {(['low', 'moderate', 'high'] as const).map((severity) => (
                             <TouchableOpacity
@@ -134,25 +136,25 @@ export default function AllergenScreen() {
                                     { color: colors.text },
                                     selectedSeverity === severity && styles.severityButtonTextActive
                                 ]}>
-                                    {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                                    {t('allergen.' + severity)}
                                 </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
                     <Text style={[styles.severityDescription, { color: colors.icon }]}>
-                        {selectedSeverity === 'low' && 'Mild reactions (discomfort, minor symptoms)'}
-                        {selectedSeverity === 'moderate' && 'Moderate reactions (noticeable symptoms, some distress)'}
-                        {selectedSeverity === 'high' && 'Severe reactions (anaphylaxis, life-threatening)'}
+                        {selectedSeverity === 'low' && t('allergen.mildReactions')}
+                        {selectedSeverity === 'moderate' && t('allergen.moderateReactions')}
+                        {selectedSeverity === 'high' && t('allergen.severeReactions')}
                     </Text>
                 </View>
             </View>
 
             <View style={styles.listSection}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    Your Allergens ({allergens.length})
+                    {t('allergen.yourAllergens')} ({allergens.length})
                 </Text>
                 {loading ? (
-                    <Text style={[styles.loadingText, { color: colors.icon }]}>Loading..</Text>
+                    <Text style={[styles.loadingText, { color: colors.icon }]}>{t('allergen.loading')}</Text>
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
                         {allergens.map((allergen: string, index: number) => {
@@ -181,16 +183,16 @@ export default function AllergenScreen() {
                     </View>
                 ) : (
                     <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.emptyStateText, { color: colors.icon }]}>No allergens added</Text>
+                        <Text style={[styles.emptyStateText, { color: colors.icon }]}>{t('allergen.emptyState')}</Text>
                         <Text style={[styles.emptyStateSubtext, { color: colors.icon }]}>
-                            Add allergens to track them in your meals
+                            {t('allergen.addYourFirst')}
                         </Text>
                     </View>
                 )}
             </View>
 
             <View style={styles.infoSection}>
-                <Text style={[styles.infoTitle, { color: colors.text }]}>Common Allergens</Text>
+                <Text style={[styles.infoTitle, { color: colors.text }]}>{t('allergen.commonAllergens')}</Text>
                 <View style={styles.commonAllergens}>
                     {['Peanuts', 'Tree Nuts', 'Milk', 'Eggs', 'Shellfish', 'Fish', 'Soy', 'Wheat'].map((common, index) => (
                         <TouchableOpacity

@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface RouteParams {
   detectedIngredients: string[];
@@ -22,12 +24,13 @@ export default function ScanResultScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const params = route.params as RouteParams;
+  const { t } = useLanguage();
 
   // 1) Safer product name (no empty / undefined)
   const safeProductName =
     params.productName && params.productName.trim() !== ''
       ? params.productName
-      : 'Unknown Item';
+      : t('scanResult.unknownItem');
 
   const isFood = params.isFood !== false;
   const isUnknown = !isFood && (safeProductName === 'Unknown' || safeProductName === 'Unknown Item');
@@ -59,7 +62,7 @@ export default function ScanResultScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={28} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan Results</Text>
+        <Text style={styles.headerTitle}>{t('scanResult.scanResults')}</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -92,32 +95,43 @@ export default function ScanResultScreen() {
             }
           />
           <Text style={styles.statusTitle}>
-            {isUnknown ? 'Unable to Identify' :
-             !isFood ? 'Not a Food Item' :
-             hasAllergens ? 'Allergen Detected!' : 'Safe to Consume'}
+            {isUnknown ? t('scanResult.unableToIdentify') :
+             !isFood ? t('scanResult.notFoodItem') :
+             hasAllergens ? t('scanResult.allergenDetected') : t('scanResult.safeToConsume')}
           </Text>
           <Text style={styles.statusSubtitle}>
             {isUnknown
-              ? 'Could not identify this item. Try scanning again with better lighting'
+              ? t('scanResult.unableToIdentifyMessage')
               : !isFood
-              ? 'This item is not edible and cannot be analyzed for allergens'
+              ? t('scanResult.notFoodItemMessage')
               : hasAllergens
-              ? `Contains ${matchedAllergens.length} allergen(s) from your profile`
-              : 'No allergens detected from your profile'}
+              ? t('scanResult.containsAllergens', { count: matchedAllergens.length })
+              : t('scanResult.noAllergensDetected')}
           </Text>
 
           {/* Risk score from AI helper — only show for food */}
           {isFood && !isUnknown && (
             <>
               <Text style={styles.riskScoreText}>
-                Risk Score: {riskScore}% - {riskTier}
+                {t('scanResult.riskScoreDisplay', {
+                  score: riskScore,
+                  tier: riskTier === 'Low Risk' ? t('scanResult.riskTierLow')
+                      : riskTier === 'Moderate Risk' ? t('scanResult.riskTierModerate')
+                      : t('scanResult.riskTierHigh'),
+                })}
               </Text>
               <Text style={styles.severityText}>
-                Severity Level: {severity}
+                {t('scanResult.severityLevel', {
+                  level: severity === 'LOW' ? t('scanResult.severityLow')
+                       : severity === 'MODERATE' ? t('scanResult.severityModerate')
+                       : t('scanResult.severityHigh'),
+                })}
               </Text>
               {explanation && (
                 <Text style={styles.explanationText}>
-                  {explanation}
+                  {explanation === 'No known allergens detected in ingredients.'
+                    ? t('scanResult.noKnownAllergens')
+                    : explanation}
                 </Text>
               )}
             </>
@@ -127,7 +141,7 @@ export default function ScanResultScreen() {
         {/* Allergen Warnings */}
         {isFood && hasAllergens && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>⚠️ Allergen Warnings</Text>
+            <Text style={styles.sectionTitle}>{t('scanResult.allergenWarnings')}</Text>
             {matchedAllergens.map((allergen, index) => (
               <View key={index} style={styles.allergenItem}>
                 <Ionicons name="alert-circle" size={24} color="#f44336" />
@@ -140,7 +154,7 @@ export default function ScanResultScreen() {
         {/* Safe Ingredients */}
         {isFood && params.safeIngredients.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>✓ Safe Ingredients</Text>
+            <Text style={styles.sectionTitle}>{t('scanResult.safeIngredients')}</Text>
             {params.safeIngredients.map((ingredient, index) => (
               <View key={index} style={styles.safeItem}>
                 <Ionicons
@@ -157,7 +171,7 @@ export default function ScanResultScreen() {
         {/* All Detected Ingredients */}
         {isFood && params.detectedIngredients.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📋 All Detected Ingredients</Text>
+            <Text style={styles.sectionTitle}>{t('scanResult.allDetectedIngredients')}</Text>
             <View style={styles.ingredientsList}>
               {params.detectedIngredients.map((ingredient, index) => (
                 <View key={index} style={styles.ingredientChip}>
@@ -176,8 +190,7 @@ export default function ScanResultScreen() {
             color="#666"
           />
           <Text style={styles.noteText}>
-            Powered by Gemini AI. Results are based on ingredient detection and
-            food.
+            {t('scanResult.aiNote')}
           </Text>
         </View>
       </ScrollView>
@@ -189,11 +202,11 @@ export default function ScanResultScreen() {
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="camera" size={20} color="#2196F3" />
-          <Text style={styles.scanAgainText}>Scan Again</Text>
+          <Text style={styles.scanAgainText}>{t('scanResult.scanAgain')}</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.doneButton} onPress={handleDone}>
-          <Text style={styles.doneButtonText}>Done</Text>
+          <Text style={styles.doneButtonText}>{t('scanResult.done')}</Text>
         </TouchableOpacity>
       </View>
     </View>

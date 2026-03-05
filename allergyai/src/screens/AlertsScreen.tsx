@@ -4,11 +4,13 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
-import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
+import { markAlertRead, acknowledgeAlert } from '../utils/allergenAlertService';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AlertsScreen() {
   const { colors } = useTheme();
+  const { t, language } = useLanguage();
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,13 +26,6 @@ export default function AlertsScreen() {
     try {
       const response = await getAlerts();
       setAlerts(response.items);
-      
-      // Check for exposure patterns
-      const uniqueAllergens = [...new Set(response.items.map(a => a.allergens).flat())];
-      for (const allergen of uniqueAllergens) {
-        const pattern = await checkExposurePattern(allergen);
-        if (pattern) console.log(pattern);
-      }
     } catch (error) {
       console.error('Failed to load alerts:', error);
     } finally {
@@ -48,7 +43,7 @@ export default function AlertsScreen() {
   };
 
   const formatDate = (dateISO: string) => {
-    return new Date(dateISO).toLocaleDateString('en-US', {
+    return new Date(dateISO).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -63,13 +58,13 @@ export default function AlertsScreen() {
 
   const handleAcknowledge = (alertId: string) => {
     RNAlert.alert(
-      'Acknowledge Alert',
-      'What action did you take?',
+      t('alerts.acknowledgeAlert'),
+      t('alerts.whatActionDidYouTake'),
       [
-        { text: 'Avoided food', onPress: () => acknowledgeAlertWithAction(alertId, 'avoided') },
-        { text: 'Ate anyway', onPress: () => acknowledgeAlertWithAction(alertId, 'consumed') },
-        { text: 'Took medication', onPress: () => acknowledgeAlertWithAction(alertId, 'medicated') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('alerts.avoidedAllergen'), onPress: () => acknowledgeAlertWithAction(alertId, 'avoided') },
+        { text: t('alerts.noAction'), onPress: () => acknowledgeAlertWithAction(alertId, 'consumed') },
+        { text: t('alerts.tookMedication'), onPress: () => acknowledgeAlertWithAction(alertId, 'medicated') },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -112,7 +107,7 @@ export default function AlertsScreen() {
             onPress={() => handleMarkRead(item.id)}
           >
             <Ionicons name="checkmark" size={16} color="#4CAF50" />
-            <Text style={[styles.actionText, { color: colors.text }]}>Mark Read</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('alerts.markRead')}</Text>
           </TouchableOpacity>
         )}
         {!item.acknowledged && (
@@ -121,7 +116,7 @@ export default function AlertsScreen() {
             onPress={() => handleAcknowledge(item.id)}
           >
             <Ionicons name="hand-left" size={16} color="#2196F3" />
-            <Text style={[styles.actionText, { color: colors.text }]}>Acknowledge</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('alerts.acknowledge')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -131,7 +126,7 @@ export default function AlertsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Loading alerts...</Text>
+        <Text style={{ color: colors.text }}>{t('alerts.loadingAlerts')}</Text>
       </View>
     );
   }
@@ -140,17 +135,11 @@ export default function AlertsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Alerts</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('alerts.alerts')}</Text>
           {unreadCount > 0 && (
-            <Text style={[styles.unreadCount, { color: colors.error }]}>{unreadCount} unread</Text>
+            <Text style={[styles.unreadCount, { color: colors.error }]}>{t('alerts.unreadCount', { count: unreadCount })}</Text>
           )}
         </View>
-        <TouchableOpacity 
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('AlertSettings' as never)}
-        >
-          <Ionicons name="settings-outline" size={24} color={colors.icon} />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.filterRow}>
@@ -174,8 +163,8 @@ export default function AlertsScreen() {
       {filteredAlerts.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="notifications-off-outline" size={64} color={colors.icon} />
-          <Text style={[styles.emptyText, { color: colors.icon }]}>No alerts yet</Text>
-          <Text style={[styles.emptySubtext, { color: colors.icon }]}>Alerts will appear here when allergens are detected</Text>
+          <Text style={[styles.emptyText, { color: colors.icon }]}>{t('alerts.noAlerts')}</Text>
+          <Text style={[styles.emptySubtext, { color: colors.icon }]}>{t('alerts.emptyState')}</Text>
         </View>
       ) : (
         <FlatList

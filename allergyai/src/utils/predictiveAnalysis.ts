@@ -5,7 +5,8 @@ interface PredictionResult {
     allergen: string;
     riskScore: number;
     confidence: number;
-    reason: string;
+    reasonKey: 'frequentCorrelation' | 'highSeverity' | 'potentialTrigger';
+    reasonCount?: number;
 }
 
 export const predictAllergenRisks = (
@@ -49,17 +50,19 @@ export const predictAllergenRisks = (
         const adjustedRiskScore = Math.min(100, riskScore * (1 + frequency * 0.5));
         const confidence = Math.min(95, data.count * 20);
 
-        let reason = '';
+        let reasonKey: PredictionResult['reasonKey'];
+        let reasonCount: number | undefined;
         if (data.count >= 3) {
-            reason = `Frequent correlation (${data.count} times)`;
+            reasonKey = 'frequentCorrelation';
+            reasonCount = data.count;
         } else if (avgSeverity >= 4) {
-            reason = 'High severity reactions';
+            reasonKey = 'highSeverity';
         } else {
-            reason = 'Potential trigger';
+            reasonKey = 'potentialTrigger';
         }
 
         if (adjustedRiskScore > RISKTHRES.LOWMAX) {
-            predictions.push({ allergen, riskScore: Math.round(adjustedRiskScore), confidence, reason });
+            predictions.push({ allergen, riskScore: Math.round(adjustedRiskScore), confidence, reasonKey, reasonCount });
         }
     });
 

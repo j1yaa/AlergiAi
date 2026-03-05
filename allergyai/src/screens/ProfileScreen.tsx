@@ -1,32 +1,31 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, logout, getAllergens, getAnalytics } from '../api/client'; 
-import { UserProfile, AllergenWithSeverity } from '../types';
+import { getProfile, logout } from '../api/client';
+import { UserProfile } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 import { ThemeToggle } from '../components';
+import * as Notifications from 'expo-notifications';
+import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
+    const { language, setLanguage, t } = useLanguage();
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(true);
 
     const loadProfile = useCallback(async () => {
         try {
-            const [profileData, allergensData, analyticsData] = await Promise.all([
+            const [profileData, alertSettings] = await Promise.all([
                 getProfile(),
-                getAllergens(),
-                getAnalytics()
+                getAlertSettings()
             ]);
-            setProfile({
-                ...profileData,
-                totalMeals: analyticsData.totalMeals || 0,
-                totalAlerts: analyticsData.totalAlerts || 0
-            });
-            setAllergensSeverity(allergensData.allergensSeverity || []);
+            setProfile(profileData);
+            setPushEnabled(alertSettings.enabled);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -38,17 +37,45 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         loadProfile();
     }, [loadProfile]));
 
+    const handleTogglePush = async (value: boolean) => {
+        if (value) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            if (existingStatus === 'granted') {
+                setPushEnabled(true);
+                const alertSettings = await getAlertSettings();
+                await saveAlertSettings({ ...alertSettings, enabled: true });
+            } else {
+                const { status } = await Notifications.requestPermissionsAsync();
+                if (status === 'granted') {
+                    setPushEnabled(true);
+                    const alertSettings = await getAlertSettings();
+                    await saveAlertSettings({ ...alertSettings, enabled: true });
+                } else {
+                    Alert.alert(
+                        t('settings.notificationsDisabled'),
+                        t('settings.notificationsDisabledMessage'),
+                        [
+                            { text: t('settings.cancel'), style: 'cancel' },
+                            { text: t('settings.openSettings'), onPress: () => Linking.openSettings() }
+                        ]
+                    );
+                }
+            }
+        } else {
+            setPushEnabled(false);
+            const alertSettings = await getAlertSettings();
+            await saveAlertSettings({ ...alertSettings, enabled: false });
+        }
+    };
+
     const handleLogout = () => {
-        Alert.alert('Logout', 'Are you sure you want to logout?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('settings.logout'), t('settings.logoutConfirm'), [
+            { text: t('settings.cancel'), style: 'cancel' },
             {
-                text: 'Logout',
+                text: t('settings.logout'),
                 style: 'destructive',
                 onPress: () => {
-                    // Logout immediately for better UX
                     onLogout?.();
-                    
-                    // Run cleanup in background
                     logout().catch(error => {
                         console.error('Logout cleanup failed:', error);
                     });
@@ -59,118 +86,152 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0B63D6" />
-                <Text style={styles.loadingText}>Loading profile...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.icon }]}>{t('settings.loading')}</Text>
             </View>
         );
     }
 
     if (!profile) {
         return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={64} color="#E53935" />
-                <Text style={styles.errorText}>Failed to load profile</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+            <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+                <Text style={[styles.errorText, { color: colors.error }]}>{t('settings.failedToLoadProfile')}</Text>
+                <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadProfile}>
+                    <Text style={styles.retryButtonText}>{t('settings.retry')}</Text>
                 </TouchableOpacity>
             </View>
         );
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Theme Toggle */}
-            <View style={styles.themeSection}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
-                <ThemeToggle />
-            </View>
-
-            {/* Header */}
-            <View style={styles.header}>
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+            {/* Welcome Header */}
+            <View style={[styles.welcomeSection, { backgroundColor: colors.surface }]}>
                 <View style={styles.profileIcon}>
                     <Text style={styles.profileInitials}>
                         {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                     </Text>
                 </View>
-                <Text style={[styles.name, { color: colors.text }]}>{profile.name}</Text>
-                <Text style={[styles.email, { color: colors.icon }]}>{profile.email}</Text>
-            </View>
-
-            {/* Stats */}
-            <View style={styles.statsContainer}>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="restaurant-outline" size={24} color={colors.primary} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalMeals}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Meals Tracked</Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="warning-outline" size={24} color={colors.error} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalAlerts}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="medical-outline" size={24} color={colors.warning} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.allergens.length}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Allergens</Text>
+                <View style={styles.welcomeText}>
+                    <Text style={[styles.welcomeLabel, { color: colors.icon }]}>{t('settings.welcome')}</Text>
+                    <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
+                    <Text style={[styles.welcomeEmail, { color: colors.icon }]}>{profile.email}</Text>
                 </View>
             </View>
 
-            {/* Allergens */}
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Allergens</Text>
-                    <TouchableOpacity
-                        style={styles.manageButton}
-                        onPress={() => navigation.navigate('Allergens')}
-                    >
-                        <Text style={styles.manageButtonText}>Manage</Text>
-                    </TouchableOpacity>
-                </View>
-                {profile.allergens.length > 0 ? (
-                    <View style={styles.allergensList}>
-                        {profile.allergens.map((allergen, index) => {
-                            const severityInfo = allergensSeverity.find(a => a.name.toLowerCase() === allergen.toLowerCase());
-                            const severity = severityInfo?.severity || 'moderate';
-                            const colors = {
-                                low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32', icon: '#4CAF50' },
-                                moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100', icon: '#FF9800' },
-                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828', icon: '#E53935' }
-                            };
-                            const color = colors[severity];
-                            return (
-                                <View key={index} style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
-                                    <Ionicons name="alert-circle" size={16} color={color.icon} />
-                                    <Text style={[styles.allergenText, { color: color.text }]}>{allergen}</Text>
-                                </View>
-                            );
-                        })}
-                    </View>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Ionicons name="medical-outline" size={48} color="#ccc" />
-                        <Text style={styles.emptyText}>No allergens added</Text>
-                        <Text style={styles.emptySubtext}>Tap Manage to add allergens</Text>
-                    </View>
-                )}
+            {/* Account Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.accountSection')}</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <TouchableOpacity
+                    style={styles.groupItem}
+                    onPress={() => navigation.navigate('UserProfile')}
+                >
+                    <Ionicons name="person-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.userProfile')}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                </TouchableOpacity>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+
+                <TouchableOpacity
+                    style={styles.groupItem}
+                    onPress={() => navigation.navigate('ChangePassword')}
+                >
+                    <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.changePassword')}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                </TouchableOpacity>
             </View>
 
-            {/* Logout Button */}
-            <TouchableOpacity
-                style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
-                onPress={handleLogout}
-                disabled={isLoggingOut}
-            >
-                {isLoggingOut ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                ) : (
+            {/* Notifications Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.notificationsSection')}</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <View style={styles.groupItem}>
+                    <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.pushNotifications')}</Text>
+                    <Switch
+                        value={pushEnabled}
+                        onValueChange={handleTogglePush}
+                        trackColor={{ false: '#767577', true: '#81c784' }}
+                        thumbColor={pushEnabled ? '#4caf50' : '#f4f3f4'}
+                    />
+                </View>
+
+                {pushEnabled && (
                     <>
-                        <Ionicons name="log-out-outline" size={20} color="#fff" />
-                        <Text style={styles.logoutButtonText}>Logout</Text>
+                        <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+                        <TouchableOpacity
+                            style={styles.groupItem}
+                            onPress={() => navigation.navigate('ReminderSettings')}
+                        >
+                            <Ionicons name="alarm-outline" size={20} color={colors.primary} />
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.mealReminders')}</Text>
+                            <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                        </TouchableOpacity>
+
+                        <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+                        <TouchableOpacity
+                            style={styles.groupItem}
+                            onPress={() => navigation.navigate('AlertSettings')}
+                        >
+                            <Ionicons name="warning-outline" size={20} color={colors.primary} />
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.alertSettings')}</Text>
+                            <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                        </TouchableOpacity>
                     </>
                 )}
+            </View>
+
+            {/* Preferences Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.preferencesSection')}</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <View style={styles.themeRow}>
+                    <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.theme')}</Text>
+                </View>
+                <View style={styles.themeToggleWrapper}>
+                    <ThemeToggle />
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+
+                <View style={styles.groupItem}>
+                    <Ionicons name="language-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.language')}</Text>
+                </View>
+                <View style={styles.languageRow}>
+                    {(['en', 'es'] as const).map((lang) => (
+                        <TouchableOpacity
+                            key={lang}
+                            style={[
+                                styles.languageOption,
+                                { borderColor: language === lang ? colors.primary : colors.cardBorder },
+                                language === lang && { backgroundColor: colors.primary + '15' },
+                            ]}
+                            onPress={() => setLanguage(lang)}
+                        >
+                            <Text style={[
+                                styles.languageOptionText,
+                                { color: language === lang ? colors.primary : colors.text },
+                            ]}>
+                                {t(`languages.${lang}`)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+
+            {/* Logout */}
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+            >
+                <Ionicons name="log-out-outline" size={20} color="#E53935" />
+                <Text style={styles.logoutText}>{t('settings.logout')}</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 }
 
@@ -179,36 +240,28 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
-    themeSection: {
-        marginBottom: 24,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F6F9FF',
     },
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: '#666',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F6F9FF',
         padding: 20,
     },
     errorText: {
         marginTop: 16,
         fontSize: 18,
-        color: '#E53935',
         fontWeight: '600',
     },
     retryButton: {
         marginTop: 20,
-        backgroundColor: '#0B63D6',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 8,
@@ -218,137 +271,111 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    header: {
+    welcomeSection: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 32,
+        padding: 20,
+        borderRadius: 16,
+        marginBottom: 28,
     },
     profileIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: '#0B63D6',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
     },
     profileInitials: {
-        fontSize: 28,
+        fontSize: 22,
         fontWeight: '700',
         color: '#fff',
     },
-    name: {
-        fontSize: 24,
-        fontWeight: '700',
-        marginBottom: 4,
-    },
-    email: {
-        fontSize: 16,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 32,
-    },
-    statCard: {
+    welcomeText: {
         flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 8,
-        elevation: 2,
+        marginLeft: 16,
     },
-    statValue: {
-        fontSize: 24,
+    welcomeLabel: {
+        fontSize: 13,
+    },
+    welcomeName: {
+        fontSize: 20,
         fontWeight: '700',
-        marginTop: 8,
+        marginTop: 2,
     },
-    statLabel: {
+    welcomeEmail: {
+        fontSize: 13,
+        marginTop: 2,
+    },
+    sectionLabel: {
         fontSize: 12,
-        marginTop: 4,
-        textAlign: 'center',
-    },
-    section: {
-        marginBottom: 32,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        fontSize: 18,
         fontWeight: '600',
+        letterSpacing: 0.8,
+        marginBottom: 8,
+        marginLeft: 4,
     },
-    manageButton: {
-        backgroundColor: '#E3F2FD',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
+    group: {
+        borderRadius: 14,
+        marginBottom: 24,
+        overflow: 'hidden',
     },
-    manageButtonText: {
-        color: '#0B63D6',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    allergensList: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    allergenPill: {
+    groupItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#FFCDD2',
-        gap: 6,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        gap: 12,
     },
-    allergenText: {
-        color: '#C62828',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: 32,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-    },
-    emptyText: {
+    groupItemText: {
         fontSize: 16,
-        color: '#999',
         fontWeight: '500',
-        marginTop: 12,
+        flex: 1,
     },
-    emptySubtext: {
+    divider: {
+        height: StyleSheet.hairlineWidth,
+        marginLeft: 48,
+    },
+    themeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 14,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    themeToggleWrapper: {
+        paddingHorizontal: 16,
+        paddingBottom: 14,
+        paddingTop: 10,
+    },
+    languageRow: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingHorizontal: 16,
+        paddingBottom: 14,
+        paddingTop: 4,
+    },
+    languageOption: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        alignItems: 'center',
+    },
+    languageOptionText: {
         fontSize: 14,
-        color: '#bbb',
-        marginTop: 4,
+        fontWeight: '600',
     },
     logoutButton: {
         flexDirection: 'row',
-        backgroundColor: '#E53935',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
         gap: 8,
-        marginTop: 'auto',
+        marginBottom: 40,
     },
-    logoutButtonDisabled: {
-        opacity: 0.6,
-    },
-    logoutButtonText: {
-        color: '#fff',
+    logoutText: {
         fontSize: 16,
         fontWeight: '600',
+        color: '#E53935',
     },
 });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { getMeals, getSymptoms } from '../api/client';
 import { Meal, Symptom } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 const { width } = Dimensions.get('window');
 
@@ -15,6 +16,7 @@ interface CorrelationData {
 export default function SymptomCorrelationScreen() {
   const [loading, setLoading] = useState(true);
   const [correlations, setCorrelations] = useState<CorrelationData[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadData();
@@ -89,28 +91,27 @@ export default function SymptomCorrelationScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Symptom Correlation Analysis</Text>
+        <Text style={styles.title}>{t('correlation.symptomCorrelationAnalysis')}</Text>
         <Text style={styles.subtitle}>
-          Track patterns between allergen exposure and symptom occurrence
+          {t('correlation.trackPatterns')}
         </Text>
       </View>
 
       <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>How This Works</Text>
+        <Text style={styles.infoTitle}>{t('correlation.howThisWorks')}</Text>
         <Text style={styles.infoText}>
-          This analysis tracks for meals consumed within 24 hours before each symptom report.
-          The correlation percentage shows how often a specific allergen was present when symptoms occurred.
+          {t('correlation.analysisDescription')}
         </Text>
           <Text style={styles.infoExample}>
-            Example: 100% means that every time you ate that food, you experienced symptoms within 24 hours.
+            {t('correlation.analysisExample')}
           </Text>
       </View>
 
       {correlations.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No correlation data available</Text>
+          <Text style={styles.emptyText}>{t('correlation.noCorrelationData')}</Text>
           <Text style={styles.emptySubtext}>
-            Log more meals and symptoms to see patterns
+            {t('correlation.logMoreToSeePatterns')}
           </Text>
         </View>
       ) : (
@@ -120,7 +121,7 @@ export default function SymptomCorrelationScreen() {
               <View style={styles.labelContainer}>
                 <Text style={styles.allergenLabel}>{item.allergen}</Text>
                 <Text style={styles.countLabel}>
-                  {item.mealCount} meals • {item.symptomCount} symptoms
+                  {t('correlation.mealsAndSymptoms', { meals: item.mealCount, symptoms: item.symptomCount })}
                 </Text>
               </View>
               <View style={styles.barWrapper}>
@@ -143,18 +144,18 @@ export default function SymptomCorrelationScreen() {
       )}
 
       <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Risk Indicators</Text>
+        <Text style={styles.legendTitle}>{t('correlation.riskIndicators')}</Text>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#f44336' }]} />
-          <Text style={styles.legendText}>High Risk (&gt;70%) - Avoid these allergens</Text>
+          <Text style={styles.legendText}>{t('correlation.highRiskDescription')}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#ff9800' }]} />
-          <Text style={styles.legendText}>Medium Risk (40-70%) - Monitor closely</Text>
+          <Text style={styles.legendText}>{t('correlation.mediumRiskDescription')}</Text>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendColor, { backgroundColor: '#4caf50' }]} />
-          <Text style={styles.legendText}>Low Risk (&lt;40%) - Generally safe</Text>
+          <Text style={styles.legendText}>{t('correlation.lowRiskDescription')}</Text>
         </View>
       </View>
     </ScrollView>

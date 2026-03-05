@@ -14,6 +14,9 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { analyzeImg } from '../utils/geminiService';
 import { getAllergens } from '../api/client';
 import { matchIngredientsWallergens } from '../utils/allergenMatcher';
+import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
+
 
 type RootStackParamList = {
     ScanResult: {
@@ -31,6 +34,7 @@ export default function ScannerScreen() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [flashOn, setFlashOn] = useState(false);
+    const { t, language } = useLanguage();
 
     useEffect(() => {
         (async () => {
@@ -68,7 +72,7 @@ export default function ScannerScreen() {
             const base64Img = await convertImgToBase64(imageUri);
 
             // Analyze the image
-            const geminiResult = await analyzeImg(base64Img);
+            const geminiResult = await analyzeImg(base64Img, language);
 
             // Get users allergens
             const allergenResponse = await getAllergens();
@@ -95,13 +99,13 @@ export default function ScannerScreen() {
         } catch (error) {
             setIsScanning(false);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            Alert.alert('Analysis Failed', errorMessage, [{ text: 'OK' }]);
+            Alert.alert(t('scanner.analysisFailed'), errorMessage, [{ text: 'OK' }]);
         }
     };
 
     const handleScan = async () => {
         if (!cameraRef.current) {
-            Alert.alert('Error', 'Camera not available');
+            Alert.alert(t('common.error'), t('scanner.cameraError'));
             return;
         }
 
@@ -110,7 +114,7 @@ export default function ScannerScreen() {
             await processImage(photo.uri);
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take the photo');
+            Alert.alert(t('common.error'), t('scanner.photoError'));
         }
     };
 
@@ -118,7 +122,7 @@ export default function ScannerScreen() {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need gallery access to scan images.');
+            Alert.alert(t('scanner.permissionDenied'), t('scanner.cameraPermissionDenied'));
             return;
         }
 
@@ -145,12 +149,14 @@ export default function ScannerScreen() {
         return (
             <View style={styles.container}>
                 <Ionicons name="eye-off" size={64} color="#999" />
-                <Text style={styles.noPermissionText}>No access to camera</Text>
+                <Text style={styles.noPermissionText}>{t('scanner.noAccessToCamera')}</Text>
+                <Text style={styles.permissionSubtext}>{t('scanner.galleryPermissionMessage')}</Text>
                 <TouchableOpacity
-                    style={styles.permissionButton}
-                    onPress={() => Camera.requestCameraPermissionsAsync()}
+                    style={styles.galleryFallbackButton}
+                    onPress={pickImageFromGallery}
                 >
-                    <Text style={styles.permissionButtonText}>Grant Permission</Text>
+                    <Ionicons name="images" size={24} color="#2196F3" />
+                    <Text style={styles.galleryFallbackText}>{t('scanner.grantPermission')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -171,7 +177,7 @@ export default function ScannerScreen() {
                     >
                         <Ionicons name="close" size={30} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerText}>Scan Food Label</Text>
+                    <Text style={styles.headerText}>{t('scanner.scanFoodLabel')}</Text>
                     <TouchableOpacity
                         style={styles.flashButton}
                         onPress={() => setFlashOn(!flashOn)}
@@ -194,7 +200,7 @@ export default function ScannerScreen() {
                     {isScanning && (
                         <View style={styles.scanningOverlay}>
                             <ActivityIndicator size="large" color="#fff" />
-                            <Text style={styles.scanningText}>Analyzing ingredients...</Text>
+                            <Text style={styles.scanningText}>{t('scanner.analyzingIngredients')}</Text>
                         </View>
                     )}
                 </View>
@@ -202,7 +208,7 @@ export default function ScannerScreen() {
                 {/* Instructions */}
                 <View style={styles.instructionsContainer}>
                     <Text style={styles.instructionsText}>
-                        Position the ingredients label within the frame
+                        {t('scanner.positionLabelWithinFrame')}
                     </Text>
                 </View>
 
@@ -214,7 +220,7 @@ export default function ScannerScreen() {
                         disabled={isScanning}
                     >
                         <Ionicons name="images" size={30} color="#fff" />
-                        <Text style={styles.galleryButtonText}>Gallery</Text>
+                        <Text style={styles.galleryButtonText}>{t('scanner.gallery')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -369,7 +375,29 @@ const styles = StyleSheet.create({
         color: '#999',
         fontSize: 16,
         marginTop: 20,
+        marginBottom: 10,
+    },
+    permissionSubtext: {
+        color: '#666',
+        fontSize: 14,
         marginBottom: 30,
+        textAlign: 'center',
+    },
+    galleryFallbackButton: {
+        backgroundColor: '#f0f8ff',
+        paddingHorizontal: 30,
+        paddingVertical: 15,
+        borderRadius: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#2196F3',
+    },
+    galleryFallbackText: {
+        color: '#2196F3',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 10,
     },
     permissionButton: {
         backgroundColor: '#2196F3',
