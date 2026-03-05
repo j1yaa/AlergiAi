@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { getMealTrends } from '../api/client';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -28,9 +29,11 @@ export default function MealTrendsScreen() {
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadTrends();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      loadTrends();
+    }, [])
+  );
 
   const loadTrends = async () => {
     try {
@@ -109,7 +112,7 @@ export default function MealTrendsScreen() {
             <View style={[styles.insightItem, { backgroundColor: '#FFF3E0' }]}>
               <Ionicons name="alert-circle" size={20} color="#FF9800" />
               <Text style={[styles.insightText, { color: '#FF9800' }]}>
-                {trends.topAllergens[0].name} appeared in {Math.round((trends.topAllergens[0].count / totalMealsThisWeek) * 100)}% of meals
+                {trends.topAllergens[0].name} appeared in {totalMealsThisWeek > 0 ? Math.round((trends.topAllergens[0].count / totalMealsThisWeek) * 100) : 0}% of meals
               </Text>
             </View>
           )}
@@ -150,27 +153,34 @@ export default function MealTrendsScreen() {
         </View>
         <Text style={[styles.subtitle, { color: colors.icon }]}>Most detected in your meals</Text>
         
-        <View style={styles.allergenList}>
-          {trends.topAllergens.map((item, index) => (
-            <View key={index} style={styles.allergenRow}>
-              <View style={styles.allergenInfo}>
-                <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
-                <View style={styles.allergenBarContainer}>
-                  <View 
-                    style={[
-                      styles.allergenBar, 
-                      { 
-                        width: `${(item.count / maxAllergens) * 100}%`,
-                        backgroundColor: colors.error 
-                      }
-                    ]} 
-                  />
+        {trends.topAllergens.length === 0 ? (
+          <View style={styles.emptyAllergens}>
+            <Text style={[styles.emptyText, { color: colors.icon }]}>No allergen data yet</Text>
+            <Text style={[styles.emptySubtext, { color: colors.icon }]}>Use "Analyze Meal" to detect allergens</Text>
+          </View>
+        ) : (
+          <View style={styles.allergenList}>
+            {trends.topAllergens.map((item, index) => (
+              <View key={index} style={styles.allergenRow}>
+                <View style={styles.allergenInfo}>
+                  <Text style={[styles.allergenName, { color: colors.text }]}>{item.name}</Text>
+                  <View style={styles.allergenBarContainer}>
+                    <View 
+                      style={[
+                        styles.allergenBar, 
+                        { 
+                          width: `${(item.count / maxAllergens) * 100}%`,
+                          backgroundColor: colors.error 
+                        }
+                      ]} 
+                    />
+                  </View>
                 </View>
+                <Text style={[styles.allergenCount, { color: colors.error }]}>{item.count}</Text>
               </View>
-              <Text style={[styles.allergenCount, { color: colors.error }]}>{item.count}</Text>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
       </View>
 
       {/* Reaction Trend */}
@@ -339,5 +349,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
     flex: 1,
+  },
+  emptyAllergens: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  emptySubtext: {
+    fontSize: 14,
   },
 });

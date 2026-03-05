@@ -101,6 +101,7 @@ export interface Symptom {
   dateISO: string;
   description: string;
   severity: number;  // 1-5 scale
+  timestamp?: string | Date;  // For backward compatibility
 }
 
 export interface SymptomsResponse {
