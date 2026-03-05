@@ -10,7 +10,6 @@ import { getProfile, getUserSettings, updateUserSettings } from '../api/client';
 import { auth } from '../config/firebase';
 import {
   updateEmail,
-  updatePassword,
   reauthenticateWithCredential,
   EmailAuthProvider
 } from 'firebase/auth';
@@ -20,26 +19,15 @@ import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertServi
 export default function SettingsScreen() {
   const { colors } = useTheme();
 
-  // Account Info
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [originalName, setOriginalName] = useState('');
   const [originalEmail, setOriginalEmail] = useState('');
+  const [originalPhone, setOriginalPhone] = useState('');
 
-  // Change Password
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  // Emergency Contact
-  const [emergencyPhone, setEmergencyPhone] = useState('');
-  const [originalEmergencyPhone, setOriginalEmergencyPhone] = useState('');
-
-  // UI state
   const [loading, setLoading] = useState(true);
-  const [savingAccount, setSavingAccount] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
-  const [savingContact, setSavingContact] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -55,17 +43,17 @@ export default function SettingsScreen() {
       setEmail(profile.email);
       setOriginalName(profile.name);
       setOriginalEmail(profile.email);
-      setEmergencyPhone(alertSettings.emergencyContactPhone || '');
-      setOriginalEmergencyPhone(alertSettings.emergencyContactPhone || '');
+      setPhone(alertSettings.emergencyContactPhone || '');
+      setOriginalPhone(alertSettings.emergencyContactPhone || '');
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error('Failed to load profile:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveAccount = async () => {
-    setSavingAccount(true);
+  const handleSave = async () => {
+    setSaving(true);
     try {
       const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
@@ -80,7 +68,7 @@ export default function SettingsScreen() {
       if (email !== originalEmail) {
         const password = await promptForPassword();
         if (!password) {
-          setSavingAccount(false);
+          setSaving(false);
           return;
         }
         const credential = EmailAuthProvider.credential(user.email!, password);
@@ -91,17 +79,24 @@ export default function SettingsScreen() {
         await AsyncStorage.setItem('saved_email', email);
       }
 
+      // Update emergency contact phone
+      if (phone !== originalPhone) {
+        const alertSettings = await getAlertSettings();
+        await saveAlertSettings({ ...alertSettings, emergencyContactPhone: phone });
+      }
+
       setOriginalName(name);
       setOriginalEmail(email);
-      Alert.alert('Success', 'Account info updated.');
+      setOriginalPhone(phone);
+      Alert.alert('Success', 'Profile updated.');
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
         Alert.alert('Error', 'Incorrect password. Please try again.');
       } else {
-        Alert.alert('Error', error.message || 'Failed to update account info.');
+        Alert.alert('Error', error.message || 'Failed to update profile.');
       }
     } finally {
-      setSavingAccount(false);
+      setSaving(false);
     }
   };
 
@@ -119,67 +114,16 @@ export default function SettingsScreen() {
     });
   };
 
-  const handleChangePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
-      return;
-    }
-
-    setSavingPassword(true);
-    try {
-      const user = auth.currentUser;
-      if (!user || !user.email) throw new Error('Not authenticated');
-
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-      await AsyncStorage.setItem('saved_password', newPassword);
-
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      Alert.alert('Success', 'Password updated.');
-    } catch (error: any) {
-      if (error.code === 'auth/wrong-password') {
-        Alert.alert('Error', 'Current password is incorrect.');
-      } else {
-        Alert.alert('Error', error.message || 'Failed to update password.');
-      }
-    } finally {
-      setSavingPassword(false);
-    }
-  };
-
-  const handleSaveContact = async () => {
-    setSavingContact(true);
-    try {
-      const alertSettings = await getAlertSettings();
-      await saveAlertSettings({ ...alertSettings, emergencyContactPhone: emergencyPhone });
-      setOriginalEmergencyPhone(emergencyPhone);
-      Alert.alert('Success', 'Emergency contact updated.');
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to update emergency contact.');
-    } finally {
-      setSavingContact(false);
-    }
-  };
-
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.icon }]}>Loading settings...</Text>
+        <Text style={[styles.loadingText, { color: colors.icon }]}>Loading...</Text>
       </View>
     );
   }
 
-  const accountChanged = name !== originalName || email !== originalEmail;
-  const passwordReady = currentPassword.length > 0 && newPassword.length > 0 && confirmPassword.length > 0;
-  const contactChanged = emergencyPhone !== originalEmergencyPhone;
+  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone;
 
   return (
     <KeyboardAvoidingView
@@ -187,31 +131,29 @@ export default function SettingsScreen() {
       style={{ flex: 1 }}
     >
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Ionicons name="settings" size={32} color={colors.primary} />
-          <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
-          <Text style={[styles.subtitle, { color: colors.icon }]}>
-            Manage your account and preferences
-          </Text>
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {name.split(' ').map(n => n[0]).join('').toUpperCase()}
+            </Text>
+          </View>
         </View>
 
-        {/* Account Info */}
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Account Info</Text>
-
+        {/* Form */}
+        <View style={styles.formSection}>
           <Text style={[styles.inputLabel, { color: colors.icon }]}>Name</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
+            style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={name}
             onChangeText={setName}
             placeholder="Your name"
             placeholderTextColor={colors.icon}
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Email</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>E-Mail</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
+            style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={email}
             onChangeText={setEmail}
             placeholder="Your email"
@@ -220,103 +162,29 @@ export default function SettingsScreen() {
             autoCapitalize="none"
           />
 
-          <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: colors.primary }, !accountChanged && styles.buttonDisabled]}
-            onPress={handleSaveAccount}
-            disabled={!accountChanged || savingAccount}
-          >
-            {savingAccount ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Changes</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Change Password */}
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Change Password</Text>
-
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Current Password</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>Mobile</Text>
           <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
-            value={currentPassword}
-            onChangeText={setCurrentPassword}
-            placeholder="Enter current password"
-            placeholderTextColor={colors.icon}
-            secureTextEntry
-          />
-
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>New Password</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
-            value={newPassword}
-            onChangeText={setNewPassword}
-            placeholder="Enter new password"
-            placeholderTextColor={colors.icon}
-            secureTextEntry
-          />
-
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Confirm New Password</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Confirm new password"
-            placeholderTextColor={colors.icon}
-            secureTextEntry
-          />
-
-          <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: colors.primary }, !passwordReady && styles.buttonDisabled]}
-            onPress={handleChangePassword}
-            disabled={!passwordReady || savingPassword}
-          >
-            {savingPassword ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>Update Password</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Emergency Contact */}
-        <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Emergency Contact</Text>
-          <Text style={[styles.description, { color: colors.icon }]}>
-            This number will be notified for high-risk allergen alerts
-          </Text>
-
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Phone Number</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
-            value={emergencyPhone}
-            onChangeText={setEmergencyPhone}
-            placeholder="Enter phone number"
+            style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Emergency contact phone"
             placeholderTextColor={colors.icon}
             keyboardType="phone-pad"
           />
-
-          <TouchableOpacity
-            style={[styles.saveButton, { backgroundColor: colors.primary }, !contactChanged && styles.buttonDisabled]}
-            onPress={handleSaveContact}
-            disabled={!contactChanged || savingContact}
-          >
-            {savingContact ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>Save Contact</Text>
-            )}
-          </TouchableOpacity>
         </View>
 
-        {/* Info */}
-        <View style={[styles.infoBox, { backgroundColor: `${colors.primary}15` }]}>
-          <Ionicons name="information-circle" size={20} color={colors.primary} />
-          <Text style={[styles.infoText, { color: colors.primary }]}>
-            Email and password changes require recent authentication for security.
-          </Text>
-        </View>
+        {/* Save Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, { backgroundColor: colors.primary }, !hasChanges && styles.buttonDisabled]}
+          onPress={handleSave}
+          disabled={!hasChanges || saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>SAVE</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -336,51 +204,45 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
   },
-  header: {
+  avatarSection: {
     alignItems: 'center',
     marginBottom: 30,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
     marginTop: 10,
   },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 5,
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: '#0B63D6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  section: {
-    marginBottom: 25,
-    padding: 15,
-    borderRadius: 12,
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#fff',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  description: {
-    fontSize: 13,
-    marginBottom: 12,
+  formSection: {
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 13,
     fontWeight: '500',
     marginBottom: 6,
-    marginTop: 8,
+    marginTop: 16,
   },
   input: {
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
     fontSize: 16,
-    marginBottom: 4,
   },
   saveButton: {
-    paddingVertical: 14,
-    borderRadius: 10,
+    paddingVertical: 16,
+    borderRadius: 25,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 30,
+    marginBottom: 40,
   },
   buttonDisabled: {
     opacity: 0.5,
@@ -388,17 +250,7 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  infoBox: {
-    flexDirection: 'row',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 40,
-  },
-  infoText: {
-    marginLeft: 10,
-    fontSize: 13,
-    flex: 1,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

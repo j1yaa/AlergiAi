@@ -18,7 +18,7 @@ const menuItems: MenuItem[] = [
   { name: 'Allergens', label: 'My Allergens', icon: 'shield-checkmark' },
   { name: 'Symptoms', label: 'Symptoms', icon: 'fitness' },
   { name: 'Alerts', label: 'Alerts', icon: 'notifications' },
-  { name: 'Profile', label: 'Profile', icon: 'person-circle' },
+  { name: 'Profile', label: 'Settings', icon: 'settings' },
 ];
 
 export default function CustomDrawer(props: any) {

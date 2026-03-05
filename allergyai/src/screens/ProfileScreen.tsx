@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getProfile, logout, getAllergens, getAnalytics } from '../api/client'; 
-import { UserProfile, AllergenWithSeverity } from '../types';
+import { getProfile, logout } from '../api/client';
+import { UserProfile } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
 import { ThemeToggle } from '../components';
@@ -10,23 +10,13 @@ import { ThemeToggle } from '../components';
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
     const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [allergensSeverity, setAllergensSeverity] = useState<AllergenWithSeverity[]>([]);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const loadProfile = useCallback(async () => {
         try {
-            const [profileData, allergensData, analyticsData] = await Promise.all([
-                getProfile(),
-                getAllergens(),
-                getAnalytics()
-            ]);
-            setProfile({
-                ...profileData,
-                totalMeals: analyticsData.totalMeals || 0,
-                totalAlerts: analyticsData.totalAlerts || 0
-            });
-            setAllergensSeverity(allergensData.allergensSeverity || []);
+            const profileData = await getProfile();
+            setProfile(profileData);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -45,10 +35,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 text: 'Logout',
                 style: 'destructive',
                 onPress: () => {
-                    // Logout immediately for better UX
                     onLogout?.();
-                    
-                    // Run cleanup in background
                     logout().catch(error => {
                         console.error('Logout cleanup failed:', error);
                     });
@@ -59,19 +46,19 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0B63D6" />
-                <Text style={styles.loadingText}>Loading profile...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={[styles.loadingText, { color: colors.icon }]}>Loading...</Text>
             </View>
         );
     }
 
     if (!profile) {
         return (
-            <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={64} color="#E53935" />
-                <Text style={styles.errorText}>Failed to load profile</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+            <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+                <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
+                <Text style={[styles.errorText, { color: colors.error }]}>Failed to load profile</Text>
+                <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadProfile}>
                     <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
             </View>
@@ -82,104 +69,48 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Theme Toggle */}
             <View style={styles.themeSection}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Theme</Text>
+                <Text style={[styles.themeSectionTitle, { color: colors.text }]}>Theme</Text>
                 <ThemeToggle />
             </View>
 
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.profileIcon}>
-                    <Text style={styles.profileInitials}>
-                        {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </Text>
-                </View>
-                <Text style={[styles.name, { color: colors.text }]}>{profile.name}</Text>
-                <Text style={[styles.email, { color: colors.icon }]}>{profile.email}</Text>
-            </View>
-
-            {/* Settings Button */}
-            <TouchableOpacity
-                style={[styles.settingsButton, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
-                onPress={() => navigation.navigate('Settings')}
-            >
-                <Ionicons name="settings-outline" size={22} color={colors.primary} />
-                <Text style={[styles.settingsButtonText, { color: colors.text }]}>Settings</Text>
-                <Ionicons name="chevron-forward" size={20} color={colors.icon} />
-            </TouchableOpacity>
-
-            {/* Stats */}
-            <View style={styles.statsContainer}>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="restaurant-outline" size={24} color={colors.primary} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalMeals}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Meals Tracked</Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="warning-outline" size={24} color={colors.error} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.totalAlerts}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Alerts</Text>
-                </View>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="medical-outline" size={24} color={colors.warning} />
-                    <Text style={[styles.statValue, { color: colors.text }]}>{profile.allergens.length}</Text>
-                    <Text style={[styles.statLabel, { color: colors.icon }]}>Allergens</Text>
-                </View>
-            </View>
-
-            {/* Allergens */}
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Allergens</Text>
-                    <TouchableOpacity
-                        style={styles.manageButton}
-                        onPress={() => navigation.navigate('Allergens')}
-                    >
-                        <Text style={styles.manageButtonText}>Manage</Text>
+            {/* Welcome Header */}
+            <View style={[styles.welcomeSection, { backgroundColor: colors.surface }]}>
+                <View style={styles.welcomeRow}>
+                    <View style={styles.profileIcon}>
+                        <Text style={styles.profileInitials}>
+                            {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </Text>
+                    </View>
+                    <View style={styles.welcomeText}>
+                        <Text style={[styles.welcomeLabel, { color: colors.icon }]}>Welcome</Text>
+                        <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
+                    </View>
+                    <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon}>
+                        <Ionicons name="log-out-outline" size={24} color={colors.error} />
                     </TouchableOpacity>
                 </View>
-                {profile.allergens.length > 0 ? (
-                    <View style={styles.allergensList}>
-                        {profile.allergens.map((allergen, index) => {
-                            const severityInfo = allergensSeverity.find(a => a.name.toLowerCase() === allergen.toLowerCase());
-                            const severity = severityInfo?.severity || 'moderate';
-                            const colors = {
-                                low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32', icon: '#4CAF50' },
-                                moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100', icon: '#FF9800' },
-                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828', icon: '#E53935' }
-                            };
-                            const color = colors[severity];
-                            return (
-                                <View key={index} style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
-                                    <Ionicons name="alert-circle" size={16} color={color.icon} />
-                                    <Text style={[styles.allergenText, { color: color.text }]}>{allergen}</Text>
-                                </View>
-                            );
-                        })}
-                    </View>
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Ionicons name="medical-outline" size={48} color="#ccc" />
-                        <Text style={styles.emptyText}>No allergens added</Text>
-                        <Text style={styles.emptySubtext}>Tap Manage to add allergens</Text>
-                    </View>
-                )}
             </View>
 
-            {/* Logout Button */}
-            <TouchableOpacity
-                style={[styles.logoutButton, isLoggingOut && styles.logoutButtonDisabled]}
-                onPress={handleLogout}
-                disabled={isLoggingOut}
-            >
-                {isLoggingOut ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                    <>
-                        <Ionicons name="log-out-outline" size={20} color="#fff" />
-                        <Text style={styles.logoutButtonText}>Logout</Text>
-                    </>
-                )}
-            </TouchableOpacity>
+            {/* Menu Items */}
+            <View style={styles.menuSection}>
+                <TouchableOpacity
+                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    onPress={() => navigation.navigate('UserProfile')}
+                >
+                    <Ionicons name="person-outline" size={22} color={colors.icon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>User Profile</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    onPress={() => navigation.navigate('ChangePassword')}
+                >
+                    <Ionicons name="lock-closed-outline" size={22} color={colors.icon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>Change Password</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -189,36 +120,28 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 20,
     },
-    themeSection: {
-        marginBottom: 24,
-    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F6F9FF',
     },
     loadingText: {
         marginTop: 16,
         fontSize: 16,
-        color: '#666',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F6F9FF',
         padding: 20,
     },
     errorText: {
         marginTop: 16,
         fontSize: 18,
-        color: '#E53935',
         fontWeight: '600',
     },
     retryButton: {
         marginTop: 20,
-        backgroundColor: '#0B63D6',
         paddingHorizontal: 24,
         paddingVertical: 12,
         borderRadius: 8,
@@ -228,151 +151,64 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    header: {
+    themeSection: {
+        marginBottom: 24,
+    },
+    themeSectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 8,
+    },
+    welcomeSection: {
+        padding: 20,
+        borderRadius: 12,
+        marginBottom: 24,
+    },
+    welcomeRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 32,
     },
     profileIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: '#0B63D6',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 16,
     },
     profileInitials: {
-        fontSize: 28,
+        fontSize: 20,
         fontWeight: '700',
         color: '#fff',
     },
-    name: {
-        fontSize: 24,
+    welcomeText: {
+        flex: 1,
+        marginLeft: 14,
+    },
+    welcomeLabel: {
+        fontSize: 13,
+    },
+    welcomeName: {
+        fontSize: 20,
         fontWeight: '700',
-        marginBottom: 4,
+        marginTop: 2,
     },
-    email: {
-        fontSize: 16,
+    logoutIcon: {
+        padding: 8,
     },
-    settingsButton: {
+    menuSection: {
+        gap: 12,
+    },
+    menuItem: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
         borderRadius: 12,
-        borderWidth: 1,
-        marginBottom: 24,
-        gap: 12,
+        gap: 14,
     },
-    settingsButtonText: {
+    menuItemText: {
         fontSize: 16,
         fontWeight: '600',
         flex: 1,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 32,
-    },
-    statCard: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.05,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 8,
-        elevation: 2,
-    },
-    statValue: {
-        fontSize: 24,
-        fontWeight: '700',
-        marginTop: 8,
-    },
-    statLabel: {
-        fontSize: 12,
-        marginTop: 4,
-        textAlign: 'center',
-    },
-    section: {
-        marginBottom: 32,
-    },
-    sectionHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    manageButton: {
-        backgroundColor: '#E3F2FD',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 6,
-    },
-    manageButtonText: {
-        color: '#0B63D6',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    allergensList: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    allergenPill: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#FFCDD2',
-        gap: 6,
-    },
-    allergenText: {
-        color: '#C62828',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    emptyState: {
-        alignItems: 'center',
-        paddingVertical: 32,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-    },
-    emptyText: {
-        fontSize: 16,
-        color: '#999',
-        fontWeight: '500',
-        marginTop: 12,
-    },
-    emptySubtext: {
-        fontSize: 14,
-        color: '#bbb',
-        marginTop: 4,
-    },
-    logoutButton: {
-        flexDirection: 'row',
-        backgroundColor: '#E53935',
-        paddingVertical: 16,
-        paddingHorizontal: 20,
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 8,
-        marginTop: 'auto',
-    },
-    logoutButtonDisabled: {
-        opacity: 0.6,
-    },
-    logoutButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
     },
 });
