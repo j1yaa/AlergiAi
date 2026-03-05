@@ -17,7 +17,7 @@ export default function AddSymptomScreen() {
 
   const handleSave = async () => {
     if (!description.trim()) {
-      Alert.alert(t('common.error'), 'Description is required');
+      Alert.alert(t('common.error'), t('symptoms.descriptionRequired'));
       return;
     }
     
@@ -93,9 +93,9 @@ export default function AddSymptomScreen() {
           thumbTintColor="#2196F3"
         />
         <View style={styles.severityLabels}>
-          <Text>Mild</Text>
+          <Text>{t('symptoms.mild')}</Text>
           <Text style={styles.severityValue}>{severity}</Text>
-          <Text>Severe</Text>
+          <Text>{t('symptoms.severe')}</Text>
         </View>
       </View>
 

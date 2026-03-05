@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface CorrelationData {
 	allergen: string;
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function SymptomCorrelationChart({ data }: Props) {
+	const { t } = useLanguage();
 	const maxCount = Math.max(...data.map(d => d.count), 1);
 
 	const getSeverityColor = (severity: number) => {
@@ -22,10 +24,10 @@ export default function SymptomCorrelationChart({ data }: Props) {
 
 	return (
 		<View style={styles.container}>
-			<Text style={styles.title}>Symptom-Allergen Correlation</Text>
-			<Text style={styles.subtitle}>Food eaten withing 24 hours before symptoms</Text>
+			<Text style={styles.title}>{t('correlation.allergenCorrelation')}</Text>
+			<Text style={styles.subtitle}>{t('correlation.foodEatenBefore')}</Text>
 			{data.length === 0 ? (
-				<Text style={styles.emptyText}>No correlation data available</Text>
+				<Text style={styles.emptyText}>{t('correlation.noCorrelationData')}</Text>
 			) : (
 					data.map((item, index) => (
 						<View key={index} style={styles.row}>

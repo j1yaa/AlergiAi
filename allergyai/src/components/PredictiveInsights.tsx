@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface Prediction {
     allergen: string;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function PredictiveInsights({ predictions }: Props) {
+    const { t } = useLanguage();
     const getRiskColor = (score: number) => {
         if (score >= 70) return '#F44336';
         if (score >= 50) return '#FF9800';
@@ -22,14 +24,14 @@ export default function PredictiveInsights({ predictions }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
-                <Text style={styles.title}> Predictive Insights</Text>
+                <Text style={styles.title}> {t('predictions.title')}</Text>
                 <View style={styles.betaBadge}>
                     <Text style={styles.betaText}>AI</Text>
                 </View>
             </View>
             {predictions.length === 0 ? (
                 <View style={styles.emptyCard}>
-                    <Text style={styles.emptyText}>Log meals and symptoms to see predictions</Text>
+                    <Text style={styles.emptyText}>{t('predictions.emptyText')}</Text>
                 </View>
             ) : (
                     predictions.map((pred, index) => (
@@ -41,7 +43,7 @@ export default function PredictiveInsights({ predictions }: Props) {
                             </View>
                         </View>
                             <Text style={styles.reason}>{pred.reason}</Text>
-                          <Text style={styles.confidence}>Confidence: {pred.confidence}%</Text>
+                          <Text style={styles.confidence}>{t('predictions.confidence', { percent: pred.confidence })}</Text>
                         </View >
                     ))
             )}

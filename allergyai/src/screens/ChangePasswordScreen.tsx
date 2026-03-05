@@ -12,9 +12,11 @@ import {
   EmailAuthProvider
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function ChangePasswordScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -23,11 +25,11 @@ export default function ChangePasswordScreen() {
 
   const handleSave = async () => {
     if (newPassword !== confirmPassword) {
-      Alert.alert('Error', 'New passwords do not match.');
+      Alert.alert(t('common.error'), t('changePassword.passwordsMismatch'));
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+      Alert.alert(t('common.error'), t('changePassword.passwordTooShort'));
       return;
     }
 
@@ -44,12 +46,12 @@ export default function ChangePasswordScreen() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      Alert.alert('Success', 'Password updated.');
+      Alert.alert(t('common.success'), t('changePassword.passwordUpdated'));
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
-        Alert.alert('Error', 'Current password is incorrect.');
+        Alert.alert(t('common.error'), t('changePassword.incorrectPassword'));
       } else {
-        Alert.alert('Error', error.message || 'Failed to update password.');
+        Alert.alert(t('common.error'), error.message || t('changePassword.failedToUpdate'));
       }
     } finally {
       setSaving(false);
@@ -64,35 +66,35 @@ export default function ChangePasswordScreen() {
       style={{ flex: 1 }}
     >
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Change Password</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('changePassword.title')}</Text>
 
         <View style={styles.formSection}>
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Current Password</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('changePassword.currentPassword')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={currentPassword}
             onChangeText={setCurrentPassword}
-            placeholder="Enter current password"
+            placeholder={t('changePassword.enterCurrent')}
             placeholderTextColor={colors.icon}
             secureTextEntry
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>New Password</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('changePassword.newPassword')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={newPassword}
             onChangeText={setNewPassword}
-            placeholder="Enter new password"
+            placeholder={t('changePassword.enterNew')}
             placeholderTextColor={colors.icon}
             secureTextEntry
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Confirm Password</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('changePassword.confirmPassword')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            placeholder="Confirm new password"
+            placeholder={t('changePassword.confirmNew')}
             placeholderTextColor={colors.icon}
             secureTextEntry
           />
@@ -106,7 +108,7 @@ export default function ChangePasswordScreen() {
           {saving ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>SAVE</Text>
+            <Text style={styles.saveButtonText}>{t('changePassword.save')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

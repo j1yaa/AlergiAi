@@ -7,7 +7,7 @@ type Language = 'en' | 'es';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (scope: string) => string;
+  t: (scope: string, options?: Record<string, any>) => string;
 }
 
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -30,8 +30,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     AsyncStorage.setItem('app_language', lang);
   }, []);
 
-  const t = useCallback((scope: string) => {
-    return i18n.t(scope);
+  const t = useCallback((scope: string, options?: Record<string, any>) => {
+    return i18n.t(scope, options);
   }, [language]);
 
   return (

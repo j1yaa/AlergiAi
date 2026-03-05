@@ -15,9 +15,11 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -88,12 +90,12 @@ export default function SettingsScreen() {
       setOriginalName(name);
       setOriginalEmail(email);
       setOriginalPhone(phone);
-      Alert.alert('Success', 'Profile updated.');
+      Alert.alert(t('common.success'), t('userProfile.profileUpdated'));
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
-        Alert.alert('Error', 'Incorrect password. Please try again.');
+        Alert.alert(t('common.error'), t('userProfile.incorrectPassword'));
       } else {
-        Alert.alert('Error', error.message || 'Failed to update profile.');
+        Alert.alert(t('common.error'), error.message || t('userProfile.failedToUpdate'));
       }
     } finally {
       setSaving(false);
@@ -103,11 +105,11 @@ export default function SettingsScreen() {
   const promptForPassword = (): Promise<string | null> => {
     return new Promise((resolve) => {
       Alert.prompt(
-        'Confirm Password',
-        'Enter your current password to update your email.',
+        t('userProfile.confirmPassword'),
+        t('userProfile.enterPasswordToUpdate'),
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
-          { text: 'Confirm', onPress: (password) => resolve(password || null) }
+          { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(null) },
+          { text: t('common.confirm'), onPress: (password) => resolve(password || null) }
         ],
         'secure-text'
       );
@@ -118,7 +120,7 @@ export default function SettingsScreen() {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={[styles.loadingText, { color: colors.icon }]}>Loading...</Text>
+        <Text style={[styles.loadingText, { color: colors.icon }]}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -142,32 +144,32 @@ export default function SettingsScreen() {
 
         {/* Form */}
         <View style={styles.formSection}>
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Name</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('userProfile.name')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={name}
             onChangeText={setName}
-            placeholder="Your name"
+            placeholder={t('userProfile.yourName')}
             placeholderTextColor={colors.icon}
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>E-Mail</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('userProfile.email')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={email}
             onChangeText={setEmail}
-            placeholder="Your email"
+            placeholder={t('userProfile.yourEmail')}
             placeholderTextColor={colors.icon}
             keyboardType="email-address"
             autoCapitalize="none"
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Mobile</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('userProfile.mobile')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={phone}
             onChangeText={setPhone}
-            placeholder="Emergency contact phone"
+            placeholder={t('userProfile.emergencyContactPhone')}
             placeholderTextColor={colors.icon}
             keyboardType="phone-pad"
           />
@@ -182,7 +184,7 @@ export default function SettingsScreen() {
           {saving ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>SAVE</Text>
+            <Text style={styles.saveButtonText}>{t('userProfile.save')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

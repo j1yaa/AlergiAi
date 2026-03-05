@@ -8,11 +8,13 @@ import {
   updateReminder, 
   requestPermissions 
 } from '../utils/reminderService';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function ReminderSettings() {
   const [reminders, setReminders] = useState<MealReminder[]>([]);
   const [showTimePicker, setShowTimePicker] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     init();
@@ -79,9 +81,9 @@ export default function ReminderSettings() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Ionicons name="notifications" size={32} color="#2196F3" />
-        <Text style={styles.title}>Meal Reminders</Text>
+        <Text style={styles.title}>{t('reminders.mealReminders')}</Text>
         <Text style={styles.subtitle}>
-          Get notified when it's time to log your meals
+          {t('reminders.getNotified')}
         </Text>
       </View>
 
@@ -89,7 +91,7 @@ export default function ReminderSettings() {
         <View style={styles.permissionBanner}>
           <Ionicons name="warning" size={20} color="#FF9800" />
           <Text style={styles.permissionText}>
-            Enable notifications to receive reminders
+            {t('reminders.enableNotifications')}
           </Text>
         </View>
       )}
@@ -101,7 +103,7 @@ export default function ReminderSettings() {
               <Ionicons name={getMealIcon(reminder.mealType)} size={28} color="#2196F3" style={styles.mealIcon} />
               <View>
                 <Text style={styles.mealType}>
-                  {reminder.mealType.charAt(0).toUpperCase() + reminder.mealType.slice(1)}
+                  {t('reminders.' + reminder.mealType)}
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setShowTimePicker(reminder.id)}
@@ -148,7 +150,7 @@ export default function ReminderSettings() {
       <View style={styles.infoBox}>
         <Ionicons name="information-circle" size={20} color="#2196F3" />
         <Text style={styles.infoText}>
-          Reminders help you stay consistent with meal logging and allergen tracking
+          {t('reminders.infoText')}
         </Text>
       </View>
     </ScrollView>

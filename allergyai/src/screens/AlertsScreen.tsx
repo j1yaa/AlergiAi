@@ -10,7 +10,7 @@ import { useLanguage } from '../hooks/useLanguage';
 
 export default function AlertsScreen() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function AlertsScreen() {
   };
 
   const formatDate = (dateISO: string) => {
-    return new Date(dateISO).toLocaleDateString('en-US', {
+    return new Date(dateISO).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -114,7 +114,7 @@ export default function AlertsScreen() {
             onPress={() => handleMarkRead(item.id)}
           >
             <Ionicons name="checkmark" size={16} color="#4CAF50" />
-            <Text style={[styles.actionText, { color: colors.text }]}>Mark Read</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('alerts.markRead')}</Text>
           </TouchableOpacity>
         )}
         {!item.acknowledged && (
@@ -123,7 +123,7 @@ export default function AlertsScreen() {
             onPress={() => handleAcknowledge(item.id)}
           >
             <Ionicons name="hand-left" size={16} color="#2196F3" />
-            <Text style={[styles.actionText, { color: colors.text }]}>Acknowledge</Text>
+            <Text style={[styles.actionText, { color: colors.text }]}>{t('alerts.acknowledge')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -133,7 +133,7 @@ export default function AlertsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Loading alerts...</Text>
+        <Text style={{ color: colors.text }}>{t('alerts.loadingAlerts')}</Text>
       </View>
     );
   }
@@ -142,9 +142,9 @@ export default function AlertsScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.headerRow}>
         <View>
-          <Text style={[styles.title, { color: colors.text }]}>Alerts</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('alerts.alerts')}</Text>
           {unreadCount > 0 && (
-            <Text style={[styles.unreadCount, { color: colors.error }]}>{unreadCount} unread</Text>
+            <Text style={[styles.unreadCount, { color: colors.error }]}>{t('alerts.unreadCount', { count: unreadCount })}</Text>
           )}
         </View>
       </View>
