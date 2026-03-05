@@ -145,7 +145,7 @@ export default function AlertsScreen() {
         </View>
         <TouchableOpacity 
           style={styles.settingsButton}
-          onPress={() => navigation.navigate('AlertSettings' as never)}
+          onPress={() => navigation.navigate('Profile' as never)}
         >
           <Ionicons name="settings-outline" size={24} color="#666" />
         </TouchableOpacity>

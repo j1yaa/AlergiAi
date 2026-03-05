@@ -226,7 +226,7 @@ export default function AddMealScreen() {
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.reminderButton, { backgroundColor: `${colors.warning}15`, borderColor: colors.warning }]}
-            onPress={() => navigation.navigate('ReminderSettings' as never)}
+            onPress={() => navigation.navigate('Profile' as never)}
           >
             <Ionicons name="notifications-outline" size={18} color={colors.warning} />
           </TouchableOpacity>

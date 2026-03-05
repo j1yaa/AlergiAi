@@ -117,8 +117,16 @@ function MainDrawer() {
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
       <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders', drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={({ navigation }) => ({
+        title: 'Meal Reminders',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Meal Reminders" backButton />,
+      })} />
+      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={({ navigation }) => ({
+        title: 'Alert Settings',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="Alert Settings" backButton />,
+      })} />
       <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation', drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="UserProfile" component={SettingsScreen} options={({ navigation }) => ({
         title: 'User Profile',

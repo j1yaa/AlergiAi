@@ -1,22 +1,29 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, logout } from '../api/client';
 import { UserProfile } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
 import { ThemeToggle } from '../components';
+import * as Notifications from 'expo-notifications';
+import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(true);
 
     const loadProfile = useCallback(async () => {
         try {
-            const profileData = await getProfile();
+            const [profileData, alertSettings] = await Promise.all([
+                getProfile(),
+                getAlertSettings()
+            ]);
             setProfile(profileData);
+            setPushEnabled(alertSettings.enabled);
             setLoading(false);
         } catch (error) {
             console.error('Failed to load profile:', error);
@@ -27,6 +34,37 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     useFocusEffect(useCallback(() => {
         loadProfile();
     }, [loadProfile]));
+
+    const handleTogglePush = async (value: boolean) => {
+        if (value) {
+            const { status: existingStatus } = await Notifications.getPermissionsAsync();
+            if (existingStatus === 'granted') {
+                setPushEnabled(true);
+                const alertSettings = await getAlertSettings();
+                await saveAlertSettings({ ...alertSettings, enabled: true });
+            } else {
+                const { status } = await Notifications.requestPermissionsAsync();
+                if (status === 'granted') {
+                    setPushEnabled(true);
+                    const alertSettings = await getAlertSettings();
+                    await saveAlertSettings({ ...alertSettings, enabled: true });
+                } else {
+                    Alert.alert(
+                        'Notifications Disabled',
+                        'Please enable notifications in your device settings to receive allergen alerts.',
+                        [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                        ]
+                    );
+                }
+            }
+        } else {
+            setPushEnabled(false);
+            const alertSettings = await getAlertSettings();
+            await saveAlertSettings({ ...alertSettings, enabled: false });
+        }
+    };
 
     const handleLogout = () => {
         Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -110,6 +148,35 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Text style={[styles.menuItemText, { color: colors.text }]}>Change Password</Text>
                     <Ionicons name="chevron-forward" size={20} color={colors.icon} />
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    onPress={() => navigation.navigate('ReminderSettings')}
+                >
+                    <Ionicons name="alarm-outline" size={22} color={colors.icon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>Meal Reminders</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    onPress={() => navigation.navigate('AlertSettings')}
+                >
+                    <Ionicons name="warning-outline" size={22} color={colors.icon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>Alert Settings</Text>
+                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                </TouchableOpacity>
+
+                <View style={[styles.menuItem, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="notifications-outline" size={22} color={colors.icon} />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>Push Notifications</Text>
+                    <Switch
+                        value={pushEnabled}
+                        onValueChange={handleTogglePush}
+                        trackColor={{ false: '#ddd', true: '#81c784' }}
+                        thumbColor={pushEnabled ? '#4caf50' : '#f4f3f4'}
+                    />
+                </View>
             </View>
         </View>
     );
