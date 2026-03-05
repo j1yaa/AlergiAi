@@ -5,12 +5,14 @@ import { getProfile, logout } from '../api/client';
 import { UserProfile } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 import { ThemeToggle } from '../components';
 import * as Notifications from 'expo-notifications';
 import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
+    const { language, setLanguage, t } = useLanguage();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -50,11 +52,11 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     await saveAlertSettings({ ...alertSettings, enabled: true });
                 } else {
                     Alert.alert(
-                        'Notifications Disabled',
-                        'Please enable notifications in your device settings to receive allergen alerts.',
+                        t('settings.notificationsDisabled'),
+                        t('settings.notificationsDisabledMessage'),
                         [
-                            { text: 'Cancel', style: 'cancel' },
-                            { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                            { text: t('settings.cancel'), style: 'cancel' },
+                            { text: t('settings.openSettings'), onPress: () => Linking.openSettings() }
                         ]
                     );
                 }
@@ -67,10 +69,10 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     };
 
     const handleLogout = () => {
-        Alert.alert('Logout', 'Are you sure you want to logout?', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('settings.logout'), t('settings.logoutConfirm'), [
+            { text: t('settings.cancel'), style: 'cancel' },
             {
-                text: 'Logout',
+                text: t('settings.logout'),
                 style: 'destructive',
                 onPress: () => {
                     onLogout?.();
@@ -86,7 +88,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         return (
             <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={[styles.loadingText, { color: colors.icon }]}>Loading...</Text>
+                <Text style={[styles.loadingText, { color: colors.icon }]}>{t('settings.loading')}</Text>
             </View>
         );
     }
@@ -95,9 +97,9 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         return (
             <View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
                 <Ionicons name="alert-circle-outline" size={64} color={colors.error} />
-                <Text style={[styles.errorText, { color: colors.error }]}>Failed to load profile</Text>
+                <Text style={[styles.errorText, { color: colors.error }]}>{t('settings.failedToLoadProfile')}</Text>
                 <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadProfile}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+                    <Text style={styles.retryButtonText}>{t('settings.retry')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -113,21 +115,21 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     </Text>
                 </View>
                 <View style={styles.welcomeText}>
-                    <Text style={[styles.welcomeLabel, { color: colors.icon }]}>Welcome</Text>
+                    <Text style={[styles.welcomeLabel, { color: colors.icon }]}>{t('settings.welcome')}</Text>
                     <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
                     <Text style={[styles.welcomeEmail, { color: colors.icon }]}>{profile.email}</Text>
                 </View>
             </View>
 
             {/* Account Section */}
-            <Text style={[styles.sectionLabel, { color: colors.icon }]}>ACCOUNT</Text>
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.accountSection')}</Text>
             <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <TouchableOpacity
                     style={styles.groupItem}
                     onPress={() => navigation.navigate('UserProfile')}
                 >
                     <Ionicons name="person-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>User Profile</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.userProfile')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
 
@@ -138,17 +140,17 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     onPress={() => navigation.navigate('ChangePassword')}
                 >
                     <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Change Password</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.changePassword')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
             </View>
 
             {/* Notifications Section */}
-            <Text style={[styles.sectionLabel, { color: colors.icon }]}>NOTIFICATIONS</Text>
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.notificationsSection')}</Text>
             <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <View style={styles.groupItem}>
                     <Ionicons name="notifications-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Push Notifications</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.pushNotifications')}</Text>
                     <Switch
                         value={pushEnabled}
                         onValueChange={handleTogglePush}
@@ -165,7 +167,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                             onPress={() => navigation.navigate('ReminderSettings')}
                         >
                             <Ionicons name="alarm-outline" size={20} color={colors.primary} />
-                            <Text style={[styles.groupItemText, { color: colors.text }]}>Meal Reminders</Text>
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.mealReminders')}</Text>
                             <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                         </TouchableOpacity>
 
@@ -175,7 +177,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                             onPress={() => navigation.navigate('AlertSettings')}
                         >
                             <Ionicons name="warning-outline" size={20} color={colors.primary} />
-                            <Text style={[styles.groupItemText, { color: colors.text }]}>Alert Settings</Text>
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.alertSettings')}</Text>
                             <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                         </TouchableOpacity>
                     </>
@@ -183,14 +185,41 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
             </View>
 
             {/* Preferences Section */}
-            <Text style={[styles.sectionLabel, { color: colors.icon }]}>PREFERENCES</Text>
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.preferencesSection')}</Text>
             <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <View style={styles.themeRow}>
                     <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Theme</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.theme')}</Text>
                 </View>
                 <View style={styles.themeToggleWrapper}>
                     <ThemeToggle />
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+
+                <View style={styles.groupItem}>
+                    <Ionicons name="language-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.language')}</Text>
+                </View>
+                <View style={styles.languageRow}>
+                    {(['en', 'es'] as const).map((lang) => (
+                        <TouchableOpacity
+                            key={lang}
+                            style={[
+                                styles.languageOption,
+                                { borderColor: language === lang ? colors.primary : colors.cardBorder },
+                                language === lang && { backgroundColor: colors.primary + '15' },
+                            ]}
+                            onPress={() => setLanguage(lang)}
+                        >
+                            <Text style={[
+                                styles.languageOptionText,
+                                { color: language === lang ? colors.primary : colors.text },
+                            ]}>
+                                {t(`languages.${lang}`)}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
                 </View>
             </View>
 
@@ -200,7 +229,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                 onPress={handleLogout}
             >
                 <Ionicons name="log-out-outline" size={20} color="#E53935" />
-                <Text style={styles.logoutText}>Logout</Text>
+                <Text style={styles.logoutText}>{t('settings.logout')}</Text>
             </TouchableOpacity>
         </ScrollView>
     );
@@ -317,6 +346,24 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 14,
         paddingTop: 10,
+    },
+    languageRow: {
+        flexDirection: 'row',
+        gap: 10,
+        paddingHorizontal: 16,
+        paddingBottom: 14,
+        paddingTop: 4,
+    },
+    languageOption: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 10,
+        borderWidth: 1.5,
+        alignItems: 'center',
+    },
+    languageOptionText: {
+        fontSize: 14,
+        fontWeight: '600',
     },
     logoutButton: {
         flexDirection: 'row',
