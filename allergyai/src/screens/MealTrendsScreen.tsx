@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 import { getMealTrends } from '../api/client';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -26,6 +27,7 @@ interface TrendsData {
 
 export default function MealTrendsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const [trends, setTrends] = useState<TrendsData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +51,7 @@ export default function MealTrendsScreen() {
   if (loading || !trends) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={{ color: colors.text }}>Loading trends...</Text>
+        <Text style={{ color: colors.text }}>{t('trends.loadingTrends')}</Text>
       </View>
     );
   }
@@ -66,12 +68,12 @@ export default function MealTrendsScreen() {
   const alertLevel = trends.reactionsThisWeek >= 4 ? 'high' : trends.reactionsThisWeek >= 2 ? 'medium' : 'low';
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.contentContainer}>
       {/* Quick Insights */}
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="bulb" size={24} color={colors.warning} />
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Quick Insights</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('trends.quickInsights')}</Text>
         </View>
         
         <View style={styles.insightsList}>
@@ -87,7 +89,7 @@ export default function MealTrendsScreen() {
               <Text style={[styles.insightText, { 
                 color: alertLevel === 'high' ? '#F44336' : alertLevel === 'medium' ? '#FF9800' : '#4CAF50' 
               }]}>
-                {trends.reactionsThisWeek} reaction{trends.reactionsThisWeek > 1 ? 's' : ''} this week - {alertLevel === 'high' ? 'High Alert' : alertLevel === 'medium' ? 'Moderate' : 'Low Risk'}
+                {t('trends.reactionsCount', { count: trends.reactionsThisWeek, level: alertLevel === 'high' ? t('trends.highAlert') : alertLevel === 'medium' ? t('trends.moderateAlert') : t('trends.lowRiskAlert') })}
               </Text>
             </View>
           )}
@@ -96,7 +98,7 @@ export default function MealTrendsScreen() {
             <View style={[styles.insightItem, { backgroundColor: '#E8F5E9' }]}>
               <Ionicons name="happy" size={20} color="#4CAF50" />
               <Text style={[styles.insightText, { color: '#4CAF50' }]}>
-                {symptomFreeDays} symptom-free day{symptomFreeDays > 1 ? 's' : ''} this week
+                {t('trends.symptomFreeDaysCount', { count: symptomFreeDays })}
               </Text>
             </View>
           )}
@@ -104,7 +106,7 @@ export default function MealTrendsScreen() {
           <View style={[styles.insightItem, { backgroundColor: '#E3F2FD' }]}>
             <Ionicons name="restaurant" size={20} color="#2196F3" />
             <Text style={[styles.insightText, { color: '#2196F3' }]}>
-              {totalMealsThisWeek} meals logged this week
+              {t('trends.mealsLoggedCount', { count: totalMealsThisWeek })}
             </Text>
           </View>
           
@@ -112,7 +114,7 @@ export default function MealTrendsScreen() {
             <View style={[styles.insightItem, { backgroundColor: '#FFF3E0' }]}>
               <Ionicons name="alert-circle" size={20} color="#FF9800" />
               <Text style={[styles.insightText, { color: '#FF9800' }]}>
-                {trends.topAllergens[0].name} appeared in {totalMealsThisWeek > 0 ? Math.round((trends.topAllergens[0].count / totalMealsThisWeek) * 100) : 0}% of meals
+                {t('trends.appearedInPercent', { name: trends.topAllergens[0].name, percent: totalMealsThisWeek > 0 ? Math.round((trends.topAllergens[0].count / totalMealsThisWeek) * 100) : 0 })}
               </Text>
             </View>
           )}
@@ -122,9 +124,9 @@ export default function MealTrendsScreen() {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="restaurant" size={24} color={colors.primary} />
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Meals Logged Per Day</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('trends.mealsLoggedPerDay')}</Text>
         </View>
-        <Text style={[styles.subtitle, { color: colors.icon }]}>Last 7 days</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>{t('trends.last7Days')}</Text>
         
         <View style={styles.chartContainer}>
           {trends.dailyMeals.map((item, index) => (
@@ -149,14 +151,14 @@ export default function MealTrendsScreen() {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="warning" size={24} color={colors.error} />
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Top 3 Allergens This Week</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('trends.top3AllergensThisWeek')}</Text>
         </View>
-        <Text style={[styles.subtitle, { color: colors.icon }]}>Most detected in your meals</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>{t('trends.mostDetectedInMeals')}</Text>
         
         {trends.topAllergens.length === 0 ? (
           <View style={styles.emptyAllergens}>
-            <Text style={[styles.emptyText, { color: colors.icon }]}>No allergen data yet</Text>
-            <Text style={[styles.emptySubtext, { color: colors.icon }]}>Use "Analyze Meal" to detect allergens</Text>
+            <Text style={[styles.emptyText, { color: colors.icon }]}>{t('trends.noAllergenData')}</Text>
+            <Text style={[styles.emptySubtext, { color: colors.icon }]}>{t('trends.useAnalyzeToDetect')}</Text>
           </View>
         ) : (
           <View style={styles.allergenList}>
@@ -187,16 +189,16 @@ export default function MealTrendsScreen() {
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="trending-down" size={24} color={colors.success} />
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Reaction Trend</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('trends.reactionTrend')}</Text>
         </View>
         
         <View style={styles.reactionContainer}>
           <View style={styles.reactionRow}>
-            <Text style={[styles.reactionLabel, { color: colors.icon }]}>This Week</Text>
+            <Text style={[styles.reactionLabel, { color: colors.icon }]}>{t('trends.thisWeek')}</Text>
             <Text style={[styles.reactionValue, { color: colors.text }]}>{trends.reactionsThisWeek}</Text>
           </View>
           <View style={styles.reactionRow}>
-            <Text style={[styles.reactionLabel, { color: colors.icon }]}>Last Week</Text>
+            <Text style={[styles.reactionLabel, { color: colors.icon }]}>{t('trends.lastWeek')}</Text>
             <Text style={[styles.reactionValue, { color: colors.text }]}>{trends.reactionsLastWeek}</Text>
           </View>
           
@@ -208,7 +210,7 @@ export default function MealTrendsScreen() {
                 color={reactionChange > 0 ? '#4CAF50' : '#F44336'} 
               />
               <Text style={[styles.changeText, { color: reactionChange > 0 ? '#4CAF50' : '#F44336' }]}>
-                {reactionChange > 0 ? 'Decreased' : 'Increased'} by {Math.abs(reactionChange)}% this week
+                {reactionChange > 0 ? t('trends.decreasedBy', { percent: Math.abs(reactionChange) }) : t('trends.increasedBy', { percent: Math.abs(reactionChange) })}
               </Text>
             </View>
           )}
@@ -221,6 +223,8 @@ export default function MealTrendsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  contentContainer: {
     padding: 16,
   },
   card: {

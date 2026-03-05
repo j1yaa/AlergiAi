@@ -117,8 +117,11 @@ export interface SmartAnalysisResult {
 export const assessMealRisk = async (
   ingredients: string[],
   userAllergens: string[],
-  description: string
+  description: string,
+  language: string = 'en'
 ): Promise<SmartAnalysisResult> => {
+  const responseLang = language === 'es' ? 'Spanish' : 'English';
+
   try {
     const { GEMINI_API_KEY } = await import('@env');
     if (!GEMINI_API_KEY) throw new Error('No AI key');
@@ -133,7 +136,7 @@ Meal: "${description}"
 Detected Ingredients: ${ingredients.join(', ')}
 User's Known Allergens: ${userAllergens.join(', ')}
 
-Provide analysis in this JSON format:
+Respond in ${responseLang}. Provide analysis in this JSON format:
 {
   "confidence": 85,
   "riskFactors": ["Cross-contamination risk", "Hidden dairy in sauce"],

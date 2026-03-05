@@ -22,6 +22,8 @@ import MealTrendsScreen from '../screens/MealTrendsScreen';
 import ReminderSettingsScreen from '../screens/ReminderSettingsScreen';
 import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 import SymptomCorrelationScreen from '../screens/SymptomCorrelationScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -111,13 +113,31 @@ function MainDrawer() {
       <Drawer.Screen name="Allergens" component={AllergenScreen} options={{ title: 'My Allergens' }} />
       <Drawer.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
       <Drawer.Screen name="Alerts" component={AlertsScreen} />
-      <Drawer.Screen name="Profile">
+      <Drawer.Screen name="Profile" options={{ title: 'Settings' }}>
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
       <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={{ title: 'Meal Reminders', drawerItemStyle: { display: 'none' } }} />
-      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={({ navigation }) => ({
+        title: 'Meal Reminders',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="ReminderSettings" backButton />,
+      })} />
+      <Drawer.Screen name="AlertSettings" component={AlertSettingsScreen} options={({ navigation }) => ({
+        title: 'Alert Settings',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="AlertSettings" backButton />,
+      })} />
       <Drawer.Screen name="SymptomCorrelation" component={SymptomCorrelationScreen} options={{ title: 'Symptom Correlation', drawerItemStyle: { display: 'none' } }} />
+      <Drawer.Screen name="UserProfile" component={SettingsScreen} options={({ navigation }) => ({
+        title: 'User Profile',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="UserProfile" backButton />,
+      })} />
+      <Drawer.Screen name="ChangePassword" component={ChangePasswordScreen} options={({ navigation }) => ({
+        title: 'Change Password',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="ChangePassword" backButton />,
+      })} />
     </Drawer.Navigator>
   );
 }

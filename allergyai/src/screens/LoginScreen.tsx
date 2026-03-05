@@ -15,8 +15,10 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { login } from '../api/client';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -56,16 +58,16 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
 
   const validateForm = () => {
     if (!email.trim()) {
-      Alert.alert('Validation Error', 'Email is required');
+      Alert.alert(t('login.validationError'), t('login.emailRequired'));
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address');
+      Alert.alert(t('login.validationError'), t('login.invalidEmail'));
       return false;
     }
     if (!password.trim()) {
-      Alert.alert('Validation Error', 'Password is required');
+      Alert.alert(t('login.validationError'), t('login.passwordRequired'));
       return false;
     }
     return true;
@@ -83,7 +85,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     } catch (error: any) {
       console.error('Login error:', error);
       const errorMessage = error.message || 'Invalid email or password';
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(t('login.loginFailed'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -101,13 +103,13 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               <Text style={styles.logoText}>AI</Text>
             </View>
             <Text style={styles.appName}>AllergyAI</Text>
-            <Text style={styles.subtitle}>Understand your environment. Reduce surprises.</Text>
+            <Text style={styles.subtitle}>{t('login.subtitle')}</Text>
           </View>
 
           <View style={styles.card}>
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder={t('login.email')}
               placeholderTextColor="#9AA4B2"
               value={email}
               onChangeText={setEmail}
@@ -118,7 +120,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
             />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder={t('login.password')}
               placeholderTextColor="#9AA4B2"
               value={password}
               onChangeText={setPassword}
@@ -135,7 +137,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
                 size={20}
                 color={rememberMe ? ACCENT : '#9AA4B2'}
               />
-              <Text style={styles.rememberMeText}>Remember me</Text>
+              <Text style={styles.rememberMeText}>{t('login.rememberMe')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -146,23 +148,23 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
               {loading ? (
                 <ActivityIndicator size="small" color="#0B3D91" />
               ) : (
-                <Text style={styles.buttonText}>Login</Text>
+                <Text style={styles.buttonText}>{t('login.loginButton')}</Text>
               )}
             </TouchableOpacity>
 
             <View style={styles.row}>
-              <TouchableOpacity onPress={() => Alert.alert('Forgot Password', 'Reset flow placeholder')}>
-                <Text style={styles.link}>Forgot password?</Text>
+              <TouchableOpacity onPress={() => Alert.alert(t('login.forgotPassword'))}>
+                <Text style={styles.link}>{t('login.forgotPassword')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.link}>Create account</Text>
+                <Text style={styles.link}>{t('login.createAccount')}</Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t('login.or')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -171,13 +173,13 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
                 style={[styles.socialButton, styles.google]}
                 onPress={() => Alert.alert('Google sign-in placeholder')}
               >
-                <Text style={styles.socialText}>Continue with Google</Text>
+                <Text style={styles.socialText}>{t('login.continueGoogle')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
 
-          <Text style={styles.footer}>Privacy-first allergy insights • Data stored securely</Text>
+          <Text style={styles.footer}>{t('login.footer')}</Text>
         </View>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
