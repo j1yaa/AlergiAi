@@ -904,50 +904,71 @@ export const getMealTrends = async () => {
   const symptomsResponse = await getSymptoms();
   const symptoms = symptomsResponse.items || [];
   
-  // Last 7 days meals - calculate from actual data
+  // Last 7 days meals - always Mon-Sun order
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const now = new Date();
-  const dailyMeals = days.map((day, index) => {
-    const targetDate = new Date(now.getTime() - (6 - index) * 24 * 60 * 60 * 1000);
-    const count = meals.filter(meal => {
-      const mealDate = meal.createdAt ? new Date(meal.createdAt) : meal.timeStamp;
-      if (!mealDate) return false;
-      const mealTime = mealDate instanceof Date ? mealDate.getTime() : new Date(mealDate).getTime();
-      const targetTime = targetDate.getTime();
-      return Math.abs(mealTime - targetTime) < 24 * 60 * 60 * 1000;
-    }).length;
-    return { day, count };
+  const sevenDaysAgo = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+  
+  // Count meals per day of week
+  const dayCountMap: { [key: string]: number } = {
+    'Mon': 0, 'Tue': 0, 'Wed': 0, 'Thu': 0, 'Fri': 0, 'Sat': 0, 'Sun': 0
+  };
+  
+  meals.forEach(meal => {
+    const mealDate = meal.createdAt ? new Date(meal.createdAt) : meal.timeStamp;
+    if (!mealDate) return;
+    const mealTime = mealDate instanceof Date ? mealDate : new Date(mealDate);
+    
+    // Only count meals from last 7 days
+    if (mealTime >= sevenDaysAgo && mealTime <= now) {
+      const dayIndex = mealTime.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayIndex];
+      dayCountMap[dayName]++;
+    }
   });
+  
+  const dailyMeals = days.map(day => ({ day, count: dayCountMap[day] }));
 
-  // Top 3 allergens - only count non-deleted meals
+  // Top 3 allergens from last 7 days
   const allergenCounts: { [key: string]: number } = {};
   meals.forEach(meal => {
-    meal.allergens?.forEach(allergen => {
-      allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
-    });
+    const mealDate = meal.createdAt ? new Date(meal.createdAt) : meal.timeStamp;
+    if (!mealDate) return;
+    const mealTime = mealDate instanceof Date ? mealDate : new Date(mealDate);
+    
+    if (mealTime >= sevenDaysAgo && mealTime <= now) {
+      meal.allergens?.forEach(allergen => {
+        allergenCounts[allergen] = (allergenCounts[allergen] || 0) + 1;
+      });
+    }
   });
   
   const topAllergens = Object.entries(allergenCounts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3)
-    .map(([name, count]) => ({ name, count }));
+    .map(([name, count]) => ({ name, count }))
+    .filter(item => item.count > 0);
 
   // Reactions this week vs last week
   const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
   const twoWeeksAgo = now.getTime() - 14 * 24 * 60 * 60 * 1000;
 
-  const reactionsThisWeek = symptoms.filter(s => 
-    new Date(s.timestamp).getTime() > weekAgo
-  ).length;
+  const reactionsThisWeek = symptoms.filter(s => {
+    const symptomDate = s.dateISO ? new Date(s.dateISO) : (s as any).timestamp ? new Date((s as any).timestamp) : null;
+    return symptomDate && symptomDate.getTime() > weekAgo;
+  }).length;
   
   const reactionsLastWeek = symptoms.filter(s => {
-    const time = new Date(s.timestamp).getTime();
+    const symptomDate = s.dateISO ? new Date(s.dateISO) : (s as any).timestamp ? new Date((s as any).timestamp) : null;
+    if (!symptomDate) return false;
+    const time = symptomDate.getTime();
     return time > twoWeeksAgo && time <= weekAgo;
   }).length;
 
   return {
     dailyMeals,
-    topAllergens: topAllergens.length > 0 ? topAllergens : [{ name: 'No data', count: 0 }],
+    topAllergens: topAllergens.length > 0 ? topAllergens : [],
     reactionsThisWeek,
     reactionsLastWeek
   };
