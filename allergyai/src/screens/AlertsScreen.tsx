@@ -6,9 +6,11 @@ import { getAlerts } from '../api/client';
 import { Alert } from '../types';
 import { markAlertRead, acknowledgeAlert, checkExposurePattern } from '../utils/allergenAlertService';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AlertsScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,13 +65,13 @@ export default function AlertsScreen() {
 
   const handleAcknowledge = (alertId: string) => {
     RNAlert.alert(
-      'Acknowledge Alert',
-      'What action did you take?',
+      t('alerts.acknowledgeAlert'),
+      t('alerts.whatActionDidYouTake'),
       [
-        { text: 'Avoided food', onPress: () => acknowledgeAlertWithAction(alertId, 'avoided') },
-        { text: 'Ate anyway', onPress: () => acknowledgeAlertWithAction(alertId, 'consumed') },
-        { text: 'Took medication', onPress: () => acknowledgeAlertWithAction(alertId, 'medicated') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('alerts.avoidedAllergen'), onPress: () => acknowledgeAlertWithAction(alertId, 'avoided') },
+        { text: t('alerts.noAction'), onPress: () => acknowledgeAlertWithAction(alertId, 'consumed') },
+        { text: t('alerts.tookMedication'), onPress: () => acknowledgeAlertWithAction(alertId, 'medicated') },
+        { text: t('common.cancel'), style: 'cancel' },
       ]
     );
   };
@@ -168,8 +170,8 @@ export default function AlertsScreen() {
       {filteredAlerts.length === 0 ? (
         <View style={styles.emptyState}>
           <Ionicons name="notifications-off-outline" size={64} color={colors.icon} />
-          <Text style={[styles.emptyText, { color: colors.icon }]}>No alerts yet</Text>
-          <Text style={[styles.emptySubtext, { color: colors.icon }]}>Alerts will appear here when allergens are detected</Text>
+          <Text style={[styles.emptyText, { color: colors.icon }]}>{t('alerts.noAlerts')}</Text>
+          <Text style={[styles.emptySubtext, { color: colors.icon }]}>{t('alerts.emptyState')}</Text>
         </View>
       ) : (
         <FlatList

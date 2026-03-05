@@ -3,9 +3,11 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
 import { getAllergens, addAllergen, removeAllergen } from '../api/client';
 import {isWeb } from '../utils/platform';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AllergenScreen() {
     const { colors } = useTheme();
+    const { t } = useLanguage();
     const [allergens, setAllergens] = useState<string[]>([]);
     const [allergensSeverity, setAllergensSeverity] = useState<any[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
@@ -62,12 +64,12 @@ export default function AllergenScreen() {
 
     const handleRemoveAllergen = async (allergen: string) => {
         showAlert(
-            'Remove Allergen',
+            t('allergen.removeAllergen'),
             `WARNING: Removing "${allergen}" from your allergen list means the app will no longer alert you about this ingredient in food products.\n\nThis could put you at risk of accidental exposure. Are you absolutely sure you want to proceed?`,
             [
-                { text: 'Cancel', style: 'cancel', onPress: () => console.log('Cancel') },
+                { text: t('common.cancel'), style: 'cancel', onPress: () => console.log('Cancel') },
                 {
-                    text: 'Remove Anyway',
+                    text: t('allergen.remove'),
                     style: 'destructive',
                     onPress: async () => {
                         // Optimistic update - remove immediately
@@ -76,11 +78,11 @@ export default function AllergenScreen() {
                         
                         try {
                             await removeAllergen({ allergen });
-                            showAlert('Success', 'Allergen successfully removed!');
+                            showAlert(t('common.success'), 'Allergen successfully removed!');
                         } catch (error) {
                             // Revert on error
                             setAllergens(originalAllergens);
-                            showAlert('Error', 'Failed to remove allergen');
+                            showAlert(t('common.error'), 'Failed to remove allergen');
                             console.error('Failed to remove allergen:', error);
                         }
                     },
@@ -140,9 +142,9 @@ export default function AllergenScreen() {
                         ))}
                     </View>
                     <Text style={[styles.severityDescription, { color: colors.icon }]}>
-                        {selectedSeverity === 'low' && 'Mild reactions (discomfort, minor symptoms)'}
-                        {selectedSeverity === 'moderate' && 'Moderate reactions (noticeable symptoms, some distress)'}
-                        {selectedSeverity === 'high' && 'Severe reactions (anaphylaxis, life-threatening)'}
+                        {selectedSeverity === 'low' && t('allergen.mildReactions')}
+                        {selectedSeverity === 'moderate' && t('allergen.moderateReactions')}
+                        {selectedSeverity === 'high' && t('allergen.severeReactions')}
                     </Text>
                 </View>
             </View>
@@ -152,7 +154,7 @@ export default function AllergenScreen() {
                     Your Allergens ({allergens.length})
                 </Text>
                 {loading ? (
-                    <Text style={[styles.loadingText, { color: colors.icon }]}>Loading..</Text>
+                    <Text style={[styles.loadingText, { color: colors.icon }]}>{t('allergen.loading')}</Text>
                 ) : allergens.length > 0 ? (
                     <View style={styles.allergenList}>
                         {allergens.map((allergen: string, index: number) => {
@@ -181,9 +183,9 @@ export default function AllergenScreen() {
                     </View>
                 ) : (
                     <View style={[styles.emptyState, { backgroundColor: colors.surface }]}>
-                        <Text style={[styles.emptyStateText, { color: colors.icon }]}>No allergens added</Text>
+                        <Text style={[styles.emptyStateText, { color: colors.icon }]}>{t('allergen.emptyState')}</Text>
                         <Text style={[styles.emptyStateSubtext, { color: colors.icon }]}>
-                            Add allergens to track them in your meals
+                            {t('allergen.addYourFirst')}
                         </Text>
                     </View>
                 )}

@@ -4,16 +4,20 @@ import Slider from '@react-native-community/slider';
 import { saveSymptom } from '../api/client';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AddSymptomScreen() {
   const navigation = useNavigation();
+  const { colors } = useTheme();
+  const { t } = useLanguage();
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(3);
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
     if (!description.trim()) {
-      Alert.alert('Error', 'Description is required');
+      Alert.alert(t('common.error'), 'Description is required');
       return;
     }
     
@@ -30,10 +34,10 @@ export default function AddSymptomScreen() {
       console.log('Saved symptom:', savedSymptom);
       setDescription('');
       setSeverity(3);
-      Alert.alert('Success', 'Symptom logged successfully');
+      Alert.alert(t('common.success'), t('symptoms.symptomLogged'));
     } catch (error) {
       console.error('Failed to save symptom:', error instanceof Error ? error.message : 'Unknown error');
-      Alert.alert('Error', 'Failed to save symptom. Please try again.');
+      Alert.alert(t('common.error'), t('symptoms.couldNotLogSymptom'));
     } finally {
       setLoading(false);
     }
@@ -41,12 +45,12 @@ export default function AddSymptomScreen() {
 
   const handleClear = () => {
     Alert.alert(
-      'Clear Form',
-      'Are you sure you want to clear all entered data?',
+      t('symptoms.clearForm'),
+      t('symptoms.clearFormConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         { 
-          text: 'Clear', 
+          text: t('symptoms.clear'), 
           style: 'destructive',
           onPress: () => {
             setDescription('');
@@ -63,12 +67,12 @@ export default function AddSymptomScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.title}>Log Symptom</Text>
+        <Text style={styles.title}>{t('symptoms.logSymptom')}</Text>
       </View>
       
       <TextInput
         style={styles.input}
-        placeholder="Describe your symptom..."
+        placeholder={t('symptoms.describeYourSymptom')}
         value={description}
         onChangeText={setDescription}
         multiline
@@ -76,7 +80,7 @@ export default function AddSymptomScreen() {
       />
       
       <View style={styles.severityContainer}>
-        <Text style={styles.label}>Severity (1-5)</Text>
+        <Text style={styles.label}>{t('symptoms.severityLabel')}</Text>
         <Slider
           style={styles.slider}
           minimumValue={1}
@@ -102,7 +106,7 @@ export default function AddSymptomScreen() {
           disabled={loading || description.trim().length === 0}
         >
           <Text style={styles.buttonText}>
-            {loading ? 'Saving...' : 'Save Symptom'}
+            {loading ? t('common.loading') : t('symptoms.save')}
           </Text>
         </TouchableOpacity>
         
@@ -111,7 +115,7 @@ export default function AddSymptomScreen() {
           onPress={handleClear}
           disabled={loading}
         >
-          <Text style={styles.clearButtonText}>Clear</Text>
+          <Text style={styles.clearButtonText}>{t('symptoms.clear')}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
