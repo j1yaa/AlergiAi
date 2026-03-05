@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, logout } from '../api/client';
 import { UserProfile } from '../types';
@@ -104,85 +104,105 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     }
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            {/* Theme Toggle */}
-            <View style={styles.themeSection}>
-                <Text style={[styles.themeSectionTitle, { color: colors.text }]}>Theme</Text>
-                <ThemeToggle />
-            </View>
-
+        <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Welcome Header */}
             <View style={[styles.welcomeSection, { backgroundColor: colors.surface }]}>
-                <View style={styles.welcomeRow}>
-                    <View style={styles.profileIcon}>
-                        <Text style={styles.profileInitials}>
-                            {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                        </Text>
-                    </View>
-                    <View style={styles.welcomeText}>
-                        <Text style={[styles.welcomeLabel, { color: colors.icon }]}>Welcome</Text>
-                        <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
-                    </View>
-                    <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon}>
-                        <Ionicons name="log-out-outline" size={24} color={colors.error} />
-                    </TouchableOpacity>
+                <View style={styles.profileIcon}>
+                    <Text style={styles.profileInitials}>
+                        {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                    </Text>
+                </View>
+                <View style={styles.welcomeText}>
+                    <Text style={[styles.welcomeLabel, { color: colors.icon }]}>Welcome</Text>
+                    <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
+                    <Text style={[styles.welcomeEmail, { color: colors.icon }]}>{profile.email}</Text>
                 </View>
             </View>
 
-            {/* Menu Items */}
-            <View style={styles.menuSection}>
+            {/* Account Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>ACCOUNT</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <TouchableOpacity
-                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    style={styles.groupItem}
                     onPress={() => navigation.navigate('UserProfile')}
                 >
-                    <Ionicons name="person-outline" size={22} color={colors.icon} />
-                    <Text style={[styles.menuItemText, { color: colors.text }]}>User Profile</Text>
-                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                    <Ionicons name="person-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>User Profile</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
 
                 <TouchableOpacity
-                    style={[styles.menuItem, { backgroundColor: colors.surface }]}
+                    style={styles.groupItem}
                     onPress={() => navigation.navigate('ChangePassword')}
                 >
-                    <Ionicons name="lock-closed-outline" size={22} color={colors.icon} />
-                    <Text style={[styles.menuItemText, { color: colors.text }]}>Change Password</Text>
-                    <Ionicons name="chevron-forward" size={20} color={colors.icon} />
+                    <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>Change Password</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
+            </View>
 
-                <View style={[styles.menuItem, { backgroundColor: colors.surface }]}>
-                    <Ionicons name="notifications-outline" size={22} color={colors.icon} />
-                    <Text style={[styles.menuItemText, { color: colors.text }]}>Push Notifications</Text>
+            {/* Notifications Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>NOTIFICATIONS</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <View style={styles.groupItem}>
+                    <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>Push Notifications</Text>
                     <Switch
                         value={pushEnabled}
                         onValueChange={handleTogglePush}
-                        trackColor={{ false: '#ddd', true: '#81c784' }}
+                        trackColor={{ false: '#767577', true: '#81c784' }}
                         thumbColor={pushEnabled ? '#4caf50' : '#f4f3f4'}
                     />
                 </View>
 
                 {pushEnabled && (
                     <>
+                        <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
                         <TouchableOpacity
-                            style={[styles.subMenuItem, { backgroundColor: colors.surface }]}
+                            style={styles.groupItem}
                             onPress={() => navigation.navigate('ReminderSettings')}
                         >
-                            <Ionicons name="alarm-outline" size={20} color={colors.icon} />
-                            <Text style={[styles.subMenuItemText, { color: colors.text }]}>Meal Reminders</Text>
+                            <Ionicons name="alarm-outline" size={20} color={colors.primary} />
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>Meal Reminders</Text>
                             <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                         </TouchableOpacity>
 
+                        <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
                         <TouchableOpacity
-                            style={[styles.subMenuItem, { backgroundColor: colors.surface }]}
+                            style={styles.groupItem}
                             onPress={() => navigation.navigate('AlertSettings')}
                         >
-                            <Ionicons name="warning-outline" size={20} color={colors.icon} />
-                            <Text style={[styles.subMenuItemText, { color: colors.text }]}>Alert Settings</Text>
+                            <Ionicons name="warning-outline" size={20} color={colors.primary} />
+                            <Text style={[styles.groupItemText, { color: colors.text }]}>Alert Settings</Text>
                             <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                         </TouchableOpacity>
                     </>
                 )}
             </View>
-        </View>
+
+            {/* Preferences Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>PREFERENCES</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <View style={styles.themeRow}>
+                    <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>Theme</Text>
+                </View>
+                <View style={styles.themeToggleWrapper}>
+                    <ThemeToggle />
+                </View>
+            </View>
+
+            {/* Logout */}
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+            >
+                <Ionicons name="log-out-outline" size={20} color="#E53935" />
+                <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 }
 
@@ -222,39 +242,29 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
     },
-    themeSection: {
-        marginBottom: 24,
-    },
-    themeSectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 8,
-    },
     welcomeSection: {
-        padding: 20,
-        borderRadius: 12,
-        marginBottom: 24,
-    },
-    welcomeRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 20,
+        borderRadius: 16,
+        marginBottom: 28,
     },
     profileIcon: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: '#0B63D6',
         justifyContent: 'center',
         alignItems: 'center',
     },
     profileInitials: {
-        fontSize: 20,
+        fontSize: 22,
         fontWeight: '700',
         color: '#fff',
     },
     welcomeText: {
         flex: 1,
-        marginLeft: 14,
+        marginLeft: 16,
     },
     welcomeLabel: {
         fontSize: 13,
@@ -264,35 +274,61 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         marginTop: 2,
     },
-    logoutIcon: {
-        padding: 8,
+    welcomeEmail: {
+        fontSize: 13,
+        marginTop: 2,
     },
-    menuSection: {
-        gap: 12,
-    },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-        borderRadius: 12,
-        gap: 14,
-    },
-    menuItemText: {
-        fontSize: 16,
+    sectionLabel: {
+        fontSize: 12,
         fontWeight: '600',
-        flex: 1,
+        letterSpacing: 0.8,
+        marginBottom: 8,
+        marginLeft: 4,
     },
-    subMenuItem: {
+    group: {
+        borderRadius: 14,
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    groupItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 14,
-        paddingLeft: 50,
-        borderRadius: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
         gap: 12,
     },
-    subMenuItemText: {
-        fontSize: 15,
+    groupItemText: {
+        fontSize: 16,
         fontWeight: '500',
         flex: 1,
+    },
+    divider: {
+        height: StyleSheet.hairlineWidth,
+        marginLeft: 48,
+    },
+    themeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 14,
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    themeToggleWrapper: {
+        paddingHorizontal: 16,
+        paddingBottom: 14,
+        paddingTop: 10,
+    },
+    logoutButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        gap: 8,
+        marginBottom: 40,
+    },
+    logoutText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#E53935',
     },
 });
