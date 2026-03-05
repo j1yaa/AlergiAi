@@ -9,9 +9,11 @@ import { createAlert } from '../utils/allergenAlertService';
 import { computeRiskScore } from '../utils/smartAnalyzer';
 import { getAlertSeverityFromScore } from '../utils/riskConstants';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 
 export default function AddMealScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
   const navigation = useNavigation();
   const [mealName, setMealName] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -57,12 +59,12 @@ export default function AddMealScreen() {
 
   const handleDeleteMeal = async (mealId: string) => {
     Alert.alert(
-      'Delete Meal',
-      'Are you sure you want to delete this meal?',
+      t('addMeal.deleteMeal'),
+      t('addMeal.deleteMealConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -70,7 +72,7 @@ export default function AddMealScreen() {
               await loadMeals();
             } catch (error) {
               console.error('Failed to delete meal:', error);
-              Alert.alert('Error', 'Could not delete the meal.');
+              Alert.alert(t('common.error'), t('addMeal.couldNotDeleteMeal'));
             }
           }
         }
@@ -146,7 +148,7 @@ export default function AddMealScreen() {
       : (description ?? '').split(',').map(i => i.trim()).filter(Boolean);
 
     if (!finalName && ing.length === 0) {
-      Alert.alert('Missing Information', 'Please enter a meal name, description, or at least one ingredient.');
+      Alert.alert(t('common.error'), 'Please enter a meal name, description, or at least one ingredient.');
       return;
     }
 
@@ -198,7 +200,7 @@ export default function AddMealScreen() {
         }
       } else {
         console.log('No allergens detected');
-        Alert.alert('Saved', 'Your meal was logged.');
+        Alert.alert(t('addMeal.saved'), t('addMeal.mealLogged'));
       }
       setMealName('');
       setDescription('');
@@ -208,7 +210,7 @@ export default function AddMealScreen() {
       }
     } catch (e) {
       console.error('Save failed:', e);
-      Alert.alert('Error', 'Could not save the meal.');
+      Alert.alert(t('common.error'), t('addMeal.couldNotSaveMeal'));
     } finally {
       setSaving(false);
     }
@@ -229,7 +231,7 @@ export default function AddMealScreen() {
             onPress={handleViewHistory}
           >
             <Ionicons name="time-outline" size={18} color={colors.secondary} />
-            <Text style={[styles.historyButtonText, { color: colors.secondary }]}>History</Text>
+            <Text style={[styles.historyButtonText, { color: colors.secondary }]}>{t('addMeal.mealHistory')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -242,14 +244,14 @@ export default function AddMealScreen() {
           console.log('TextInput onChange:', `"${text}"`);
           setMealName(text);
         }}
-        placeholder="Enter meal name..."
+        placeholder={t('addMeal.mealName')}
         placeholderTextColor={colors.icon}
         testID="mealNameInput"
       />
 
       <TextInput
         style={[styles.input, styles.textArea, { backgroundColor: colors.surface, borderColor: colors.cardBorder, color: colors.text }]}
-        placeholder="Describe your meal..."
+        placeholder={t('addMeal.enterIngredients')}
         placeholderTextColor={colors.icon}
         value={description}
         onChangeText={setDescription}
@@ -263,7 +265,7 @@ export default function AddMealScreen() {
         disabled={loading || !description.trim()}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Analyzing...' : 'Analyze Meal'}
+          {loading ? t('addMeal.analyzingPleaseWait') : t('addMeal.analyze')}
         </Text>
       </TouchableOpacity>
 
@@ -273,7 +275,7 @@ export default function AddMealScreen() {
         disabled={saving}
       >
         <Text style={styles.saveBtnText}>
-          {saving ? 'Saving...' : 'Save Meal'}
+          {saving ? t('common.loading') : t('addMeal.saveMeal')}
         </Text>
       </TouchableOpacity>
 
@@ -302,7 +304,7 @@ export default function AddMealScreen() {
                   </View>
                 ))
               ) : (
-                <Text style={[styles.noAllergens, { color: colors.success }]}>No allergens detected</Text>
+                <Text style={[styles.noAllergens, { color: colors.success }]}>{t('addMeal.noAllergens')}</Text>
               )}
             </View>
           </View>
@@ -344,8 +346,8 @@ export default function AddMealScreen() {
           <Ionicons name="scan" size={32} color={colors.secondary} />
         </View>
         <View style={styles.scanTextContainer}>
-          <Text style={[styles.scanTitle, { color: colors.text }]}>📷 Scan Food Label</Text>
-          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>Quick allergen detection with camera</Text>
+          <Text style={[styles.scanTitle, { color: colors.text }]}>{t('dashboard.scanFood')}</Text>
+          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>{t('dashboard.quickAllergenDetectionWithCamera')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={24} color={colors.icon} />
       </TouchableOpacity>
@@ -357,7 +359,7 @@ export default function AddMealScreen() {
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Meal History</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('addMeal.mealHistory')}</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setShowHistory(false)}
