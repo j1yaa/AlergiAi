@@ -14,6 +14,9 @@ import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { analyzeImg } from '../utils/geminiService';
 import { getAllergens } from '../api/client';
 import { matchIngredientsWallergens } from '../utils/allergenMatcher';
+import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
+
 
 type RootStackParamList = {
     ScanResult: {
@@ -118,7 +121,7 @@ export default function ScannerScreen() {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== 'granted') {
-            Alert.alert('Permission Denied', 'We need gallery access to scan images.');
+            Alert.alert(t('scanner.permissionDenied'), t('scanner.cameraPermissionDenied'));
             return;
         }
 
@@ -194,7 +197,7 @@ export default function ScannerScreen() {
                     {isScanning && (
                         <View style={styles.scanningOverlay}>
                             <ActivityIndicator size="large" color="#fff" />
-                            <Text style={styles.scanningText}>Analyzing ingredients...</Text>
+                            <Text style={styles.scanningText}>{t('scanner.analyzingIngredients')}</Text>
                         </View>
                     )}
                 </View>
@@ -202,7 +205,7 @@ export default function ScannerScreen() {
                 {/* Instructions */}
                 <View style={styles.instructionsContainer}>
                     <Text style={styles.instructionsText}>
-                        Position the ingredients label within the frame
+                        {t('scanner.positionLabelWithinFrame')}
                     </Text>
                 </View>
 
