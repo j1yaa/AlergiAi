@@ -34,6 +34,7 @@ export default function ScannerScreen() {
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [flashOn, setFlashOn] = useState(false);
+    const { t } = useLanguage();
 
     useEffect(() => {
         (async () => {
@@ -98,13 +99,13 @@ export default function ScannerScreen() {
         } catch (error) {
             setIsScanning(false);
             const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-            Alert.alert('Analysis Failed', errorMessage, [{ text: 'OK' }]);
+            Alert.alert(t('scanner.analysisFailed'), errorMessage, [{ text: 'OK' }]);
         }
     };
 
     const handleScan = async () => {
         if (!cameraRef.current) {
-            Alert.alert('Error', 'Camera not available. Try using the Gallery option instead.');
+            Alert.alert(t('common.error'), t('scanner.cameraError'));
             return;
         }
 
@@ -113,7 +114,7 @@ export default function ScannerScreen() {
             await processImage(photo.uri);
         } catch (error) {
             console.error('Error taking photo:', error);
-            Alert.alert('Error', 'Failed to take the photo. Try using the Gallery option instead.');
+            Alert.alert(t('common.error'), t('scanner.photoError'));
         }
     };
 
@@ -148,14 +149,14 @@ export default function ScannerScreen() {
         return (
             <View style={styles.container}>
                 <Ionicons name="eye-off" size={64} color="#999" />
-                <Text style={styles.noPermissionText}>Camera access denied</Text>
-                <Text style={styles.permissionSubtext}>Use Gallery to scan food labels</Text>
+                <Text style={styles.noPermissionText}>{t('scanner.noAccessToCamera')}</Text>
+                <Text style={styles.permissionSubtext}>{t('scanner.galleryPermissionMessage')}</Text>
                 <TouchableOpacity
                     style={styles.galleryFallbackButton}
                     onPress={pickImageFromGallery}
                 >
                     <Ionicons name="images" size={24} color="#2196F3" />
-                    <Text style={styles.galleryFallbackText}>Open Gallery</Text>
+                    <Text style={styles.galleryFallbackText}>{t('scanner.grantPermission')}</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -176,7 +177,7 @@ export default function ScannerScreen() {
                     >
                         <Ionicons name="close" size={30} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.headerText}>Scan Food Label</Text>
+                    <Text style={styles.headerText}>{t('scanner.scanFoodLabel')}</Text>
                     <TouchableOpacity
                         style={styles.flashButton}
                         onPress={() => setFlashOn(!flashOn)}
@@ -219,7 +220,7 @@ export default function ScannerScreen() {
                         disabled={isScanning}
                     >
                         <Ionicons name="images" size={30} color="#fff" />
-                        <Text style={styles.galleryButtonText}>Gallery</Text>
+                        <Text style={styles.galleryButtonText}>{t('scanner.gallery')}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity

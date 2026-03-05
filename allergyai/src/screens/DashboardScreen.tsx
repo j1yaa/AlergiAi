@@ -131,7 +131,7 @@ export default function DashboardScreen() {
       <View style={[styles.chartContainer, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
         <View style={styles.chartHeader}>
           <Ionicons name="bar-chart" size={24} color={colors.primary} />
-          <Text style={[styles.chartTitle, { color: colors.text }]}>Weekly Exposure</Text>
+          <Text style={[styles.chartTitle, { color: colors.text }]}>{t('dashboard.weeklyExposure')}</Text>
         </View>
         <View style={styles.chartPlaceholder}>
           {analytics.weeklyExposure.map((item, index) => {

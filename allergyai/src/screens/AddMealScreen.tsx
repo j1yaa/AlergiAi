@@ -13,7 +13,7 @@ import { useLanguage } from '../hooks/useLanguage';
 
 export default function AddMealScreen() {
   const { colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigation = useNavigation();
   const [mealName, setMealName] = useState<string>('');
   const [description, setDescription] = useState('');
@@ -81,16 +81,16 @@ export default function AddMealScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'No date';
+    if (!dateString) return t('addMeal.noDate');
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
         minute: '2-digit'
       });
     } catch {
-      return 'Invalid date';
+      return t('addMeal.invalidDate');
     }
   };
 
@@ -107,7 +107,7 @@ export default function AddMealScreen() {
           {item.createdAt ? formatDate(item.createdAt) : 
            item.timeStamp ? formatDate(item.timeStamp.toString()) : 
            item.dateISO ? formatDate(item.dateISO) :
-           'No date'}
+           t('addMeal.noDate')}
         </Text>
       </View>
       
@@ -117,7 +117,7 @@ export default function AddMealScreen() {
       
       {item.items && item.items.length > 0 && (
         <View style={styles.mealIngredientsContainer}>
-          <Text style={[styles.mealIngredientsLabel, { color: colors.icon }]}>Ingredients:</Text>
+          <Text style={[styles.mealIngredientsLabel, { color: colors.icon }]}>{t('addMeal.ingredients')}</Text>
           <View style={styles.mealIngredientsList}>
             {item.items.map((ingredient, index) => (
               <View key={index} style={[styles.mealIngredientPill, { backgroundColor: `${colors.secondary}15` }]}>
@@ -148,7 +148,7 @@ export default function AddMealScreen() {
       : (description ?? '').split(',').map(i => i.trim()).filter(Boolean);
 
     if (!finalName && ing.length === 0) {
-      Alert.alert(t('common.error'), 'Please enter a meal name, description, or at least one ingredient.');
+      Alert.alert(t('addMeal.missingInfo'), t('addMeal.missingInfoMessage'));
       return;
     }
 
@@ -158,23 +158,23 @@ export default function AddMealScreen() {
     try {
       await createMeal({
         items: ing,
-        note: finalName || 'Unnamed Meal'
+        note: finalName || t('addMeal.unnamedMeal')
       });
 
       let allergensToAlert: string[] = [];
       let riskScore = 0;
-      let riskTier = 'Low Risk';
+      let riskTier = t('addMeal.lowRisk');
 
       if (result?.allergens && result.allergens.length > 0) {
         allergensToAlert = result.allergens;
         riskScore = result.riskScore;
-        riskTier = result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk';
+        riskTier = result.riskScore <= 30 ? t('addMeal.lowRisk') : result.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
       } else if (ing.length > 0) {
         try {
           const response = await analyzeMeal({ description: ing.join(', ') });
           allergensToAlert = response.allergens;
           riskScore = response.riskScore;
-          riskTier = response.riskScore <= 30 ? 'Low Risk' : response.riskScore <= 70 ? 'Moderate Risk' : 'High Risk';
+          riskTier = response.riskScore <= 30 ? t('addMeal.lowRisk') : response.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
         } catch (error) {
           console.log('Could not analyze ingredients:', error);
         }
@@ -188,9 +188,9 @@ export default function AddMealScreen() {
         const allergenList = allergensToAlert.join(', ');
         const riskLevel = riskScore > 70 ? 'HIGH' : riskScore > 30 ? 'MODERATE' : 'LOW';
         Alert.alert(
-          '⚠️ Allergen Detected!',
-          `${riskTier.toUpperCase()} RISK: This meal contains ${allergenList}.\n\nRisk Score: ${riskScore}%\n\nPlease review carefully before consuming.`,
-          [{ text: 'OK', style: 'default' }]
+          t('addMeal.allergenDetected'),
+          `${riskTier.toUpperCase()}: ${allergenList}\n\n${t('addMeal.riskScoreLabel')} ${riskScore}%`,
+          [{ text: t('common.ok'), style: 'default' }]
         );
         
         for (const allergen of allergensToAlert) {
@@ -224,7 +224,7 @@ export default function AddMealScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView style={[styles.container, { backgroundColor: colors.background }]} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Log Your Meal</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('addMeal.logYourMeal')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={[styles.historyButton, { backgroundColor: `${colors.secondary}15`, borderColor: colors.secondary }]}
@@ -236,7 +236,7 @@ export default function AddMealScreen() {
         </View>
       </View>
 
-      <Text style={[styles.label, { color: colors.text }]}>Meal Name</Text>
+      <Text style={[styles.label, { color: colors.text }]}>{t('addMeal.mealNameLabel')}</Text>
       <TextInput
         style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.cardBorder, color: colors.text }]}
         value={mealName}
@@ -281,10 +281,10 @@ export default function AddMealScreen() {
 
       {result && (
         <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-          <Text style={[styles.resultTitle, { color: colors.text }]}>Analysis Result</Text>
+          <Text style={[styles.resultTitle, { color: colors.text }]}>{t('addMeal.analysisResult')}</Text>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Ingredients:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('addMeal.ingredients')}</Text>
             <View style={styles.pillContainer}>
               {result.ingredients.map((ingredient, index) => (
                 <View key={index} style={[styles.pill, { backgroundColor: `${colors.secondary}15` }]}>
@@ -295,7 +295,7 @@ export default function AddMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Allergens:</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('addMeal.allergens')}</Text>
             <View style={styles.pillContainer}>
               {result.allergens.length > 0 ? (
                 result.allergens.map((allergen, index) => (
@@ -310,9 +310,9 @@ export default function AddMealScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Risk Assessment</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('addMeal.riskAssessment')}</Text>
             <View style={styles.riskContainer}>
-              <Text style={[styles.riskScoreText, { color: colors.text }]}>Risk Score: {result.riskScore}%</Text>
+              <Text style={[styles.riskScoreText, { color: colors.text }]}>{t('addMeal.riskScoreLabel')} {result.riskScore}%</Text>
               <View style={[
                 styles.riskBar,
                 { backgroundColor: `${result.riskScore <= 30 ? colors.success : result.riskScore <= 70 ? colors.warning : colors.error}20` }
@@ -329,7 +329,7 @@ export default function AddMealScreen() {
                 styles.riskTierText,
                 { color: result.riskScore <= 30 ? colors.success : result.riskScore <= 70 ? colors.warning : colors.error }
               ]}>
-                {result.riskScore <= 30 ? 'Low Risk' : result.riskScore <= 70 ? 'Moderate Risk' : 'High Risk'}
+                {result.riskScore <= 30 ? t('addMeal.lowRisk') : result.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk')}
               </Text>
             </View>
           </View>
@@ -346,8 +346,8 @@ export default function AddMealScreen() {
           <Ionicons name="scan" size={32} color={colors.secondary} />
         </View>
         <View style={styles.scanTextContainer}>
-          <Text style={[styles.scanTitle, { color: colors.text }]}>{t('dashboard.scanFood')}</Text>
-          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>{t('dashboard.quickAllergenDetectionWithCamera')}</Text>
+          <Text style={[styles.scanTitle, { color: colors.text }]}>{t('addMeal.scanFoodLabel')}</Text>
+          <Text style={[styles.scanSubtitle, { color: colors.icon }]}>{t('addMeal.quickAllergenDetectionWithCamera')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={24} color={colors.icon} />
       </TouchableOpacity>
@@ -370,13 +370,13 @@ export default function AddMealScreen() {
           
           {loadingMeals ? (
             <View style={styles.loadingContainer}>
-              <Text style={{ color: colors.text }}>Loading meals...</Text>
+              <Text style={{ color: colors.text }}>{t('addMeal.loadingMeals')}</Text>
             </View>
           ) : meals.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons name="restaurant-outline" size={64} color={colors.icon} />
-              <Text style={[styles.emptyText, { color: colors.icon }]}>No meals logged yet</Text>
-              <Text style={[styles.emptySubtext, { color: colors.icon }]}>Start tracking your meals to monitor allergen exposure</Text>
+              <Text style={[styles.emptyText, { color: colors.icon }]}>{t('addMeal.noMealsLogged')}</Text>
+              <Text style={[styles.emptySubtext, { color: colors.icon }]}>{t('addMeal.startTrackingMeals')}</Text>
             </View>
           ) : (
             <FlatList
