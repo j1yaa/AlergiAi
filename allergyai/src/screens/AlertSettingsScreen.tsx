@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, TextInput, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Switch, TextInput, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAlertSettings, saveAlertSettings, AlertSettings } from '../utils/allergenAlertService';
@@ -127,11 +127,21 @@ export default function AlertSettingsScreen() {
             mode="time"
             is24Hour={false}
             onChange={(event, time) => {
-              setShowStartPicker(false);
-              if (time) {
-                updateSettings({
-                  quietHours: { ...settings.quietHours, start: formatTime(time) }
-                });
+              if (Platform.OS === 'android') {
+                setShowStartPicker(false);
+                if (event.type === 'set' && time) {
+                  updateSettings({
+                    quietHours: { ...settings.quietHours, start: formatTime(time) }
+                  });
+                }
+              } else {
+                if (time) {
+                  updateSettings({
+                    quietHours: { ...settings.quietHours, start: formatTime(time) }
+                  });
+                } else {
+                  setShowStartPicker(false);
+                }
               }
             }}
           />
@@ -143,11 +153,21 @@ export default function AlertSettingsScreen() {
             mode="time"
             is24Hour={false}
             onChange={(event, time) => {
-              setShowEndPicker(false);
-              if (time) {
-                updateSettings({
-                  quietHours: { ...settings.quietHours, end: formatTime(time) }
-                });
+              if (Platform.OS === 'android') {
+                setShowEndPicker(false);
+                if (event.type === 'set' && time) {
+                  updateSettings({
+                    quietHours: { ...settings.quietHours, end: formatTime(time) }
+                  });
+                }
+              } else {
+                if (time) {
+                  updateSettings({
+                    quietHours: { ...settings.quietHours, end: formatTime(time) }
+                  });
+                } else {
+                  setShowEndPicker(false);
+                }
               }
             }}
           />
@@ -259,7 +279,7 @@ const styles = StyleSheet.create({
   },
   lowButton: {
     backgroundColor: '#e8f5e9',
-    borderColor: '4caf50',
+    borderColor: '#4caf50',
   },
   mediumButton: {
     backgroundColor: '#fff3e0',
