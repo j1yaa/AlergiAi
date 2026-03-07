@@ -38,15 +38,21 @@ export default function ReminderSettings() {
   };
 
   const handleToggle = async (reminder: MealReminder) => {
-    if (!permissionGranted) {
+    console.log('Toggle clicked for:', reminder.mealType, 'current state:', reminder.enabled);
+
+    const updated = {...reminder, enabled: !reminder.enabled};
+    setReminders(prev => prev.map(r => r.id === reminder.id ? updated : r));
+    if (!permissionGranted && updated.enabled) {
       const granted = await requestPermissions();
-      if (!granted) return;
-      setPermissionGranted(true);
+      setPermissionGranted(granted);
+      if (!granted) {
+        setReminders(prev => prev.map(r => r.id === reminder.id ? reminder : r));
+        return;
+      }
     }
 
-    const updated = { ...reminder, enabled: !reminder.enabled };
     await updateReminder(updated);
-    setReminders(prev => prev.map(r => r.id === reminder.id ? updated : r));
+    console.log('Toggle saved:', updated.mealType, 'new state:', updated.enabled);
   };
 
   const handleTimeChange = async (reminderId: string, time: Date) => {

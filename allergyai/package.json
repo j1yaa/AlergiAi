@@ -27,19 +27,12 @@
     "expo": "54.0.33",
     "expo-camera": "17.0.10",
     "expo-constants": "~18.0.10",
-<<<<<<< HEAD
     "expo-dev-client": "~6.0.20",
     "expo-font": "~14.0.9",
     "expo-image": "~3.0.10",
     "expo-image-picker": "~17.0.8",
     "expo-linking": "~8.0.9",
-=======
-    "expo-font": "14.0.11",
-    "expo-image": "3.0.11",
-    "expo-image-picker": "17.0.10",
-    "expo-linking": "8.0.11",
     "expo-localization": "~17.0.8",
->>>>>>> 2cb297963c3175d42133e367a270f8e5fa61791f
     "expo-notifications": "~0.32.16",
     "expo-secure-store": "15.0.8",
     "expo-splash-screen": "31.0.13",

@@ -18,19 +18,26 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
 export const requestPermissions = async () => {
-  const { status: existingStatus } = await Notifications.getPermissionsAsync();
-  let finalStatus = existingStatus;
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
   
-  if (existingStatus !== 'granted') {
-    const { status } = await Notifications.requestPermissionsAsync();
-    finalStatus = status;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+  
+    return finalStatus === 'granted';
+  } catch (error) {
+    console.warn('Failed to request permission:', error);
+    return false;
   }
-  
-  return finalStatus === 'granted';
 };
 
 export const saveReminders = async (reminders: MealReminder[]) => {
@@ -53,20 +60,24 @@ const getDefaultReminders = (): MealReminder[] => [
 export const scheduleReminder = async (reminder: MealReminder) => {
   if (!reminder.enabled) return;
 
-  const [hours, minutes] = reminder.time.split(':').map(Number);
+  try {
+    const [hours, minutes] = reminder.time.split(':').map(Number);
   
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `Time to log your ${reminder.mealType}`,
-      body: `Don't forget to track what you're eating to stay safe from allergens.`,
-      data: { mealType: reminder.mealType },
-    },
-    trigger: {
-      hour: hours,
-      minute: minutes,
-      repeats: true,
-    },
-  });
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `Time to log your ${reminder.mealType}`,
+        body: `Don't forget to track what you're eating to stay safe from allergens.`,
+        data: { mealType: reminder.mealType },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: hours,
+        minute: minutes,
+      },
+    });
+  } catch (error) {
+    console.warn('Failed to schedule notification:', error);
+  }
 };
 
 export const cancelReminder = async (reminderId: string) => {
@@ -79,9 +90,13 @@ export const cancelReminder = async (reminderId: string) => {
 };
 
 export const updateReminder = async (reminder: MealReminder) => {
-  await cancelReminder(reminder.mealType);
-  if (reminder.enabled) {
-    await scheduleReminder(reminder);
+  try {
+    await cancelReminder(reminder.mealType);
+    if (reminder.enabled) {
+      await scheduleReminder(reminder);
+    }
+  } catch (error) {
+    console.warn('Failed to update reminder:', error);
   }
   
   const reminders = await loadReminders();
