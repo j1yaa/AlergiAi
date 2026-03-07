@@ -255,16 +255,19 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   thresholdButtonActive: {
-    borderWidth: 2,
+    borderWidth: 3,
   },
   lowButton: {
     backgroundColor: '#e8f5e9',
+    borderColor: '4caf50',
   },
   mediumButton: {
     backgroundColor: '#fff3e0',
+    borderColor: '#ff9800',
   },
   highButton: {
     backgroundColor: '#ffebee',
+    borderColor: '#f44336',
   },
   thresholdText: {
     fontSize: 14,
