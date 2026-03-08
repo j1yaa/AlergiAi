@@ -94,6 +94,14 @@ export const updateReminder = async (reminder: MealReminder) => {
     await cancelReminder(reminder.mealType);
     if (reminder.enabled) {
       await scheduleReminder(reminder);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `Don't forget to log your ${reminder.mealType}!`,
+          body: `Reminders are on. We'll notify you at ${reminder.time} every day.`,
+          data: { mealType: reminder.mealType },
+        },
+        trigger: null,
+      });
     }
   } catch (error) {
     console.warn('Failed to update reminder:', error);
