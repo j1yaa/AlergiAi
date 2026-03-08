@@ -44,11 +44,15 @@ export const predictAllergenRisks = (
         const frequency = data.count / Math.max(symptoms.length, 1);
 
         // Consistant risk score calculations
-        const severityLvl = avgSeverity >= 4 ? 'high' : avgSeverity >= 2.5 ? 'moderate' : 'low';
+        const severityLvl = avgSeverity >= 4 ? 'severe' : avgSeverity >= 3.5 ?
+            'high' : avgSeverity >= 2.5 ? 'moderate' : avgSeverity >= 1.5 ? 'low' : 'minimal';
         const { riskScore } = computeRiskScore([allergen], [{ allergen, severity: severityLvl, sensitivity: 'moderate' }]);
 
         const adjustedRiskScore = Math.min(100, riskScore * (1 + frequency * 0.5));
-        const confidence = Math.min(95, data.count * 20);
+        const sampleSize = Math.min(data.count / 10, 1);
+        const consistencyScore = frequency * 100;
+        const severityWeight = (avgSeverity / 5) * 20;
+        const confidence = Math.min(95, Math.round(40 + sampleSize * 35 + consistencyScore * 0.2 + severityWeight));
 
         let reasonKey: PredictionResult['reasonKey'];
         let reasonCount: number | undefined;
