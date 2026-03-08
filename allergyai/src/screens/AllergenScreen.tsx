@@ -164,14 +164,14 @@ export default function AllergenScreen() {
                         {allergens.map((allergen: string, index: number) => {
                             const severityInfo = allergensSeverity.find((a: any) => a.name.toLowerCase() === allergen.toLowerCase());
                             const severity = severityInfo?.severity || 'moderate';
-                            const colors = {
+                            const severityColors = {
                                 minimal: { bg: '#F1F8E9', border: '#DCEDC8', text: '#558B2F' },
                                 low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32' },
                                 moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' },
                                 high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828' },
                                 severe: { bg: '#FCE4EC', border: '#F8BBD0', text: '#880E4F' }
                             };
-                            const color = colors[severity];
+                            const color = severityColors[severity as keyof typeof severityColors];
                             return (
                                 <View key={index} style={[styles.allergenItem, { backgroundColor: colors.surface }]}>
                                     <View style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
