@@ -13,6 +13,7 @@ export default function AddSymptomScreen() {
   const { t } = useLanguage();
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState(3);
+  const [category, setCategory] = useState<'digestive' | 'skin' | 'respiratory' | 'cardiovascular' | 'neurological' | 'other'>('other');
   const [loading, setLoading] = useState(false);
 
   const handleSave = async () => {
@@ -26,6 +27,7 @@ export default function AddSymptomScreen() {
       const symptom = {
         description: description.trim(),
         severity,
+        category,
         dateISO: new Date().toISOString()
       };
       
@@ -55,6 +57,7 @@ export default function AddSymptomScreen() {
           onPress: () => {
             setDescription('');
             setSeverity(3);
+            setCategory('other');
           }
         }
       ]
@@ -69,7 +72,24 @@ export default function AddSymptomScreen() {
         </TouchableOpacity>
         <Text style={styles.title}>{t('symptoms.logSymptom')}</Text>
       </View>
-      
+
+      <View style={styles.categoryCont}>
+        <Text style={styles.label}>{t('symptoms.category')}</Text>
+        <View style={styles.categoryButtons}> 
+          {(['digestive', 'skin', 'respiratory', 'cardiovascular', 'neurological', 'other'] as const).map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.categoryButton, category === cat && styles.categoryButtonActive]}
+              onPress={() => setCategory(cat)}
+            >
+              <Text style={[styles.categoryButtonText, category === cat && styles.categoryButtonTextActive]}>
+                {t(`symptoms.${cat}`)}
+              </Text>              
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       <TextInput
         style={styles.input}
         placeholder={t('symptoms.describeYourSymptom')}
@@ -204,5 +224,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
+    },
+    categoryCont: {
+      marginBottom: 20,
+    },
+    categoryButtons: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    categoryButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: '#ddd',
+      backgroundColor: '#fff',
+    },
+    categoryButtonActive: {
+      backgroundColor: '#2196F3',
+      borderColor: '#2196F3',
+    },
+    categoryButtonText: {
+      fontSize: 14,
+      color: '#666',
+    },
+    categoryButtonTextActive: {
+      color: '#fff',
+      fontWeight: '600',
+    },
 });
