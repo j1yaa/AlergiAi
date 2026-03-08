@@ -1,3 +1,11 @@
+export const SEVERITY_WEIGHTS = {
+    minimal: 1,
+    low: 2,
+    moderate: 3,
+    high: 4,
+    severe: 5
+} as const;
+
 export const RISKTHRES = {
     LOWMAX: 30,
     MODERATEMAX: 70,

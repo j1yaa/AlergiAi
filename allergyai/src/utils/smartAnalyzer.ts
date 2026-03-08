@@ -14,7 +14,7 @@ export interface RiskScoreResult {
 
 export interface AllergenMatch {
   allergen: string;
-  severity: 'low' | 'moderate' | 'high';
+  severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
   sensitivity?: 'mild' | 'moderate' | 'severe';
 }
 

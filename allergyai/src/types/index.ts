@@ -131,7 +131,7 @@ export interface UserProfile {
 
 export interface AddAllergenRequest {
     allergen: string;
-    severity?: 'low' | 'moderate' | 'high';
+    severity?: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
 }
 
 export interface RemoveAllergenRequest {
@@ -140,7 +140,7 @@ export interface RemoveAllergenRequest {
 
 export interface AllergenWithSeverity {
     name: string;
-    severity: 'low' | 'moderate' | 'high';
+    severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
 }
 
 export interface AllergensResponse {

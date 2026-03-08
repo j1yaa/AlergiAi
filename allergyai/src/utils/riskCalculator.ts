@@ -1,7 +1,7 @@
 // Scientific risk calculation utilities
 
 export interface RiskFactors {
-  severity: 'low' | 'moderate' | 'high';
+  severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
   exposure: 'trace' | 'low' | 'high';
   sensitivity: 'mild' | 'moderate' | 'severe';
 }
@@ -19,16 +19,18 @@ export interface RiskCalculationResult {
  * @returns Detailed risk calculation result
  */
 export const calculateRiskScore = (factors: RiskFactors): RiskCalculationResult => {
+  const {SEVERITY_WEIGHTS } = require('./riskConstants');
+
   // Assign standardized weights
-  const severityWeight = factors.severity === 'low' ? 1 : factors.severity === 'moderate' ? 2 : 3;
+  const severityWeight = SEVERITY_WEIGHTS[factors.severity];
   const exposureWeight = factors.exposure === 'trace' ? 1 : factors.exposure === 'low' ? 2 : 3;
   const sensitivityWeight = factors.sensitivity === 'mild' ? 1 : factors.sensitivity === 'moderate' ? 2 : 3;
 
-  // Compute raw score (1-27 range)
+  // Compute raw score (1-45 range with a 5-point severity scale)
   const rawScore = severityWeight * exposureWeight * sensitivityWeight;
 
   // Normalize to 0-100% scale
-  const normalizedScore = Math.round((rawScore / 27) * 100);
+  const normalizedScore = Math.round((rawScore / 45) * 100);
 
   // Determine risk tier
   let riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk';
@@ -41,7 +43,8 @@ export const calculateRiskScore = (factors: RiskFactors): RiskCalculationResult 
   }
 
   // Generate explanation
-  const explanation = `Risk calculated from: ${factors.severity} allergen severity (${severityWeight}), ${factors.exposure} exposure level (${exposureWeight}), ${factors.sensitivity} user sensitivity (${sensitivityWeight}). Raw score: ${rawScore}/27.`;
+  const explanation = `Risk calculated from: ${factors.severity} allergen severity (${severityWeight}), 
+  ${factors.exposure} exposure level (${exposureWeight}), ${factors.sensitivity} user sensitivity (${sensitivityWeight}). Raw score: ${rawScore}/45.`;
 
   return {
     rawScore,
@@ -109,14 +112,18 @@ export const getRiskColor = (riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk
  * @param severity - The severity level
  * @returns Color code
  */
-export const getSeverityColor = (severity: 'low' | 'moderate' | 'high'): string => {
+export const getSeverityColor = (severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe'): string => {
   switch (severity) {
+    case 'minimal':
+      return '#9CCC65';
     case 'low':
-      return '#4CAF50';
+      return '#66BB6A';
     case 'moderate':
-      return '#FF9800';
+      return '#FFA726';
     case 'high':
-      return '#f44336';
+      return '#EF5350';
+    case 'severe':
+      return '#AD1457';
     default:
       return '#666';
   }

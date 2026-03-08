@@ -259,7 +259,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         const severityInfo = allergensSeverity.find((as: any) => as.name.toLowerCase() === allergen.toLowerCase());
         return {
           allergen: allergen.toLowerCase(),
-          severity: severityInfo?.severity || 'moderate' as 'low' | 'moderate' | 'high',
+          severity: severityInfo?.severity || 'moderate' as 'minimal' | 'low' | 'moderate' | 'high' | 'severe',
           sensitivity: 'moderate' as 'mild' | 'moderate' | 'severe'
         };
       });
