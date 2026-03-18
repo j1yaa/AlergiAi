@@ -101,7 +101,8 @@ export interface Symptom {
   dateISO: string;
   description: string;
   severity: number;  // 1-5 scale
-  timestamp?: string | Date;  // For backward compatibility
+  category?: 'digestive' | 'skin' | 'respiratory' | 'cardiovascular' | 'neurological' | 'other';
+  timestamp?: string | Date; 
 }
 
 export interface SymptomsResponse {
