@@ -2,15 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { 
-  MealReminder, 
-  loadReminders, 
-  updateReminder, 
-  requestPermissions 
+import {
+  MealReminder,
+  loadReminders,
+  updateReminder,
+  requestPermissions
 } from '../utils/reminderService';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../hooks/useTheme';
 
 export default function ReminderSettings() {
+  const { colors, colorScheme } = useTheme();
   const [reminders, setReminders] = useState<MealReminder[]>([]);
   const [showTimePicker, setShowTimePicker] = useState<string | null>(null);
   const [permissionGranted, setPermissionGranted] = useState(false);
@@ -84,11 +86,11 @@ export default function ReminderSettings() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Ionicons name="notifications" size={32} color="#2196F3" />
-        <Text style={styles.title}>{t('reminders.mealReminders')}</Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.title, { color: colors.text }]}>{t('reminders.mealReminders')}</Text>
+        <Text style={[styles.subtitle, { color: colors.icon }]}>
           {t('reminders.getNotified')}
         </Text>
       </View>
@@ -103,20 +105,20 @@ export default function ReminderSettings() {
       )}
 
       {reminders.map(reminder => (
-        <View key={reminder.id} style={styles.reminderCard}>
+        <View key={reminder.id} style={[styles.reminderCard, { backgroundColor: colors.surface }]}>
           <View style={styles.reminderHeader}>
             <View style={styles.reminderInfo}>
               <Ionicons name={getMealIcon(reminder.mealType)} size={28} color="#2196F3" style={styles.mealIcon} />
               <View>
-                <Text style={styles.mealType}>
+                <Text style={[styles.mealType, { color: colors.text }]}>
                   {t('reminders.' + reminder.mealType)}
                 </Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={() => setShowTimePicker(reminder.id)}
                   style={styles.timeButton}
                 >
-                  <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.timeText}>{formatTime12Hour(reminder.time)}</Text>
+                  <Ionicons name="time-outline" size={16} color={colors.icon} />
+                  <Text style={[styles.timeText, { color: colors.icon }]}>{formatTime12Hour(reminder.time)}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -129,26 +131,35 @@ export default function ReminderSettings() {
           </View>
 
           {showTimePicker === reminder.id && (
-            <DateTimePicker
-              value={parseTime(reminder.time)}
-              mode="time"
-              is24Hour={false}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, selectedTime) => {
-                if (Platform.OS === 'android') {
-                  setShowTimePicker(null);
-                  if (event.type === 'set' && selectedTime) {
-                    handleTimeChange(reminder.id, selectedTime);
-                  }
-                } else {
-                  if (selectedTime) {
-                    handleTimeChange(reminder.id, selectedTime);
-                  } else {
+            <View style={[styles.pickerContainer, { backgroundColor: colors.background, borderColor: colors.cardBorder }]}>
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity onPress={() => setShowTimePicker(null)} style={styles.doneButton}>
+                  <Text style={[styles.doneButtonText, { color: colors.secondary }]}>Done</Text>
+                </TouchableOpacity>
+              )}
+              <DateTimePicker
+                value={parseTime(reminder.time)}
+                mode="time"
+                is24Hour={false}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                themeVariant={colorScheme}
+                style={styles.picker}
+                onChange={(event, selectedTime) => {
+                  if (Platform.OS === 'android') {
                     setShowTimePicker(null);
+                    if (event.type === 'set' && selectedTime) {
+                      handleTimeChange(reminder.id, selectedTime);
+                    }
+                  } else {
+                    if (selectedTime) {
+                      handleTimeChange(reminder.id, selectedTime);
+                    } else {
+                      setShowTimePicker(null);
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            </View>
           )}
         </View>
       ))}
@@ -166,7 +177,6 @@ export default function ReminderSettings() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
   header: {
@@ -177,11 +187,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginTop: 10,
-    color: '#333',
   },
   subtitle: {
     fontSize: 14,
-    color: '#666',
     marginTop: 5,
     textAlign: 'center',
   },
@@ -200,7 +208,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reminderCard: {
-    backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 12,
     marginBottom: 15,
@@ -221,7 +228,6 @@ const styles = StyleSheet.create({
   mealType: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
   },
   timeButton: {
@@ -230,8 +236,24 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 14,
-    color: '#666',
     marginLeft: 4,
+  },
+  pickerContainer: {
+    borderRadius: 12,
+    marginTop: 10,
+    borderWidth: 1,
+  },
+  picker: {
+    height: 216,
+  },
+  doneButton: {
+    alignSelf: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   infoBox: {
     flexDirection: 'row',
