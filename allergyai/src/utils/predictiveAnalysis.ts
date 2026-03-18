@@ -44,11 +44,26 @@ export const predictAllergenRisks = (
         const frequency = data.count / Math.max(symptoms.length, 1);
 
         // Consistant risk score calculations
-        const severityLvl = avgSeverity >= 4 ? 'high' : avgSeverity >= 2.5 ? 'moderate' : 'low';
+        const severityLvl = avgSeverity >= 4 ? 'severe' : avgSeverity >= 3.5 ?
+            'high' : avgSeverity >= 2.5 ? 'moderate' : avgSeverity >= 1.5 ? 'low' : 'minimal';
         const { riskScore } = computeRiskScore([allergen], [{ allergen, severity: severityLvl, sensitivity: 'moderate' }]);
 
-        const adjustedRiskScore = Math.min(100, riskScore * (1 + frequency * 0.5));
-        const confidence = Math.min(95, data.count * 20);
+        const allergenLower = allergen.toLowerCase();
+        let riskModifier = 1.0;
+        if (allergenLower.includes('peanut') || allergenLower.includes('shellfish') || allergenLower.includes('tree nut')) {
+            riskModifier = 1.15;
+        } else if (allergenLower.includes('dairy') || allergenLower.includes('milk') || allergenLower.includes('egg')) {
+            riskModifier = 1.1;
+        } else if (allergenLower.includes('wheat') || allergenLower.includes('soy')) {
+            riskModifier = 1.05;
+        }
+
+        const adjustedRiskScore = Math.min(100, Math.round(riskScore * (1 + frequency * 0.5) * riskModifier));
+        const sampleSize = Math.min(data.count / 10, 1);
+        const consistencyScore = frequency * 100;
+        const severityWeight = (avgSeverity / 5) * 20;
+        const varAdjustment = (allergen.length % 5) - 2;
+        const confidence = Math.min(95, Math.max(40, Math.round(40 + sampleSize * 35 + consistencyScore * 0.2 + severityWeight + varAdjustment)));
 
         let reasonKey: PredictionResult['reasonKey'];
         let reasonCount: number | undefined;

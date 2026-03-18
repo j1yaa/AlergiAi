@@ -259,7 +259,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         const severityInfo = allergensSeverity.find((as: any) => as.name.toLowerCase() === allergen.toLowerCase());
         return {
           allergen: allergen.toLowerCase(),
-          severity: severityInfo?.severity || 'moderate' as 'low' | 'moderate' | 'high',
+          severity: severityInfo?.severity || 'moderate' as 'minimal' | 'low' | 'moderate' | 'high' | 'severe',
           sensitivity: 'moderate' as 'mild' | 'moderate' | 'severe'
         };
       });
@@ -280,7 +280,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       };
 
       // Save the analyzed meal to Firebase
-      await addDoc(collection(db, 'meals'), {
+      const mealDoc = await addDoc(collection(db, 'meals'), {
         userId: firebaseUser.uid,
         description: payload.description,
         ingredients: response.ingredients,
@@ -289,6 +289,21 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         advice: response.advice,
         createdAt: new Date().toISOString()
       });
+      
+      if (response.allergens.length > 0) {
+        const severity = response.riskScore >= 70 ? 'high' : response.riskScore >= 40 ? 'medium' : 'low';
+        await addDoc(collection(db, 'alerts'), {
+          userId: firebaseUser.uid,
+          mealId: mealDoc.id,
+          message: `Allergen detected: ${response.allergens.join(', ')}`,
+          allergens: response.allergens,
+          severity,
+          dateISO: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+          read: false,
+          triggered: true
+        });
+      }
       
       return response;
     },

@@ -11,7 +11,7 @@ export default function AllergenScreen() {
     const [allergens, setAllergens] = useState<string[]>([]);
     const [allergensSeverity, setAllergensSeverity] = useState<any[]>([]);
     const [newAllergen, setNewAllergen] = useState('');
-    const [selectedSeverity, setSelectedSeverity] = useState<'low' | 'moderate' | 'high'>('moderate');
+    const [selectedSeverity, setSelectedSeverity] = useState<'minimal' | 'low' | 'moderate' | 'high' | 'severe'>('moderate');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -118,16 +118,18 @@ export default function AllergenScreen() {
                 <View style={[styles.severitySection, { backgroundColor: colors.surface }]}>
                     <Text style={[styles.severityLabel, { color: colors.text }]}>{t('allergen.reactionSeverity')}</Text>
                     <View style={styles.severityButtons}>
-                        {(['low', 'moderate', 'high'] as const).map((severity) => (
+                        {(['minimal', 'low', 'moderate', 'high', 'severe'] as const).map((severity) => (
                             <TouchableOpacity
                                 key={severity}
                                 style={[
                                     styles.severityButton,
                                     { backgroundColor: colors.background, borderColor: colors.icon + '40' },
                                     selectedSeverity === severity && styles.severityButtonActive,
+                                    severity === 'minimal' && styles.severityMinimal,
                                     severity === 'low' && styles.severityLow,
                                     severity === 'moderate' && styles.severityModerate,
                                     severity === 'high' && styles.severityHigh,
+                                    severity === 'severe' && styles.severitySevere,
                                 ]}
                                 onPress={() => setSelectedSeverity(severity)}
                             >
@@ -142,9 +144,11 @@ export default function AllergenScreen() {
                         ))}
                     </View>
                     <Text style={[styles.severityDescription, { color: colors.icon }]}>
+                        {selectedSeverity === 'minimal' && t('allergen.minimalReactions')}
                         {selectedSeverity === 'low' && t('allergen.mildReactions')}
                         {selectedSeverity === 'moderate' && t('allergen.moderateReactions')}
                         {selectedSeverity === 'high' && t('allergen.severeReactions')}
+                        {selectedSeverity === 'severe' && t('allergen.criticalReactions')}
                     </Text>
                 </View>
             </View>
@@ -160,12 +164,14 @@ export default function AllergenScreen() {
                         {allergens.map((allergen: string, index: number) => {
                             const severityInfo = allergensSeverity.find((a: any) => a.name.toLowerCase() === allergen.toLowerCase());
                             const severity = severityInfo?.severity || 'moderate';
-                            const colors = {
+                            const severityColors = {
+                                minimal: { bg: '#F1F8E9', border: '#DCEDC8', text: '#558B2F' },
                                 low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32' },
                                 moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' },
-                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828' }
+                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828' },
+                                severe: { bg: '#FCE4EC', border: '#F8BBD0', text: '#880E4F' }
                             };
-                            const color = colors[severity];
+                            const color = severityColors[severity as keyof typeof severityColors];
                             return (
                                 <View key={index} style={[styles.allergenItem, { backgroundColor: colors.surface }]}>
                                     <View style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
@@ -368,13 +374,14 @@ const styles = StyleSheet.create({
     },
     severityButtons: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         gap: 8,
         marginBottom: 8,
     },
     severityButton: {
-        flex: 1,
+        width: '30%',
         paddingVertical: 10,
-        paddingHorizontal: 16,
+        paddingHorizontal: 8,
         borderRadius: 6,
         borderWidth: 2,
         borderColor: '#ddd',
@@ -382,25 +389,31 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     severityButtonActive: {
-        borderColor: '#2196F3',
-        backgroundColor: '#2196F3',
+        borderWidth: 3,
+        backgroundColor: '#fff',
+    },
+    severityMinimal: {
+        borderColor: '#9CCC65',
     },
     severityLow: {
-        borderColor: '#4CAF50',
+        borderColor: '#66BB6A',
     },
     severityModerate: {
-        borderColor: '#FF9800',
+        borderColor: '#FFA726',
     },
     severityHigh: {
-        borderColor: '#f44336',
+        borderColor: '#EF5350',
+    },
+    severitySevere: {
+        borderColor: '#AD1457',
     },
     severityButtonText: {
-        fontSize: 14,
+        fontSize: 13,
         fontWeight: '500',
         color: '#666',
     },
     severityButtonTextActive: {
-        color: '#fff',
+        color: '#666',
     },
     severityDescription: {
         fontSize: 12,

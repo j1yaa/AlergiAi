@@ -101,7 +101,8 @@ export interface Symptom {
   dateISO: string;
   description: string;
   severity: number;  // 1-5 scale
-  timestamp?: string | Date;  // For backward compatibility
+  category?: 'digestive' | 'skin' | 'respiratory' | 'cardiovascular' | 'neurological' | 'other';
+  timestamp?: string | Date; 
 }
 
 export interface SymptomsResponse {
@@ -131,7 +132,7 @@ export interface UserProfile {
 
 export interface AddAllergenRequest {
     allergen: string;
-    severity?: 'low' | 'moderate' | 'high';
+    severity?: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
 }
 
 export interface RemoveAllergenRequest {
@@ -140,7 +141,7 @@ export interface RemoveAllergenRequest {
 
 export interface AllergenWithSeverity {
     name: string;
-    severity: 'low' | 'moderate' | 'high';
+    severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe';
 }
 
 export interface AllergensResponse {
