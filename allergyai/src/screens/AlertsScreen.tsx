@@ -14,7 +14,7 @@ export default function AlertsScreen() {
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
+  const [filter, setFilter] = useState<'all' | 'minimal' | 'low' | 'medium' | 'moderate' | 'high' | 'severe'>('all');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -35,9 +35,12 @@ export default function AlertsScreen() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
+      case 'severe': return '#880E4F';
       case 'high': return '#F44336';
+      case 'moderate': return '#FF9800';
       case 'medium': return '#FF9800';
       case 'low': return '#4CAF50';
+      case 'minimal': return '#8BC34A';
       default: return '#9E9E9E';
     }
   };
@@ -143,7 +146,7 @@ export default function AlertsScreen() {
       </View>
 
       <View style={styles.filterRow}>
-        {['all', 'high', 'medium', 'low'].map((f) => (
+        {(['all', 'minimal', 'low', 'medium', 'moderate', 'high', 'severe'] as const).map((f) => (
           <TouchableOpacity
             key={f}
             style={[
@@ -151,7 +154,7 @@ export default function AlertsScreen() {
               { backgroundColor: colors.surface, borderColor: colors.icon + '40' },
               filter === f && { backgroundColor: colors.primary, borderColor: colors.primary }
             ]}
-            onPress={() => setFilter(f as any)}
+            onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, { color: colors.icon }, filter === f && styles.filterTextActive]}>
               {f.toUpperCase()}

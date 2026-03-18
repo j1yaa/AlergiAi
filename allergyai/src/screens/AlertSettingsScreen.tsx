@@ -72,15 +72,13 @@ export default function AlertSettingsScreen() {
         <Text style={[styles.description, { color: colors.icon }]}>{t('alertSettings.severityThresholdDescription')}</Text>
 
         <View style={styles.thresholdButtons}>
-          {['low', 'medium', 'high'].map((level) => (
+          {['minimal', 'low', 'moderate', 'high', 'severe'].map((level) => (
             <TouchableOpacity
               key={level}
               style={[
                 styles.thresholdButton,
+                styles[`${level}Button` as keyof typeof styles],
                 settings.severityThreshold === level && styles.thresholdButtonActive,
-                level === 'low' && styles.lowButton,
-                level === 'medium' && styles.mediumButton,
-                level === 'high' && styles.highButton,
               ]}
               onPress={() => updateSettings({ severityThreshold: level as any })}
             >
@@ -267,12 +265,13 @@ const styles = StyleSheet.create({
   },
   thresholdButtons: {
     flexDirection: 'row',
-    gap: 10,
+    flexWrap: 'wrap',
+    gap: 8,
     marginTop: 10,
   },
   thresholdButton: {
-    flex: 1,
-    padding: 12,
+    width: '30%',
+    padding: 10,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 2,
@@ -281,17 +280,29 @@ const styles = StyleSheet.create({
   thresholdButtonActive: {
     borderWidth: 3,
   },
+  minimalButton: {
+    backgroundColor: '#F1F8E9',
+    borderColor: '#9CCC65',
+  },
   lowButton: {
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#E8F5E9',
     borderColor: '#4caf50',
+  },
+  moderateButton: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FFA726',
   },
   mediumButton: {
     backgroundColor: '#fff3e0',
     borderColor: '#ff9800',
   },
   highButton: {
-    backgroundColor: '#ffebee',
-    borderColor: '#f44336',
+    backgroundColor: '#FFEBEE',
+    borderColor: '#EF5350',
+  },
+  severeButton: {
+    backgroundColor: '#FCE4EC',
+    borderColor: '#AD1457',
   },
   thresholdText: {
     fontSize: 14,

@@ -387,9 +387,12 @@ export default {
   // AlertSettingsScreen
   alertSettings: {
     alertSettings: 'Alert Settings',
-    high: 'High Risk',
-    medium: 'Medium Risk',
-    low: 'Low Risk',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+    minimal: 'Minimal',
+    moderate: 'Moderate',
+    severe: 'Severe',
     notifyOn: 'Notify On',
     save: 'Save',
     settingsSaved: 'Settings saved',

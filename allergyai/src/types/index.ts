@@ -27,7 +27,7 @@ export interface Alert {
   mealId: string;
   dateISO: string;
   allergens: string[];
-  severity: 'low' | 'medium' | 'high';
+  severity: 'minimal' | 'low' | 'medium' | 'moderate' | 'high' | 'severe';
   note: string;
   userId?: string;
   message?: string;
