@@ -77,7 +77,7 @@ export default function AlertSettingsScreen() {
               key={level}
               style={[
                 styles.thresholdButton,
-                styles[`${level}Button` as keyof typeof styles],
+                styles[`${level}Button` as keyof typeof styles] as any,
                 settings.severityThreshold === level && styles.thresholdButtonActive,
               ]}
               onPress={() => updateSettings({ severityThreshold: level as any })}
