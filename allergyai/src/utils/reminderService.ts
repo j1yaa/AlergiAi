@@ -93,6 +93,8 @@ export const updateReminder = async (reminder: MealReminder) => {
   try {
     await cancelReminder(reminder.mealType);
     if (reminder.enabled) {
+      const [h, m] = reminder.time.split(':').map(Number);
+      const displayName = `${h % 12 || 12}:${m.toString().padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
       await scheduleReminder(reminder);
       await Notifications.scheduleNotificationAsync({
         content: {
