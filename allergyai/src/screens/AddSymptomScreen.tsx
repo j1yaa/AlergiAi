@@ -45,7 +45,6 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
         severity,
         category,
         resolved: !onGoing,
-        resolvedAt: !onGoing ? new Date().toISOString() : undefined,
       };
       
       if (duration && parseInt(duration) > 0) {
@@ -62,6 +61,9 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
       }
       if (notes.trim()) {
         symptomData.notes = notes.trim();
+      }
+      if (onGoing) {
+        symptomData.resolvedAt = new Date().toISOString();
       }
 
       await saveSymptom(symptomData);
