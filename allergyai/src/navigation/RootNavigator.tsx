@@ -24,6 +24,7 @@ import AlertSettingsScreen from '../screens/AlertSettingsScreen';
 import SymptomCorrelationScreen from '../screens/SymptomCorrelationScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import WearableSettingsScreen from '../screens/WearableSettingsScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -137,6 +138,11 @@ function MainDrawer() {
         title: 'Change Password',
         drawerItemStyle: { display: 'none' },
         header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="ChangePassword" backButton />,
+      })} />
+      <Drawer.Screen name="WearableSettings" component={WearableSettingsScreen} options={({ navigation }) => ({
+        title: 'Wearable Devices',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ goBack: () => navigation.goBack() }} title="WearableSettings" backButton />,
       })} />
     </Drawer.Navigator>
   );

@@ -16,6 +16,7 @@ export default {
     SymptomCorrelation: 'Symptom Correlation',
     UserProfile: 'User Profile',
     ChangePassword: 'Change Password',
+    WearableSettings: 'Wearable Devices',
   },
 
   // CustomDrawer
@@ -83,6 +84,7 @@ export default {
     accountSection: 'ACCOUNT',
     userProfile: 'User Profile',
     changePassword: 'Change Password',
+    wearableDevices: 'Wearable Devices',
     notificationsSection: 'NOTIFICATIONS',
     pushNotifications: 'Push Notifications',
     mealReminders: 'Meal Reminders',
@@ -510,6 +512,30 @@ export default {
     yes: 'Yes',
     no: 'No',
     confirm: 'Confirm',
+  },
+
+  wearable: {
+    title: 'Wearable Devices',
+    healthSync: 'Health Data Sync',
+    syncDescription: 'Sync heart rate, sleep, and activity data',
+    syncNow: 'Sync Now',
+    syncing: 'Syncing...',
+    lastSync: 'Last sync: {time}',
+    supportedDevices: 'Supported Devices',
+    permissionRequired: 'Permission Required',
+    permissionMessage: 'Health data access is required for sync',
+    syncEnabled: 'Health data sync enabled',
+    syncFailed: 'Failed to sync health data',
+    syncComplete: 'Health data synced successfully',
+    disableSync: 'Disable Sync',
+    disableSyncConfirm: 'Are you sure you want to disable health data sync?',
+    disable: 'Disable',
+    recentData: 'Recent Health Data',
+    howItWorks:'How It Works',
+    howItWorksDesc: 'Connect your wearable device to automatically track health metrics and correlate them with your allergy symptoms for better insights.',
+    benefit1: 'Track heart rate patterns during reactions',
+    benefit2: 'Monitor sleep quality and stress levels',
+    benefit3: 'Identify sympom trigger correlations',
   },
 
   languages: {

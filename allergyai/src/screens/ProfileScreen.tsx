@@ -143,6 +143,17 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.changePassword')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+
+                <TouchableOpacity
+                    style={styles.groupItem}
+                    onPress={() => navigation.navigate('WearableSettings')}
+                >
+                    <Ionicons name="watch-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.wearableDevices')}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                </TouchableOpacity>
             </View>
 
             {/* Notifications Section */}

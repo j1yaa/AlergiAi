@@ -97,6 +97,26 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface WearableData {
+  id: string;
+  userId: string;
+  deviceType: 'applewatch' | 'fitbit' | 'garmin' | 'samsung' | 'other';
+  heartRate?: number;
+  steps?: number;
+  sleepHours?: number;
+  stressLevel?: number;
+  timestamp: Date;
+  syncedAt: Date;
+}
+
+export interface HealthMetrics {
+  avgHeartRate: number;
+  dailySteps: number;
+  sleepQuality: number;
+  stressLevel: number;
+  correlationWithSymptoms: number;
+}
+
 export interface Symptom {
   id: string;
   dateISO: string;
