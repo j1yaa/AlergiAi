@@ -113,9 +113,8 @@ export default function SymptomHistoryScreen() {
   };
 
   const getSeverityLabel = (severity: number) => {
-    if (severity <= 2) return t('symptoms.mild');
-    if (severity <= 3) return t('symptoms.moderate');
-    return t('symptoms.severe');
+    const labels = ['Minimal', 'Mild', 'Moderate', 'Severe', 'Critical'];
+    return labels[severity - 1] || '';
   };
 
   const formatDate = (dateISO: string) => {
