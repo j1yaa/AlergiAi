@@ -29,7 +29,13 @@ export default function DrawerHeader({ navigation, title, backButton }: DrawerHe
         <View style={[styles.header, { backgroundColor: colors.background, borderBottomColor: colors.cardBorder }]}>
           <TouchableOpacity
             style={[styles.menuButton, { backgroundColor: `${colors.primary}15` }]}
-            onPress={() => navigation.toggleDrawer()}
+            onPress={() => {
+              if (backButton && navigation.goBack) {
+                navigation.goBack();
+              } else if (navigation.toggleDrawer) {
+                navigation.toggleDrawer();
+              }
+            }}
           >
           <Ionicons name={backButton ? "arrow-back" : "menu"} size={24} color={colors.primary} />
           </TouchableOpacity>

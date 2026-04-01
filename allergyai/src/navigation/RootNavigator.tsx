@@ -159,7 +159,7 @@ function SymptomsStack() {
         name="AddSymptom"
         component={AddSymptomScreen}
         options={({navigation}) => ({
-          header: () => <DrawerHeader navigation={navigation}
+          header: () => <DrawerHeader navigation={{ goBack: () => navigation.goBack() }} 
           title="Add Symptom" backButton />,
         })}
       />
