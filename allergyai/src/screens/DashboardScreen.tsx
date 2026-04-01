@@ -70,13 +70,16 @@ export default function DashboardScreen() {
           <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalMeals}</Text>
           <Text style={[styles.statLabel, { color: colors.icon }]}>{t('dashboard.totalMeals')}</Text>
         </View>
-        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+        <TouchableOpacity
+          style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}
+          onPress={() => navigation.navigate('Alerts' as never)} 
+        >
           <View style={[styles.statIconContainer, { backgroundColor: `${colors.warning}15` }]}>
             <Ionicons name="notifications" size={24} color={colors.warning} />
           </View>
           <Text style={[styles.statValue, { color: colors.text }]}>{analytics.totalAlerts}</Text>
           <Text style={[styles.statLabel, { color: colors.icon }]}>{t('dashboard.alerts')}</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.quickActions}>
