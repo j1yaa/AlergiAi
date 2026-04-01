@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "allergyai",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.allergyai.app"
@@ -56,16 +56,7 @@
           "microphonePermission": "Allow AllergyAI to access your microphone."
         }
       ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#2196F3",
-          "sounds": [],
-          "androidMode": "default",
-          "androidCollapsedTitle": "Meal Reminder"
-        }
-      ],
+
       "expo-localization",
       "expo-font",
       "expo-secure-store",
