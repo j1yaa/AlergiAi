@@ -1,20 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch, Platform } from 'react-native';
 import { saveSymptom } from '../api/client';
-import { useNavigation } from '@react-navigation/native';
+
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
+import { Symptom } from '../types';
 
-export default function AddSymptomScreen() {
-  const navigation = useNavigation();
+export default function AddSymptomScreen({ navigation }: { navigation: any }) {
   const { colors } = useTheme();
   const { t } = useLanguage();
+
   const [description, setDescription] = useState('');
-  const [severity, setSeverity] = useState(3);
-  const [category, setCategory] = useState<'digestive' | 'skin' | 'respiratory' | 'cardiovascular' | 'neurological' | 'other'>('other');
-  const [loading, setLoading] = useState(false);
+  const [severity, setSeverity] = useState(1);
+  const [category, setCategory] = useState<Symptom['category']>('other');
+  const [duration, setDuration] = useState('');
+  const [location, setLocation] = useState('');
+  const [triggers, setTriggers] = useState('');
+  const [medications, setMedications] = useState('');
+  const [notes, setNotes] = useState('');
+  const [onGoing, setOngoing] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const categories: { key: Symptom['category']; label: string; icon: string}[] = [
+    { key: 'digestive', label: t('symptoms.digestive'), icon: 'restaurant' },
+    { key: 'skin', label: t('symptoms.skin'), icon: 'hand-left' },
+    { key: 'respiratory', label: t('symptoms.respiratory'), icon: 'fitness' },
+    { key: 'cardiovascular', label: t('symptoms.cardiovascular'), icon: 'heart' },
+    { key: 'neurological', label: t('symptoms.neurological'), icon: 'analytics' },
+    { key: 'other', label: t('symptoms.other'), icon: 'ellipsis-horizontal' },
+  ];
 
   const handleSave = async () => {
     if (!description.trim()) {
@@ -22,26 +37,33 @@ export default function AddSymptomScreen() {
       return;
     }
     
-    setLoading(true);
+    setSaving(true);
     try {
-      const symptom = {
+      const symptomData: Omit<Symptom, 'id'> = {
+        dateISO: new Date().toISOString(),
         description: description.trim(),
         severity,
         category,
-        dateISO: new Date().toISOString()
+        duration: duration ? parseInt(duration) : undefined,
+        location: location.trim() || undefined,
+        triggers: triggers.trim() ? triggers.split(',').map
+          (t => t.trim()).filter(Boolean) : undefined,
+        medications: medications.trim() ? medications.split(',').map
+          (m => m.trim()).filter(Boolean) : undefined,
+        notes: notes.trim() || undefined,
+        resolved: !onGoing,
+        resolvedAt: !onGoing ? new Date().toISOString() : undefined,
       };
-      
-      console.log('Saving symptom:', symptom);
-      const savedSymptom = await saveSymptom(symptom);
-      console.log('Saved symptom:', savedSymptom);
-      setDescription('');
-      setSeverity(3);
+
+      await saveSymptom(symptomData);
       Alert.alert(t('common.success'), t('symptoms.symptomLogged'));
+      handleClear();
+      navigation.goBack();
     } catch (error) {
-      console.error('Failed to save symptom:', error instanceof Error ? error.message : 'Unknown error');
-      Alert.alert(t('common.error'), t('symptoms.couldNotLogSymptom'));
+      console.error('Failed to save symptom:', error);
+      Alert.alert(t('symptoms.error'), t('symptoms.couldNotLogSymptom'));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -53,89 +75,183 @@ export default function AddSymptomScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         { 
           text: t('symptoms.clear'), 
-          style: 'destructive',
           onPress: () => {
             setDescription('');
-            setSeverity(3);
+            setSeverity(1);
             setCategory('other');
-          }
-        }
+            setDuration('');
+            setLocation('');
+            setTriggers('');
+            setMedications('');
+            setNotes('');
+            setOngoing(true);
+          },
+        },
       ]
     );
   };
 
-  return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.title}>{t('symptoms.logSymptom')}</Text>
-      </View>
+  const getSeverityColor = (sev: number) => {
+    const colorsSeverity = ['#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#F44336'];
+    return colorsSeverity[sev - 1] || '#9E9E9E';
+  };
 
-      <View style={styles.categoryCont}>
-        <Text style={styles.label}>{t('symptoms.category')}</Text>
-        <View style={styles.categoryButtons}> 
-          {(['digestive', 'skin', 'respiratory', 'cardiovascular', 'neurological', 'other'] as const).map((cat) => (
+  const getSeverityLabel = (sev: number) => {
+    const labels = ['Minimal', 'Mild', 'Moderate', 'Severe', 'Critical'];
+    return labels[sev - 1] || '';
+  };
+
+  return (
+    <ScrollView style={[styles.container, { backgroundColor: colors.background}]}>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Symptom Details</Text>
+
+        <Text style={[styles.label, { color: colors.icon }]}>Description *</Text>
+        <TextInput
+          style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={description}
+          onChangeText={setDescription}
+          placeholder={t('symptoms.describeYourSymptom')}
+          placeholderTextColor={colors.icon}
+          multiline
+          numberOfLines={3}
+        />
+
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.category')}</Text>
+        <View style={styles.categoryGrid}> 
+          {categories.map((cat) => (
             <TouchableOpacity
-              key={cat}
-              style={[styles.categoryButton, category === cat && styles.categoryButtonActive]}
-              onPress={() => setCategory(cat)}
+              key={cat.key}
+              style={[
+                styles.categoryButton, 
+                  {backgroundColor: colors.surface, borderColor: colors.cardBorder},
+                  category === cat.key && {backgroundColor: colors.primary, borderColor: colors.primary},
+              ]}
+              onPress={() => setCategory(cat.key)}
             >
-              <Text style={[styles.categoryButtonText, category === cat && styles.categoryButtonTextActive]}>
-                {t(`symptoms.${cat}`)}
+              <Ionicons 
+                name={cat.icon as any} 
+                size={20} 
+                color={category === cat.key ? '#fff' : colors.icon} 
+              />
+              <Text style={[
+                styles.categoryText, 
+                {color: category === cat.key ? '#fff' : colors.text},
+                ]}
+              >
+                {cat.label}
               </Text>              
             </TouchableOpacity>
           ))}
         </View>
+
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.severity')} ({severity}/5)</Text>
+          <View style={styles.severityContainer}> 
+            <View style={styles.severityButtons}>
+              {[1, 2, 3, 4, 5].map((sev) => (
+              <TouchableOpacity
+                key={sev}
+                style={[
+                  styles.severityButton, 
+                    {backgroundColor: severity >= sev ? getSeverityColor(sev) : colors.surface, borderColor: getSeverityColor(sev),
+                  },
+                ]}
+                onPress={() => setSeverity(sev)}
+              >
+                <Text style={[
+                  styles.severityButtonText,  
+                    {color: severity >= sev ? '#fff' : colors.text},
+                  ]}
+                >
+                  {sev}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[styles.severityLabel, {color: getSeverityColor(severity)}]}>
+            {getSeverityLabel(severity)}
+          </Text>
+        </View>
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder={t('symptoms.describeYourSymptom')}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-      />
-      
-      <View style={styles.severityContainer}>
-        <Text style={styles.label}>{t('symptoms.severityLabel')}</Text>
-        <Slider
-          style={styles.slider}
-          minimumValue={1}
-          maximumValue={5}
-          step={1}
-          value={severity}
-          onValueChange={setSeverity}
-          minimumTrackTintColor="#2196F3"
-          maximumTrackTintColor="#D1D1D1"
-          thumbTintColor="#2196F3"
-        />
-        <View style={styles.severityLabels}>
-          <Text>{t('symptoms.mild')}</Text>
-          <Text style={styles.severityValue}>{severity}</Text>
-          <Text>{t('symptoms.severe')}</Text>
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Information</Text>
+
+        <Text style={[styles.label, { color: colors.icon }]}>Duration (minutes)</Text>
+        <TextInput
+          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={duration}
+          onChangeText={setDuration}
+          placeholder="ex. 30"
+          placeholderTextColor={colors.icon}
+          keyboardType="numeric"
+        />  
+
+        <Text style={[styles.label, { color: colors.icon }]}>Location</Text>
+        <TextInput
+          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={location}
+          onChangeText={setLocation}
+          placeholder= "Where did this occur? (ex. Restaurant, Home)"
+          placeholderTextColor={colors.icon}
+        /> 
+
+        <Text style={[styles.label, { color: colors.icon }]}>Suspected Triggers</Text>
+        <TextInput
+          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={triggers}
+          onChangeText={setTriggers}
+          placeholder="Separate with commas (ex. peanuts, shellfish)"
+          placeholderTextColor={colors.icon}
+        /> 
+
+        <Text style={[styles.label, { color: colors.icon }]}>Medications Taken</Text>
+        <TextInput
+          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={medications}
+          onChangeText={setMedications}
+          placeholder="Separate with commas (ex. Benadryl, EpiPen)"
+          placeholderTextColor={colors.icon}
+        /> 
+
+        <Text style={[styles.label, { color: colors.icon }]}>Additional Notes</Text>
+        <TextInput
+          style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          value={notes}
+          onChangeText={setNotes}
+          placeholder="Add any other relevant information..."
+          placeholderTextColor={colors.icon}
+          multiline
+          numberOfLines={3}
+        /> 
+
+        <View style={[styles.switchRow]}>
+          <Text style={[styles.label, { color: colors.text }]}>Symptom is ongoing</Text>
+          <Switch
+            value={onGoing}
+            onValueChange={setOngoing}
+            trackColor={{false: colors.cardBorder, true: colors.primary + '40'}}
+            thumbColor={onGoing ? colors.primary : colors.icon}
+          /> 
         </View>
       </View>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
-          onPress={handleSave}
-          disabled={loading || description.trim().length === 0}
+          style={[styles.clearButton, {backgroundColor: colors.surface, borderColor: colors.cardBorder}]} 
+          onPress={handleClear}
         >
-          <Text style={styles.buttonText}>
-            {loading ? t('common.loading') : t('symptoms.save')}
-          </Text>
+          <Text style={[styles.clearButtonText, {color: colors.text }]}>{t('symptoms.clear')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.clearButton}
-          onPress={handleClear}
-          disabled={loading}
+          style={[styles.saveButton, {backgroundColor: colors.primary}]}
+          onPress={handleSave}
+          disabled={saving}
         >
-          <Text style={styles.clearButtonText}>{t('symptoms.clear')}</Text>
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Saving...' : t('symptoms.save')}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -145,112 +261,111 @@ export default function AddSymptomScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
     padding: 20,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
+  section: {
+    marginBottom: 24,
   },
-  backButton: {
-    marginRight: 15,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 15,
-    borderRadius: 8,
-    fontSize: 16,
-    marginBottom: 20,
-    textAlignVertical: 'top',
-    minHeight: 120,
-  },
-  severityContainer: {
-    marginBottom: 30,
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
   },
   label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  input: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 8,
     fontSize: 16,
-    marginBottom: 10,
   },
-  slider: {
-    width: '100%',
+  textInput: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    fontSize: 16,
+    textAlignVertical: 'top',
+  },
+  categoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 6,
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  severityContainer: {
+    alignItems: 'center',
+  },
+  severityButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  severityButton: {
+    width: 40,
     height: 40,
+    borderRadius: 20,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  severityLabels: {
+  severityButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  severityLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  severityValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2196F3',
+    marginTop: 16,
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    gap: 10,
-  },
-  button: {
-    backgroundColor: '#2196F3',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    flex: 1,
-  },
-  buttonDisabled: {
-    backgroundColor: '#B0BEC5',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 40,
   },
   clearButton: {
-    backgroundColor: '#F44336',
-    padding: 15,
+    flex: 1,
+    paddingVertical: 14,
     borderRadius: 8,
+    borderWidth: 1,
     alignItems: 'center',
-    flex: 0.4,
   },
   clearButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButton: {
+    flex: 2,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  saveButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-    },
-    categoryCont: {
-      marginBottom: 20,
-    },
-    categoryButtons: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    categoryButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: '#ddd',
-      backgroundColor: '#fff',
-    },
-    categoryButtonActive: {
-      backgroundColor: '#2196F3',
-      borderColor: '#2196F3',
-    },
-    categoryButtonText: {
-      fontSize: 14,
-      color: '#666',
-    },
-    categoryButtonTextActive: {
-      color: '#fff',
-      fontWeight: '600',
+    fontWeight: '700',
     },
 });

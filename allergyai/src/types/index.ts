@@ -104,6 +104,14 @@ export interface Symptom {
   severity: number;  // 1-5 scale
   category?: 'digestive' | 'skin' | 'respiratory' | 'cardiovascular' | 'neurological' | 'other';
   timestamp?: string | Date; 
+  duration?: number;
+  triggers?: string[];
+  location?: string;
+  medications?: string[];
+  notes?: string;
+  photos?: string[];
+  resolved?: boolean;
+  resolvedAt?: string;
 }
 
 export interface SymptomsResponse {
