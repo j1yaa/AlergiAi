@@ -446,6 +446,8 @@ export default {
     yourName: 'Your name',
     yourEmail: 'Your email',
     emergencyContactPhone: 'Emergency contact phone',
+    medicalNotes: 'Medical Notes',
+    medicalNotesPlaceholder: 'Enter any medical conditions, medications, or important health information...',
     save: 'SAVE',
     profileUpdated: 'Profile updated.',
     incorrectPassword: 'Incorrect password. Please try again.',
