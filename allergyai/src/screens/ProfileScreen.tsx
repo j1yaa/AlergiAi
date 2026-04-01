@@ -9,6 +9,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { ThemeToggle } from '../components';
 import * as Notifications from 'expo-notifications';
 import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
+import { exportMedicalReport } from '../utils/exportService';
 
 export default function ProfileScreen({ navigation, onLogout }: { navigation: any; onLogout?: () => void }) {
     const { colors } = useTheme();
@@ -17,6 +18,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [pushEnabled, setPushEnabled] = useState(true);
+    const [exporting, setExporting] = useState(false);
 
     const loadProfile = useCallback(async () => {
         try {
@@ -65,6 +67,17 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
             setPushEnabled(false);
             const alertSettings = await getAlertSettings();
             await saveAlertSettings({ ...alertSettings, enabled: false });
+        }
+    };
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await exportMedicalReport();
+        } catch (error: any) {
+            Alert.alert('Export Failed', error.message || 'Could not export report. Please try again.');
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -153,6 +166,22 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Ionicons name="watch-outline" size={20} color={colors.primary} />
                     <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.wearableDevices')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                </TouchableOpacity>
+            </View>
+
+            {/* Data Section */}
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>DATA</Text>
+            <View style={[styles.group, { backgroundColor: colors.surface }]}>
+                <TouchableOpacity
+                    style={styles.groupItem}
+                    onPress={handleExport}
+                    disabled={exporting}
+                >
+                    <Ionicons name="download-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>Export Medical Report</Text>
+                    {exporting
+                        ? <ActivityIndicator size="small" color={colors.primary} />
+                        : <Ionicons name="chevron-forward" size={18} color={colors.icon} />}
                 </TouchableOpacity>
             </View>
 
