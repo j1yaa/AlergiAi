@@ -291,7 +291,7 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
       });
       
       if (response.allergens.length > 0) {
-        const severity = response.riskScore >= 70 ? 'high' : response.riskScore >= 40 ? 'medium' : 'low';
+        const severity = response.riskScore >= 80 ? 'severe' : response.riskScore >= 60 ? 'high' : response.riskScore >= 40 ? 'moderate' : response.riskScore >= 20 ? 'low' : 'minimal';
         await addDoc(collection(db, 'alerts'), {
           userId: firebaseUser.uid,
           mealId: mealDoc.id,
