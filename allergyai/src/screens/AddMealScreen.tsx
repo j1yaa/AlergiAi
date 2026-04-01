@@ -23,6 +23,8 @@ export default function AddMealScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loadingMeals, setLoadingMeals] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [filterBy, setFilterBy] = useState<'all' | 'allergens' | 'safe'>('all');
 
   const handleAnalyze = async () => {
     if (!description.trim()) return;
@@ -93,6 +95,18 @@ export default function AddMealScreen() {
       return t('addMeal.invalidDate');
     }
   };
+
+  const sortedFilteredMeals = meals
+    .filter(meal => {
+      if (filterBy === 'allergens') return meal.allergens && meal.allergens.length > 0;
+      if (filterBy === 'safe') return !meal.allergens || meal.allergens.length === 0;
+      return true;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.timeStamp || 0).getTime();
+      const dateB = new Date(b.createdAt || b.timeStamp || 0).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   const renderMeal = ({ item }: { item: Meal }) => {
     if (!item.notes && !item.note && !item.description && (!item.items || item.items.length === 0)) {
@@ -351,12 +365,41 @@ export default function AddMealScreen() {
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.cardBorder }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>{t('addMeal.mealHistory')}</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowHistory(false)}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowHistory(false)}>
               <Ionicons name="close" size={24} color={colors.icon} />
             </TouchableOpacity>
+          </View>
+
+          {/* Sort & Filter Bar */}
+          <View style={[styles.filterBar, { borderBottomColor: colors.cardBorder }]}>
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>Sort:</Text>
+              {(['newest', 'oldest'] as const).map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.filterChip, { borderColor: colors.cardBorder }, sortOrder === opt && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                  onPress={() => setSortOrder(opt)}
+                >
+                  <Text style={[styles.filterChipText, { color: sortOrder === opt ? '#fff' : colors.text }]}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={styles.filterGroup}>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>Filter:</Text>
+              {(['all', 'allergens', 'safe'] as const).map(opt => (
+                <TouchableOpacity
+                  key={opt}
+                  style={[styles.filterChip, { borderColor: colors.cardBorder }, filterBy === opt && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                  onPress={() => setFilterBy(opt)}
+                >
+                  <Text style={[styles.filterChipText, { color: filterBy === opt ? '#fff' : colors.text }]}>
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
           
           {loadingMeals ? (
@@ -371,7 +414,7 @@ export default function AddMealScreen() {
             </View>
           ) : (
             <FlatList
-              data={meals}
+              data={sortedFilteredMeals}
               renderItem={renderMeal}
               keyExtractor={(item) => item.id}
               showsVerticalScrollIndicator={false}
@@ -674,6 +717,33 @@ const styles = StyleSheet.create({
   },
   mealIngredientText: {
     fontSize: 11,
+    fontWeight: '600',
+  },
+  filterBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  filterGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginRight: 2,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterChipText: {
+    fontSize: 13,
     fontWeight: '600',
   },
 });
