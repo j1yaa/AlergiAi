@@ -158,6 +158,10 @@ function SymptomsStack() {
       <Stack.Screen
         name="AddSymptom"
         component={AddSymptomScreen}
+        options={({navigation}) => ({
+          header: () => <DrawerHeader navigation={navigation}
+          title="Add Symptom" backButton />,
+        })}
       />
     </Stack.Navigator>
   );
