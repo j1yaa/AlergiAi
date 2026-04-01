@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useLanguage } from '../hooks/useLanguage';
+import { useTheme } from '../hooks/useTheme';
 import { translateAllergen } from '../utils/allergenTranslation';
 
 interface Prediction {
@@ -17,6 +18,7 @@ interface Props {
 
 export default function PredictiveInsights({ predictions }: Props) {
     const { t, language } = useLanguage();
+    const { colors } = useTheme();
     const getRiskColor = (score: number) => {
         if (score >= 70) return '#F44336';
         if (score >= 50) return '#FF9800';
@@ -24,34 +26,34 @@ export default function PredictiveInsights({ predictions }: Props) {
     };
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.surface }]}>
             <View style={styles.headerRow}>
-                <Text style={styles.title}> {t('predictions.title')}</Text>
+                <Text style={[styles.title, { color: colors.text }]}> {t('predictions.title')}</Text>
                 <View style={styles.betaBadge}>
                     <Text style={styles.betaText}>AI</Text>
                 </View>
             </View>
             {predictions.length === 0 ? (
-                <View style={styles.emptyCard}>
-                    <Text style={styles.emptyText}>{t('predictions.emptyText')}</Text>
+                <View style={[styles.emptyCard, { backgroundColor: colors.background }]}>
+                    <Text style={[styles.emptyText, { color: colors.icon }]}>{t('predictions.emptyText')}</Text>
                 </View>
             ) : (
                     predictions.map((pred, index) => (
-                        <View key={index} style={styles.predictionCard}>
+                        <View key={index} style={[styles.predictionCard, { backgroundColor: colors.background }]}>
                             <View style={styles.header}>
-                                <Text style={styles.allergen}>{translateAllergen(pred.allergen, language)}</Text>
+                                <Text style={[styles.allergen, { color: colors.text }]}>{translateAllergen(pred.allergen, language)}</Text>
                                 <View style={[styles.badge, { backgroundColor: getRiskColor(pred.riskScore) }]}>
                                 <Text style={styles.badgeText}>{Math.round(pred.riskScore)}%</Text>
                             </View>
                         </View>
-                            <Text style={styles.reason}>
+                            <Text style={[styles.reason, { color: colors.icon }]}>
                                 {pred.reasonKey === 'frequentCorrelation'
                                     ? t('predictions.frequentCorrelation', { count: pred.reasonCount })
                                     : pred.reasonKey === 'highSeverity'
                                     ? t('predictions.highSeverity')
                                     : t('predictions.potentialTrigger')}
                             </Text>
-                          <Text style={styles.confidence}>{t('predictions.confidence', { percent: pred.confidence })}</Text>
+                          <Text style={[styles.confidence, { color: colors.icon }]}>{t('predictions.confidence', { percent: pred.confidence })}</Text>
                         </View >
                     ))
             )}
@@ -61,7 +63,6 @@ export default function PredictiveInsights({ predictions }: Props) {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#fff',
         padding: 20,
         borderRadius: 16,
         marginBottom: 20,
@@ -79,7 +80,6 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#212529',
         flex: 1,
     },
     betaBadge: {
@@ -94,18 +94,15 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     emptyCard: {
-        backgroundColor: '#F8F9FA',
         padding: 16,
         borderRadius: 8,
         alignItems: 'center',
     },
     emptyText: {
-        color: '#6C757D',
         textAlign: 'center',
         fontSize: 14,
     },
     predictionCard: {
-        backgroundColor: '#F8F9FA',
         padding: 12,
         borderRadius: 8,
         marginBottom: 8,
@@ -132,12 +129,10 @@ const styles = StyleSheet.create({
     },
     reason: {
         fontSize: 14,
-        color: '#495057',
         marginBottom: 4,
     },
     confidence: {
         fontSize: 12,
-        color: '#6C757D',
     },
 });
                               

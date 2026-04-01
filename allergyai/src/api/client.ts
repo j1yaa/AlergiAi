@@ -274,40 +274,12 @@ export const analyzeMeal = async (payload: AnalyzeRequest): Promise<AnalyzeRespo
         ? `${riskResult.riskTier} detected: ${riskResult.matchedAllergens.join(', ')}. ${riskResult.explanation || ''}`
         : 'This meal appears to be safe for your dietary restrictions.';
 
-      const response: AnalyzeResponse = {
+      return {
         ingredients,
         allergens: riskResult.matchedAllergens,
         riskScore: riskResult.riskScore,
         advice
       };
-
-      // Save the analyzed meal to Firebase
-      const mealDoc = await addDoc(collection(db, 'meals'), {
-        userId: firebaseUser.uid,
-        description: payload.description,
-        ingredients: response.ingredients,
-        allergens: response.allergens,
-        riskScore: response.riskScore,
-        advice: response.advice,
-        createdAt: new Date().toISOString()
-      });
-      
-      if (response.allergens.length > 0) {
-        const severity = response.riskScore >= 80 ? 'severe' : response.riskScore >= 60 ? 'high' : response.riskScore >= 40 ? 'moderate' : response.riskScore >= 20 ? 'low' : 'minimal';
-        await addDoc(collection(db, 'alerts'), {
-          userId: firebaseUser.uid,
-          mealId: mealDoc.id,
-          message: `Allergen detected: ${response.allergens.join(', ')}`,
-          allergens: response.allergens,
-          severity,
-          dateISO: new Date().toISOString(),
-          timestamp: new Date().toISOString(),
-          read: false,
-          triggered: true
-        });
-      }
-      
-      return response;
     },
     { ingredients: [], allergens: [], riskScore: 0, advice: 'Analysis unavailable' }
   );

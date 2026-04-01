@@ -17,14 +17,18 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const systemColorScheme = useColorScheme() as ColorScheme;
-  const [theme, setThemeState] = useState<Theme>('auto');
+  const [theme, setThemeState] = useState<Theme>('light');
   
   const colorScheme: ColorScheme = theme === 'auto' ? (systemColorScheme || 'light') : theme;
   const colors = Colors[colorScheme];
 
   useEffect(() => {
     AsyncStorage.getItem('theme').then((saved) => {
-      if (saved) setThemeState(saved as Theme);
+      if (saved === 'dark') setThemeState('dark');
+      else {
+        setThemeState('light');
+        AsyncStorage.setItem('theme', 'light');
+      }
     });
   }, []);
 

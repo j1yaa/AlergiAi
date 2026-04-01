@@ -44,6 +44,13 @@ export default function AlertSettingsScreen() {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  const displayTime = (timeString: string) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const h = hours % 12 || 12;
+    return `${h}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+  };
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
@@ -105,7 +112,7 @@ export default function AlertSettingsScreen() {
               onPress={() => setShowStartPicker(true)}
             >
               <Ionicons name="time-outline" size={20} color={colors.icon} />
-              <Text style={[styles.timeText, { color: colors.text }]}>{settings.quietHours.start}</Text>
+              <Text style={[styles.timeText, { color: colors.text }]}>{displayTime(settings.quietHours.start)}</Text>
             </TouchableOpacity>
           </View>
 
@@ -116,7 +123,7 @@ export default function AlertSettingsScreen() {
               onPress={() => setShowEndPicker(true)}
             >
               <Ionicons name="time-outline" size={20} color={colors.icon} />
-              <Text style={[styles.timeText, { color: colors.text }]}>{settings.quietHours.end}</Text>
+              <Text style={[styles.timeText, { color: colors.text }]}>{displayTime(settings.quietHours.end)}</Text>
             </TouchableOpacity>
           </View>
         </View>

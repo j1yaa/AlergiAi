@@ -169,15 +169,6 @@ export default function AddMealScreen() {
         allergensToAlert = result.allergens;
         riskScore = result.riskScore;
         riskTier = result.riskScore <= 30 ? t('addMeal.lowRisk') : result.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
-      } else if (ing.length > 0) {
-        try {
-          const response = await analyzeMeal({ description: ing.join(', ') });
-          allergensToAlert = response.allergens;
-          riskScore = response.riskScore;
-          riskTier = response.riskScore <= 30 ? t('addMeal.lowRisk') : response.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
-        } catch (error) {
-          console.log('Could not analyze ingredients:', error);
-        }
       }
 
       if (allergensToAlert.length > 0) {
