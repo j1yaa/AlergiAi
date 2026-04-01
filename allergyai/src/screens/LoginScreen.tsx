@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { login } from '../api/client';
 import { useLanguage } from '../hooks/useLanguage';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 export default function LoginScreen({ navigation, onLogin }: { navigation: any; onLogin: () => void }) {
   const { t } = useLanguage();
@@ -91,6 +93,73 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
     }
   };
 
+  const handleForgotPassword = () => {
+    if (Platform.OS === 'ios') { 
+      Alert.prompt(
+        t('login.forgotPassword'),
+        'Enter your email address to receive a password reset link',
+        [
+          {text: t('common.cancel'), style: 'cancel'},
+          {
+            text: 'Send Reset Link',
+            onPress: async (resetEmail?: string) => {
+              if (!resetEmail || !resetEmail.trim()) {
+                Alert.alert('Error', 'Please enter your email address');
+                return;
+              }
+              await sendPasswordReset(resetEmail.trim());
+            }
+          }
+        ],
+        'plain-text',
+        email
+      );
+    } else {
+      if (email && email.trim()) {
+        Alert.alert(
+          t('login.forgotPassword'),
+          `Send password reset link to ${email}?`,
+          [
+            {text: t('common.cancel'), style: 'cancel'},
+            {
+              text: 'Send Reset Link',
+              onPress: () => sendPasswordReset(email.trim())
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          t('login.forgotPassword'),
+          'Please enter your email address in the email field above and try again.'
+        );
+      }
+    }
+  };
+
+  const sendPasswordReset = async (resetEmail: string) => {
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+        Alert.alert('Success', 'Password reset email was sent! Check your inbox.');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        Alert.alert('Error', 'No account found with this email address');
+      } else if (error.code === 'auth/invalid-email') {
+        Alert.alert('Error', 'Invalid email address');
+      } else {
+        Alert.alert('Error', 'Failed to send the reset email. Please try again.');
+      }
+    }
+  };
+
+  const handleGoogleSignIn = () => {
+    Alert.alert(
+      'Google Sign-In',
+      'Google authentication is not configured yet. Please use email/password login or contact support.',
+      [{text: 'OK'}]
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.select({ ios: 'padding', android: undefined })}
@@ -153,7 +222,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
             </TouchableOpacity>
 
             <View style={styles.row}>
-              <TouchableOpacity onPress={() => Alert.alert(t('login.forgotPassword'))}>
+              <TouchableOpacity onPress={handleForgotPassword}>
                 <Text style={styles.link}>{t('login.forgotPassword')}</Text>
               </TouchableOpacity>
 
@@ -171,7 +240,7 @@ export default function LoginScreen({ navigation, onLogin }: { navigation: any; 
             <View style={styles.socialRow}>
               <TouchableOpacity
                 style={[styles.socialButton, styles.google]}
-                onPress={() => Alert.alert('Google sign-in placeholder')}
+                onPress={handleGoogleSignIn}
               >
                 <Text style={styles.socialText}>{t('login.continueGoogle')}</Text>
               </TouchableOpacity>

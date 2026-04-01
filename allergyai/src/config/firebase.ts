@@ -1,6 +1,6 @@
-import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
-import { initializeAuth, getReactNativePersistence, getAuth } from 'firebase/auth';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Firestore } from 'firebase/firestore';
+import { initializeAuth, getAuth, Auth, getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import '../utils/networkLogger';
 
@@ -13,8 +13,8 @@ const firebaseConfig = {
   appId: '1:1052657724773:web:000923188a61de905f058c'
 };
 
-let app;
-let auth;
+let app: FirebaseApp;
+let auth: Auth;
 
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
@@ -35,7 +35,11 @@ if (getApps().length === 0) {
   console.log('Using existing Firebase app');
 }
 
-export const db = getFirestore(app);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
 export { auth };
 
 // Log auth state changes

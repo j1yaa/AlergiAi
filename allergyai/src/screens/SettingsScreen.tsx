@@ -119,7 +119,7 @@ export default function SettingsScreen() {
         t('userProfile.enterPasswordToUpdate'),
         [
           { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(null) },
-          { text: t('common.confirm'), onPress: (password) => resolve(password || null) }
+          { text: t('common.confirm'), onPress: (password?: string) => resolve(password || null) }
         ],
         'secure-text'
       );
