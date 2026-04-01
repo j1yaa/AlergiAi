@@ -440,10 +440,12 @@ export const getUserSettings = async (): Promise<UserSettings> => {
         email: userData?.email || firebaseUser.email || '',
         allergens: userData?.allergens || [],
         diet: userData?.diet || '',
-        notifications: userData?.notifications !== false
+        notifications: userData?.notifications !== false,
+        medicalNotes: userData?.medicalNotes || ''
       };
     },
-    { name: '', email: '', allergens: [], diet: '', notifications: true }
+    { name: '', email: '', allergens: [], diet: '',
+    notifications: true, medicalNotes: '' }
   );
 };
 
@@ -460,7 +462,8 @@ export const updateUserSettings = async (settings: UserSettings): Promise<UserSe
         email: settings.email,
         notifications: settings.notifications,
         allergens: settings.allergens,
-        diet: settings.diet
+        diet: settings.diet,
+        medicalNotes: settings.medicalNotes || ''
       });
       
       return settings;
@@ -705,6 +708,7 @@ export const getProfile = async (): Promise<UserProfile> => {
         totalMeals: 0,
         totalAlerts: 0,
         createdAt: userData?.createdAt || new Date().toISOString(),
+        medicalNotes: userData?.medicalNotes || '',
       };
     },
     {
@@ -715,6 +719,7 @@ export const getProfile = async (): Promise<UserProfile> => {
       totalMeals: 0,
       totalAlerts: 0,
       createdAt: new Date().toISOString(),
+      medicalNotes: '',
     },
     'getProfile'
   );

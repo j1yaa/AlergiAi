@@ -24,9 +24,11 @@ export default function SettingsScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [medicalNotes, setMedicalNotes] = useState('');
   const [originalName, setOriginalName] = useState('');
   const [originalEmail, setOriginalEmail] = useState('');
   const [originalPhone, setOriginalPhone] = useState('');
+  const [originalMedicalNotes, setOriginalMedicalNotes] = useState('');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,6 +49,8 @@ export default function SettingsScreen() {
       setOriginalEmail(profile.email);
       setPhone(alertSettings.emergencyContactPhone || '');
       setOriginalPhone(alertSettings.emergencyContactPhone || '');
+      setMedicalNotes(profile.medicalNotes || '');
+      setOriginalMedicalNotes(profile.medicalNotes || '');
     } catch (error) {
       console.error('Failed to load profile:', error);
     } finally {
@@ -87,9 +91,15 @@ export default function SettingsScreen() {
         await saveAlertSettings({ ...alertSettings, emergencyContactPhone: phone });
       }
 
+      if (medicalNotes !== originalMedicalNotes) {
+        const settings = await getUserSettings();
+        await updateUserSettings({...settings, medicalNotes});
+      }
+
       setOriginalName(name);
       setOriginalEmail(email);
       setOriginalPhone(phone);
+      setOriginalMedicalNotes(medicalNotes);
       Alert.alert(t('common.success'), t('userProfile.profileUpdated'));
     } catch (error: any) {
       if (error.code === 'auth/wrong-password') {
@@ -125,7 +135,7 @@ export default function SettingsScreen() {
     );
   }
 
-  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone;
+  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone || medicalNotes !== originalMedicalNotes;
 
   return (
     <KeyboardAvoidingView
@@ -172,6 +182,18 @@ export default function SettingsScreen() {
             placeholder={t('userProfile.emergencyContactPhone')}
             placeholderTextColor={colors.icon}
             keyboardType="phone-pad"
+          />
+
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('userProfile.medicalNotes')}</Text>
+          <TextInput
+            style={[styles.textArea, { borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface }]}
+            value={medicalNotes}
+            onChangeText={setMedicalNotes}
+            placeholder={t('userProfile.medicalNotesPlaceholder')}
+            placeholderTextColor={colors.icon}
+            multiline
+            numberOfLines={6}
+            textAlignVertical="top" 
           />
         </View>
 
@@ -254,5 +276,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 1,
+  },
+  textArea: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    fontSize: 15,
+    minHeight: 120,
+    marginTop: 8,
   },
 });

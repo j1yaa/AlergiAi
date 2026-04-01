@@ -70,6 +70,7 @@ export interface UserSettings {
   reminderEnabled?: boolean;
   theme?: string;
   language?: string;
+  medicalNotes?: string;
 }
 
 export interface AlertsResponse {
@@ -126,6 +127,7 @@ export interface UserProfile {
     totalMeals: number;
     totalAlerts: number;
     createdAt: string;
+    medicalNotes?: string;
 }
 
 
