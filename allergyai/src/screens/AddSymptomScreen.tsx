@@ -44,20 +44,37 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
         description: description.trim(),
         severity,
         category,
-        duration: duration ? parseInt(duration) : undefined,
-        location: location.trim() || undefined,
-        triggers: triggers.trim() ? triggers.split(',').map
-          (t => t.trim()).filter(Boolean) : undefined,
-        medications: medications.trim() ? medications.split(',').map
-          (m => m.trim()).filter(Boolean) : undefined,
-        notes: notes.trim() || undefined,
         resolved: !onGoing,
         resolvedAt: !onGoing ? new Date().toISOString() : undefined,
       };
+      
+      if (duration && parseInt(duration) > 0) {
+          symptomData.duration = parseInt(duration);
+      }
+      if (location.trim()) {
+        symptomData.location = location.trim();
+      }
+      if (triggers.trim()) {
+        symptomData.triggers = triggers.split(',').map(t => t.trim()).filter(Boolean);
+      }
+      if (medications.trim()) {
+        symptomData.medications = medications.split(',').map(m => m.trim()).filter(Boolean);
+      }
+      if (notes.trim()) {
+        symptomData.notes = notes.trim();
+      }
 
       await saveSymptom(symptomData);
       Alert.alert(t('common.success'), t('symptoms.symptomLogged'));
-      handleClear();
+      setDescription('');
+      setSeverity(1);
+      setCategory('other');
+      setDuration('');
+      setLocation('');
+      setTriggers('');
+      setMedications('');
+      setNotes('');
+      setOngoing(true);
       navigation.goBack();
     } catch (error) {
       console.error('Failed to save symptom:', error);
@@ -194,24 +211,30 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
           onChangeText={setLocation}
           placeholder= "Where did this occur? (ex. Restaurant, Home)"
           placeholderTextColor={colors.icon}
+          multiline
+          numberOfLines={2}
         /> 
 
         <Text style={[styles.label, { color: colors.icon }]}>Suspected Triggers</Text>
         <TextInput
-          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={triggers}
           onChangeText={setTriggers}
           placeholder="Separate with commas (ex. peanuts, shellfish)"
           placeholderTextColor={colors.icon}
+          multiline
+          numberOfLines={2}
         /> 
 
         <Text style={[styles.label, { color: colors.icon }]}>Medications Taken</Text>
         <TextInput
-          style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
+          style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={medications}
           onChangeText={setMedications}
           placeholder="Separate with commas (ex. Benadryl, EpiPen)"
           placeholderTextColor={colors.icon}
+          multiline
+          numberOfLines={2}
         /> 
 
         <Text style={[styles.label, { color: colors.icon }]}>Additional Notes</Text>
@@ -225,7 +248,7 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
           numberOfLines={3}
         /> 
 
-        <View style={[styles.switchRow]}>
+        <View style={styles.switchRow}>
           <Text style={[styles.label, { color: colors.text }]}>Symptom is ongoing</Text>
           <Switch
             value={onGoing}

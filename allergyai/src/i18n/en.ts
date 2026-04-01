@@ -275,7 +275,7 @@ export default {
   // SymptomsScreen / AddSymptomScreen
   symptoms: {
     logSymptom: 'Log Symptom',
-    describeYourSymptom: 'Describe your symptom...',
+    describeYourSymptom: 'Describe your symptom(s)...',
     severity: 'Severity',
     severityLabel: 'Severity (1-5)',
     category: 'Category',
