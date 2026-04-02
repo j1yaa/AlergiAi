@@ -42,12 +42,13 @@ export default function ScanResultScreen() {
     severity,
     riskTier,
     explanation,
+    factorData,
   } = isFood
     ? computeRiskScore(
         params.detectedIngredients ?? [],
         params.allergenWarnings ?? [],
       )
-    : { riskScore: 0, matchedAllergens: [], severity: 'LOW' as const, riskTier: 'Low Risk' as const, explanation: '' };
+    : { riskScore: 0, matchedAllergens: [], severity: 'LOW' as const, riskTier: 'Low Risk' as const, explanation: '', factorData: undefined };
 
   const hasAllergens = matchedAllergens.length > 0;
 
@@ -129,9 +130,17 @@ export default function ScanResultScreen() {
               </Text>
               {explanation && (
                 <Text style={styles.explanationText}>
-                  {explanation === 'No known allergens detected in ingredients.'
-                    ? t('scanResult.noKnownAllergens')
-                    : explanation}
+                  {factorData
+                    ? t('scanResult.riskExplanation', {
+                        severity: t(`allergen.${factorData.severityLabel}`),
+                        severityWeight: factorData.severityWeight,
+                        exposure: t(`scanResult.exposure${factorData.exposureLabel.charAt(0).toUpperCase() + factorData.exposureLabel.slice(1)}`),
+                        exposureWeight: factorData.exposureWeight,
+                        sensitivity: t(`scanResult.sensitivity${factorData.sensitivityLabel.charAt(0).toUpperCase() + factorData.sensitivityLabel.slice(1)}`),
+                        sensitivityWeight: factorData.sensitivityWeight,
+                        rawScore: factorData.rawScore,
+                      })
+                    : t('scanResult.noKnownAllergens')}
                 </Text>
               )}
             </>

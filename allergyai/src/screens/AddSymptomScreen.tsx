@@ -122,16 +122,16 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
   };
 
   const getSeverityLabel = (sev: number) => {
-    const labels = ['Minimal', 'Mild', 'Moderate', 'Severe', 'Critical'];
-    return labels[sev - 1] || '';
+    const keys = ['minimal', 'mild', 'moderate', 'severe', 'critical'];
+    return t(`symptoms.${keys[sev - 1] || ''}`);
   };
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background}]}>
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Symptom Details</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('symptoms.symptomDetails')}</Text>
 
-        <Text style={[styles.label, { color: colors.icon }]}>Description *</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.descriptionLabel')} *</Text>
         <TextInput
           style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={description}
@@ -200,64 +200,64 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Additional Information</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('symptoms.additionalInfo')}</Text>
 
-        <Text style={[styles.label, { color: colors.icon }]}>Duration (minutes)</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.durationLabel')}</Text>
         <TextInput
           style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={duration}
           onChangeText={setDuration}
-          placeholder="ex. 30"
+          placeholder={t('symptoms.durationPlaceholder')}
           placeholderTextColor={colors.icon}
           keyboardType="numeric"
-        />  
+        />
 
-        <Text style={[styles.label, { color: colors.icon }]}>Location</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.locationLabel')}</Text>
         <TextInput
           style={[styles.input, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={location}
           onChangeText={setLocation}
-          placeholder= "Where did this occur? (ex. Restaurant, Home)"
+          placeholder={t('symptoms.locationPlaceholder')}
           placeholderTextColor={colors.icon}
           multiline
           numberOfLines={2}
-        /> 
+        />
 
-        <Text style={[styles.label, { color: colors.icon }]}>Suspected Triggers</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.triggersLabel')}</Text>
         <TextInput
           style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={triggers}
           onChangeText={setTriggers}
-          placeholder="Separate with commas (ex. peanuts, shellfish)"
+          placeholder={t('symptoms.triggersPlaceholder')}
           placeholderTextColor={colors.icon}
           multiline
           numberOfLines={2}
-        /> 
+        />
 
-        <Text style={[styles.label, { color: colors.icon }]}>Medications Taken</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.medicationsLabel')}</Text>
         <TextInput
           style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={medications}
           onChangeText={setMedications}
-          placeholder="Separate with commas (ex. Benadryl, EpiPen)"
+          placeholder={t('symptoms.medicationsPlaceholder')}
           placeholderTextColor={colors.icon}
           multiline
           numberOfLines={2}
-        /> 
+        />
 
-        <Text style={[styles.label, { color: colors.icon }]}>Additional Notes</Text>
+        <Text style={[styles.label, { color: colors.icon }]}>{t('symptoms.notesLabel')}</Text>
         <TextInput
           style={[styles.textInput, {borderColor: colors.cardBorder, color: colors.text, backgroundColor: colors.surface}]}
           value={notes}
           onChangeText={setNotes}
-          placeholder="Add any other relevant information..."
+          placeholder={t('symptoms.notesPlaceholder')}
           placeholderTextColor={colors.icon}
           multiline
           numberOfLines={3}
-        /> 
+        />
 
         <View style={styles.switchRow}>
-          <Text style={[styles.label, { color: colors.text }]}>Symptom is ongoing</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{t('symptoms.symptomOngoing')}</Text>
           <Switch
             value={onGoing}
             onValueChange={setOngoing}
@@ -281,7 +281,7 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
           disabled={saving}
         >
           <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : t('symptoms.save')}
+            {saving ? t('symptoms.saving') : t('symptoms.save')}
           </Text>
         </TouchableOpacity>
       </View>
