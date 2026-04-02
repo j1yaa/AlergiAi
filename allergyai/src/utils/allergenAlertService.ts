@@ -80,10 +80,11 @@ export const createAlert = async (
   const alert: any = {
     userId: user.uid,
     allergen,
+    allergens: [allergen],
     severity,
     source,
     message: `${severity.toUpperCase()} RISK: ${allergen} detected in your ${source}`,
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     read: false,
     acknowledged: false,
   };
