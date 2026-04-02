@@ -297,8 +297,10 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
       );
       
       const snapshot = await getDocs(alertsQuery);
+      console.log('getAlerts: found', snapshot.docs.length, 'docs');
       const alerts = snapshot.docs.map(doc => {
         const data = doc.data();
+        console.log('getAlerts: raw doc:', JSON.stringify(data));
         // Handle Firestore timestamp conversion
         let timestampISO: string;
         if (data.timestamp?.toDate) {

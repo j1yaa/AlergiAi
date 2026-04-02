@@ -80,20 +80,22 @@ export const createAlert = async (
   const alert: any = {
     userId: user.uid,
     allergen,
+    allergens: [allergen],
     severity,
     source,
     message: `${severity.toUpperCase()} RISK: ${allergen} detected in your ${source}`,
-    timestamp: new Date(),
+    timestamp: new Date().toISOString(),
     read: false,
     acknowledged: false,
   };
 
-  // Only add mealId if it's provided
   if (mealId) {
     alert.mealId = mealId;
   }
 
+  console.log('createAlert: saving to Firestore:', JSON.stringify(alert));
   const docRef = await addDoc(collection(db, 'alerts'), alert);
+  console.log('createAlert: saved with id:', docRef.id);
   
   const settings = await getAlertSettings();
   if (settings.enabled && shouldAlert(severity, settings) && !isQuietHours(settings)) {
