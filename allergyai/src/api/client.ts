@@ -302,6 +302,7 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
         // Handle Firestore timestamp conversion
         let timestampISO: string;
         if (data.timestamp?.toDate) {
+          // Firestore Timestamp object
           timestampISO = data.timestamp.toDate().toISOString();
         } else if (data.timestamp instanceof Date) {
           timestampISO = data.timestamp.toISOString();
@@ -321,7 +322,7 @@ export const getAlerts = async (params?: { status?: string; page?: number; pageS
           triggered: data.triggered || false,
           mealId: data.mealId || '',
           dateISO: timestampISO,
-          allergens: data.allergens || (data.allergen ? [data.allergen] : []),
+          allergens: data.allergens || [data.allergen].filter(Boolean),
           severity: data.severity || 'medium',
           note: data.note || ''
         } as Alert;
