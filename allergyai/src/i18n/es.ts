@@ -15,6 +15,7 @@ export default {
     SymptomCorrelation: 'Correlación de Síntomas',
     UserProfile: 'Perfil de Usuario',
     ChangePassword: 'Cambiar Contraseña',
+    EmergencyContact: 'Contacto de Emergencia',
   },
 
   // CustomDrawer

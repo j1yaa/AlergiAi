@@ -17,6 +17,7 @@ export default {
     UserProfile: 'User Profile',
     ChangePassword: 'Change Password',
     WearableSettings: 'Wearable Devices',
+    EmergencyContact: 'Emergency Contact',
   },
 
   // CustomDrawer
