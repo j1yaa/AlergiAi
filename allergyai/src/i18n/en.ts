@@ -521,7 +521,7 @@ export default {
     syncDescription: 'Sync heart rate, sleep, and activity data',
     syncNow: 'Sync Now',
     syncing: 'Syncing...',
-    lastSync: 'Last sync: {time}',
+    lastSync: 'Last sync: %{time}',
     supportedDevices: 'Supported Devices',
     permissionRequired: 'Permission Required',
     permissionMessage: 'Health data access is required for sync',
