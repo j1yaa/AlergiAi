@@ -214,17 +214,20 @@ export default function AddMealScreen() {
         Alert.alert(
           t('addMeal.allergenDetected'),
           `${riskTier.toUpperCase()}: ${allergenList}\n\n${t('addMeal.riskScoreLabel')} ${riskScore}%`,
-          [{ text: t('common.ok'), style: 'default' }]
+          [{
+            text: t('common.ok'),
+            style: 'default',
+            onPress: async () => {
+              for (const allergen of allergensToAlert) {
+                const stored = allergensSeverity.find(
+                  a => a.name.toLowerCase() === allergen.toLowerCase()
+                );
+                const userAllergenSeverity = stored?.severity as any;
+                await createAlert(allergen, alertSeverity, 'meal', undefined, userAllergenSeverity);
+              }
+            }
+          }]
         );
-
-        for (const allergen of allergensToAlert) {
-          const stored = allergensSeverity.find(
-            a => a.name.toLowerCase() === allergen.toLowerCase()
-          );
-          const userAllergenSeverity = stored?.severity as any;
-          console.log(`Creating alert: ${allergen} - ${alertSeverity} (stored: ${userAllergenSeverity})`);
-          await createAlert(allergen, alertSeverity, 'meal', undefined, userAllergenSeverity);
-        }
       } else {
         console.log('No allergens detected');
         Alert.alert(t('addMeal.saved'), t('addMeal.mealLogged'));
