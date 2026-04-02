@@ -31,10 +31,12 @@ export interface Alert {
   note: string;
   userId?: string;
   message?: string;
+  source?: 'meal' | 'scan' | 'manual' | 'symptom';
   type?: string;
   timestamp?: Date;
   read?: boolean;
   triggered?: boolean;
+  acknowledged?: boolean;
 }
 
 export interface AnalyticsSummary {

@@ -36,6 +36,18 @@ export default function AlertsScreen() {
     }
   };
 
+  const getAlertMessage = (item: Alert) => {
+    const severityLabel = item.severity.toUpperCase();
+    const allergenList = item.allergens.length > 0 ? item.allergens.join(', ') : '';
+    const sourceKey = item.source === 'scan' ? 'detectedInScan'
+      : item.source === 'manual' ? 'detectedInManual'
+      : 'detectedInMeal';
+    if (allergenList) {
+      return `${t('alerts.riskLabel', { severity: severityLabel, allergen: allergenList })} ${t(`alerts.${sourceKey}`)}`;
+    }
+    return item.message || '';
+  };
+
   const getSeverityColor = (severity: string) => {
     switch (severity) {
       case 'severe': return '#880E4F';
@@ -98,7 +110,7 @@ export default function AlertsScreen() {
         <Text style={[styles.date, { color: colors.icon }]}>{formatDate(item.dateISO)}</Text>
         {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
       </View>
-      <Text style={[styles.message, { color: colors.text }]}>{item.message}</Text>
+      <Text style={[styles.message, { color: colors.text }]}>{getAlertMessage(item)}</Text>
       {item.allergens.length > 0 && (
         <View style={styles.allergenContainer}>
           {item.allergens.map((allergen, index) => (
