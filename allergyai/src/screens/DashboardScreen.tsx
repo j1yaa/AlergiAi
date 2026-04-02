@@ -14,7 +14,6 @@ import { predictAllergenRisks } from '../utils/predictiveAnalysis';
 export default function DashboardScreen() {
   const { colors } = useTheme();
   const { t, language } = useLanguage();
-  console.log('=== DashboardScreen rendered ===');
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [predictions, setPredictions] = useState<any[]>([]);
   const navigation = useNavigation();
@@ -33,7 +32,6 @@ export default function DashboardScreen() {
       const symptoms = await getSymptoms();
       const meals = await getMeals();
       const predictedRisks = predictAllergenRisks(symptoms.items, meals, []);
-      console.log('Predictions calculated:', predictedRisks);
       setPredictions(predictedRisks);
     } catch (error) {
       console.error('Failed to load analytics:', error);
