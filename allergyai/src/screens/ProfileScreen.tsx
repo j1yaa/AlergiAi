@@ -79,7 +79,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         try {
             await exportMedicalReport();
         } catch (error: any) {
-            Alert.alert('Export Failed', error.message || 'Could not export report. Please try again.');
+            Alert.alert(t('settings.exportFailed'), error.message || 'Could not export report. Please try again.');
         } finally {
             setExporting(false);
         }
@@ -183,13 +183,13 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     onPress={() => navigation.navigate('EmergencyContact')}
                 >
                     <Ionicons name="call-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Emergency Contact</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.emergencyContact')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
             </View>
 
             {/* Data Section */}
-            <Text style={[styles.sectionLabel, { color: colors.icon }]}>DATA</Text>
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.dataSection')}</Text>
             <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <TouchableOpacity
                     style={styles.groupItem}
@@ -197,7 +197,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     disabled={exporting}
                 >
                     <Ionicons name="download-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Export Medical Report</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.exportMedicalReport')}</Text>
                     {exporting
                         ? <ActivityIndicator size="small" color={colors.primary} />
                         : <Ionicons name="chevron-forward" size={18} color={colors.icon} />}

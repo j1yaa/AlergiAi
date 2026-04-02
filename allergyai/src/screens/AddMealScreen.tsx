@@ -395,7 +395,7 @@ export default function AddMealScreen() {
           {/* Sort & Filter Bar */}
           <View style={[styles.filterBar, { borderBottomColor: colors.cardBorder }]}>
             <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.icon }]}>Sort:</Text>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>{t('addMeal.sort')}</Text>
               {(['newest', 'oldest'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
@@ -403,13 +403,13 @@ export default function AddMealScreen() {
                   onPress={() => setSortOrder(opt)}
                 >
                   <Text style={[styles.filterChipText, { color: sortOrder === opt ? '#fff' : colors.text }]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {t(`addMeal.${opt}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.icon }]}>Filter:</Text>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>{t('addMeal.filter')}</Text>
               {(['all', 'allergens', 'safe'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
@@ -417,7 +417,7 @@ export default function AddMealScreen() {
                   onPress={() => setFilterBy(opt)}
                 >
                   <Text style={[styles.filterChipText, { color: filterBy === opt ? '#fff' : colors.text }]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {opt === 'allergens' ? t('addMeal.allergens') : t(`addMeal.${opt}`)}
                   </Text>
                 </TouchableOpacity>
               ))}

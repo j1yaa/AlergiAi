@@ -6,10 +6,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
+import { useLanguage } from '../hooks/useLanguage';
 import { getEmergencyContact, saveEmergencyContact, EmergencyContact } from '../utils/emergencyContactService';
 
 export default function EmergencyContactScreen() {
   const { colors } = useTheme();
+  const { t } = useLanguage();
 
   const [contact, setContact] = useState<EmergencyContact>({
     firstName: '',
@@ -43,7 +45,7 @@ export default function EmergencyContactScreen() {
   const handleSave = async () => {
     if (contact.notifyEnabled) {
       if (!contact.phone && !contact.email) {
-        Alert.alert('Missing Info', 'Please enter a phone number or email to enable notifications.');
+        Alert.alert(t('emergencyContact.missingInfo'), t('emergencyContact.missingInfoMessage'));
         return;
       }
     }
@@ -51,9 +53,9 @@ export default function EmergencyContactScreen() {
     try {
       await saveEmergencyContact(contact);
       setOriginalContact(contact);
-      Alert.alert('Saved', 'Emergency contact has been updated.');
+      Alert.alert(t('emergencyContact.saved'), t('emergencyContact.saveSuccess'));
     } catch (e) {
-      Alert.alert('Error', 'Failed to save. Please try again.');
+      Alert.alert(t('common.error'), t('emergencyContact.saveError'));
     } finally {
       setSaving(false);
     }
@@ -74,9 +76,9 @@ export default function EmergencyContactScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Ionicons name="call" size={32} color={colors.primary} />
-          <Text style={[styles.title, { color: colors.text }]}>Emergency Contact</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{t('emergencyContact.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.icon }]}>
-            This person will be notified if a high-severity allergen is detected
+            {t('emergencyContact.subtitle')}
           </Text>
         </View>
 
@@ -84,9 +86,9 @@ export default function EmergencyContactScreen() {
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           <View style={styles.row}>
             <View style={styles.labelContainer}>
-              <Text style={[styles.label, { color: colors.text }]}>Enable Notifications</Text>
+              <Text style={[styles.label, { color: colors.text }]}>{t('emergencyContact.enableNotifications')}</Text>
               <Text style={[styles.description, { color: colors.icon }]}>
-                Send a text & email to your emergency contact when a high-severity allergen is logged
+                {t('emergencyContact.enableDescription')}
               </Text>
             </View>
             <Switch
@@ -100,42 +102,42 @@ export default function EmergencyContactScreen() {
 
         {/* Contact Info */}
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Contact Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('emergencyContact.contactInfo')}</Text>
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>First Name</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('emergencyContact.firstName')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={contact.firstName}
             onChangeText={(v) => update({ firstName: v })}
-            placeholder="First name"
+            placeholder={t('emergencyContact.firstNamePlaceholder')}
             placeholderTextColor={colors.icon}
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Last Name</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('emergencyContact.lastName')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={contact.lastName}
             onChangeText={(v) => update({ lastName: v })}
-            placeholder="Last name"
+            placeholder={t('emergencyContact.lastNamePlaceholder')}
             placeholderTextColor={colors.icon}
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Phone Number</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('emergencyContact.phoneNumber')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={contact.phone}
             onChangeText={(v) => update({ phone: v })}
-            placeholder="Phone number"
+            placeholder={t('emergencyContact.phonePlaceholder')}
             placeholderTextColor={colors.icon}
             keyboardType="phone-pad"
           />
 
-          <Text style={[styles.inputLabel, { color: colors.icon }]}>Email</Text>
+          <Text style={[styles.inputLabel, { color: colors.icon }]}>{t('emergencyContact.email')}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.cardBorder, color: colors.text }]}
             value={contact.email}
             onChangeText={(v) => update({ email: v })}
-            placeholder="Email address"
+            placeholder={t('emergencyContact.emailPlaceholder')}
             placeholderTextColor={colors.icon}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -146,7 +148,7 @@ export default function EmergencyContactScreen() {
         <View style={styles.infoBox}>
           <Ionicons name="information-circle" size={20} color="#2196F3" />
           <Text style={styles.infoText}>
-            When a high-severity allergen alert is triggered, your emergency contact will receive a text message and email with your name and the allergen detected.
+            {t('emergencyContact.infoText')}
           </Text>
         </View>
 
@@ -159,7 +161,7 @@ export default function EmergencyContactScreen() {
           {saving ? (
             <ActivityIndicator size="small" color="#fff" />
           ) : (
-            <Text style={styles.saveButtonText}>SAVE</Text>
+            <Text style={styles.saveButtonText}>{t('emergencyContact.save')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

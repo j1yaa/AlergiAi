@@ -102,6 +102,10 @@ export default {
     notificationsDisabled: 'Notifications Disabled',
     notificationsDisabledMessage: 'Please enable notifications in your device settings to receive allergen alerts.',
     openSettings: 'Open Settings',
+    emergencyContact: 'Emergency Contact',
+    dataSection: 'DATA',
+    exportMedicalReport: 'Export Medical Report',
+    exportFailed: 'Export Failed',
   },
 
   // DashboardScreen
@@ -178,6 +182,12 @@ export default {
     unnamedMeal: 'Unnamed Meal',
     noDate: 'No date',
     invalidDate: 'Invalid date',
+    sort: 'Sort:',
+    filter: 'Filter:',
+    newest: 'Newest',
+    oldest: 'Oldest',
+    all: 'All',
+    safe: 'Safe',
   },
 
   // ScannerScreen
@@ -339,6 +349,13 @@ export default {
     alerts: 'Alerts',
     unreadCount: '%{count} unread',
     markRead: 'Mark Read',
+    filterAll: 'All',
+    filterMinimal: 'Minimal',
+    filterLow: 'Low',
+    filterMedium: 'Medium',
+    filterModerate: 'Moderate',
+    filterHigh: 'High',
+    filterSevere: 'Severe',
   },
 
   // MealTrendsScreen
@@ -513,6 +530,29 @@ export default {
     yes: 'Yes',
     no: 'No',
     confirm: 'Confirm',
+  },
+
+  emergencyContact: {
+    title: 'Emergency Contact',
+    subtitle: 'This person will be notified if a high-severity allergen is detected',
+    enableNotifications: 'Enable Notifications',
+    enableDescription: 'Send a text & email to your emergency contact when a high-severity allergen is logged',
+    contactInfo: 'Contact Information',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    phoneNumber: 'Phone Number',
+    email: 'Email',
+    firstNamePlaceholder: 'First name',
+    lastNamePlaceholder: 'Last name',
+    phonePlaceholder: 'Phone number',
+    emailPlaceholder: 'Email address',
+    infoText: 'When a high-severity allergen alert is triggered, your emergency contact will receive a text message and email with your name and the allergen detected.',
+    save: 'SAVE',
+    saved: 'Saved',
+    saveSuccess: 'Emergency contact has been updated.',
+    saveError: 'Failed to save. Please try again.',
+    missingInfo: 'Missing Info',
+    missingInfoMessage: 'Please enter a phone number or email to enable notifications.',
   },
 
   wearable: {

@@ -102,6 +102,10 @@ export default {
     notificationsDisabled: 'Notificaciones Desactivadas',
     notificationsDisabledMessage: 'Habilita las notificaciones en la configuración de tu dispositivo para recibir alertas de alérgenos.',
     openSettings: 'Abrir Configuración',
+    emergencyContact: 'Contacto de Emergencia',
+    dataSection: 'DATOS',
+    exportMedicalReport: 'Exportar Informe Médico',
+    exportFailed: 'Exportación Fallida',
   },
 
   // DashboardScreen
@@ -178,6 +182,12 @@ export default {
     unnamedMeal: 'Comida Sin Nombre',
     noDate: 'Sin fecha',
     invalidDate: 'Fecha inválida',
+    sort: 'Ordenar:',
+    filter: 'Filtrar:',
+    newest: 'Más Reciente',
+    oldest: 'Más Antiguo',
+    all: 'Todo',
+    safe: 'Seguro',
   },
 
   // ScannerScreen
@@ -339,6 +349,13 @@ export default {
     alerts: 'Alertas',
     unreadCount: '%{count} sin leer',
     markRead: 'Marcar Leído',
+    filterAll: 'Todo',
+    filterMinimal: 'Mínimo',
+    filterLow: 'Bajo',
+    filterMedium: 'Medio',
+    filterModerate: 'Moderado',
+    filterHigh: 'Alto',
+    filterSevere: 'Severo',
   },
 
   // MealTrendsScreen
@@ -518,6 +535,30 @@ export default {
   languages: {
     en: 'Inglés',
     es: 'Español',
+  },
+
+  // EmergencyContactScreen
+  emergencyContact: {
+    title: 'Contacto de Emergencia',
+    subtitle: 'Esta persona será notificada si se detecta un alérgeno de alta severidad',
+    enableNotifications: 'Habilitar Notificaciones',
+    enableDescription: 'Enviar un texto y correo a tu contacto de emergencia cuando se registre un alérgeno de alta severidad',
+    contactInfo: 'Información de Contacto',
+    firstName: 'Nombre',
+    lastName: 'Apellido',
+    phoneNumber: 'Número de Teléfono',
+    email: 'Correo Electrónico',
+    firstNamePlaceholder: 'Nombre',
+    lastNamePlaceholder: 'Apellido',
+    phonePlaceholder: 'Número de teléfono',
+    emailPlaceholder: 'Dirección de correo',
+    infoText: 'Cuando se active una alerta de alérgeno de alta severidad, tu contacto de emergencia recibirá un mensaje de texto y correo con tu nombre y el alérgeno detectado.',
+    save: 'GUARDAR',
+    saved: 'Guardado',
+    saveSuccess: 'El contacto de emergencia ha sido actualizado.',
+    saveError: 'Error al guardar. Inténtalo de nuevo.',
+    missingInfo: 'Información Faltante',
+    missingInfoMessage: 'Ingresa un número de teléfono o correo para habilitar las notificaciones.',
   },
 
   // WearableSettingsScreen

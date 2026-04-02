@@ -163,7 +163,7 @@ export default function AlertsScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, { color: colors.icon }, filter === f && styles.filterTextActive]}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {t(`alerts.filter${f.charAt(0).toUpperCase() + f.slice(1)}`)}
             </Text>
           </TouchableOpacity>
         ))}
