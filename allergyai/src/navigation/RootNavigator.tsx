@@ -143,7 +143,7 @@ function MainDrawer() {
       <Drawer.Screen name="WearableSettings" component={WearableSettingsScreen} options={({ navigation }) => ({
         title: 'Wearable Devices',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ goBack: () => navigation.goBack() }} title="WearableSettings" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="WearableSettings" backButton />,
       })} />
       <Drawer.Screen name="EmergencyContact" component={EmergencyContactScreen} options={({ navigation }) => ({
         title: 'Emergency Contact',
