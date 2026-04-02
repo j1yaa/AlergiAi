@@ -15,6 +15,7 @@ import {
   EmailAuthProvider
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -33,6 +34,7 @@ export default function SettingsScreen() {
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [originalProfileImage, setOriginalProfileImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -66,6 +68,13 @@ export default function SettingsScreen() {
     }
   };
 
+  const savePermanentImage = async (tempUri: string): Promise<string> => {
+    const fileName = 'profile_picture.jpg';
+    const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
+    await FileSystem.copyAsync({ from: tempUri, to: permanentUri });
+    return permanentUri;
+  };
+
   const handlePickImage = () => {
     Alert.alert('Profile Photo', 'Choose a photo source', [
       {
@@ -78,7 +87,9 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            setProfileImage(result.assets[0].uri);
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setProfileImage(permanent);
+            setImageError(false);
           }
         }
       },
@@ -92,7 +103,9 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            setProfileImage(result.assets[0].uri);
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setProfileImage(permanent);
+            setImageError(false);
           }
         }
       },
@@ -197,12 +210,16 @@ export default function SettingsScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={handlePickImage} style={styles.avatarWrapper}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.avatarImage} />
+            {profileImage && !imageError ? (
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.avatarImage}
+                onError={() => setImageError(true)}
+              />
             ) : (
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  {name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?'}
                 </Text>
               </View>
             )}

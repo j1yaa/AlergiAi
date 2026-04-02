@@ -17,6 +17,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     const { language, setLanguage, t } = useLanguage();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [pushEnabled, setPushEnabled] = useState(true);
@@ -126,12 +127,19 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Welcome Header */}
             <View style={[styles.welcomeSection, { backgroundColor: colors.surface }]}>
-                {profileImage ? (
-                    <Image source={{ uri: profileImage }} style={styles.profileImage} />
+                {profileImage && !imageError ? (
+                    <Image
+                        source={{ uri: profileImage }}
+                        style={styles.profileImage}
+                        onError={() => {
+                            setImageError(true);
+                            AsyncStorage.removeItem('profile_picture_uri');
+                        }}
+                    />
                 ) : (
                     <View style={styles.profileIcon}>
                         <Text style={styles.profileInitials}>
-                            {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                            {profile.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?'}
                         </Text>
                     </View>
                 )}
