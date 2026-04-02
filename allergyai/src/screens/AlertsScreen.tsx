@@ -84,7 +84,7 @@ export default function AlertsScreen() {
   const unreadCount = alerts.filter(a => !a.read).length;
 
   const renderAlert = ({ item }: { item: Alert }) => (
-    <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderWidth: 1, borderColor: colors.primary }]}>
+    <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderTopWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderTopColor: colors.primary, borderRightColor: colors.primary, borderBottomColor: colors.primary }]}>
       <View style={styles.alertHeader}>
         <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) + '20' }]}>
           <Ionicons name="warning" size={14} color={getSeverityColor(item.severity)} />
@@ -148,7 +148,7 @@ export default function AlertsScreen() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
         {(['all', 'minimal', 'low', 'medium', 'moderate', 'high', 'severe'] as const).map((f) => (
           <TouchableOpacity
             key={f}
@@ -209,8 +209,14 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   filterRow: {
-    flexDirection: 'row',
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 15,
+  },
+  filterRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
   },
   filterButton: {
     paddingHorizontal: 16,
@@ -219,6 +225,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#ddd',
+    marginRight: 8,
   },
   filterButtonActive: {
     backgroundColor: '#2196F3',
