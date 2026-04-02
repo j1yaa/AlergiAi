@@ -86,8 +86,11 @@ export default function AlertsScreen() {
   const renderAlert = ({ item }: { item: Alert }) => (
     <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderWidth: 1, borderColor: colors.primary }]}>
       <View style={styles.alertHeader}>
-        <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
-          <Ionicons name="warning" size={16} color="#fff" />
+        <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) + '20' }]}>
+          <Ionicons name="warning" size={14} color={getSeverityColor(item.severity)} />
+          <Text style={[styles.severityLabel, { color: getSeverityColor(item.severity) }]}>
+            {item.severity.charAt(0).toUpperCase() + item.severity.slice(1)}
+          </Text>
         </View>
         <Text style={[styles.date, { color: colors.icon }]}>{formatDate(item.dateISO)}</Text>
         {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
@@ -157,7 +160,7 @@ export default function AlertsScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, { color: colors.icon }, filter === f && styles.filterTextActive]}>
-              {f.toUpperCase()}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -231,11 +234,16 @@ const styles = StyleSheet.create({
   },
   alertCard: {
     backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
     borderLeftColor: '#F44336',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   unreadCard: {
     backgroundColor: '#fff',
@@ -257,19 +265,26 @@ const styles = StyleSheet.create({
   severityBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 20,
     marginRight: 10,
+    gap: 4,
+  },
+  severityLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   date: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    fontWeight: '500',
   },
   message: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginBottom: 8,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '500',
+    marginBottom: 10,
   },
   allergenContainer: {
     flexDirection: 'row',
