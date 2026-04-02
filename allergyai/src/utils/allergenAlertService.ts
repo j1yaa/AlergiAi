@@ -1,6 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Linking, Platform } from 'react-native';
 import { db, auth } from '../config/firebase';
+import { getEmergencyContact } from './emergencyContactService';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy, limit } from 'firebase/firestore';
 
 export interface AllergenAlert {
@@ -21,8 +23,6 @@ export interface AlertSettings {
   enabled: boolean;
   quietHours: { start: string; end: string };
   severityThreshold: 'low' | 'medium' | 'high';
-  notifyEmergencyContact: boolean;
-  emergencyContactPhone?: string;
 }
 
 const SETTINGS_KEY = '@alert_settings';
@@ -46,7 +46,6 @@ export const getAlertSettings = async (): Promise<AlertSettings> => {
     enabled: true,
     quietHours: { start: '22:00', end: '07:00' },
     severityThreshold: 'low',
-    notifyEmergencyContact: false,
   };
 };
 
@@ -69,7 +68,8 @@ export const createAlert = async (
   allergen: string,
   severity: 'low' | 'medium' | 'high',
   source: 'meal' | 'scan' | 'manual',
-  mealId?: string
+  mealId?: string,
+  userAllergenSeverity?: 'minimal' | 'low' | 'moderate' | 'high' | 'severe'
 ): Promise<string> => {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
@@ -100,13 +100,56 @@ export const createAlert = async (
   const settings = await getAlertSettings();
   if (settings.enabled && shouldAlert(severity, settings) && !isQuietHours(settings)) {
     await sendPushNotification(allergen, severity);
-    
-    if (settings.notifyEmergencyContact && severity === 'high' && settings.emergencyContactPhone) {
-      console.log(`Emergency contact notified: ${settings.emergencyContactPhone}`);
+
+    const isHighRisk = severity === 'high' ||
+      userAllergenSeverity === 'severe' ||
+      userAllergenSeverity === 'high';
+    if (isHighRisk) {
+      await notifyEmergencyContact(allergen);
     }
   }
 
   return docRef.id;
+};
+
+const notifyEmergencyContact = async (reason: string, isSymptom = false) => {
+  const contact = await getEmergencyContact();
+  if (!contact.notifyEnabled) return;
+  if (!contact.phone && !contact.email) return;
+
+  const user = auth.currentUser;
+  const userName = user?.displayName || user?.email || 'A user';
+  const subject = isSymptom ? 'Symptom Alert' : 'Allergen Alert';
+  const message = isSymptom
+    ? `SYMPTOM ALERT: ${userName} has logged a severe symptom (${reason}). Please check in on them.`
+    : `ALLERGEN ALERT: ${userName} has logged a high-severity allergen (${reason}). Please check in on them.`;
+
+  // Notify the user with a push notification confirming outreach
+  const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'your emergency contact';
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: `🚨 ${subject}`,
+      body: `Notifying ${contactName} about ${reason}. Tap to send message.`,
+      data: { type: 'emergency', reason, contact, message, subject },
+      sound: true,
+    },
+    trigger: null,
+  });
+
+  // Open SMS (preferred) or email composer pre-filled
+  if (contact.phone) {
+    const smsUrl = `sms:${contact.phone}${Platform.OS === 'ios' ? '&' : '?'}body=${encodeURIComponent(message)}`;
+    const canOpen = await Linking.canOpenURL(smsUrl);
+    if (canOpen) await Linking.openURL(smsUrl);
+  } else if (contact.email) {
+    const emailUrl = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+    const canOpen = await Linking.canOpenURL(emailUrl);
+    if (canOpen) await Linking.openURL(emailUrl);
+  }
+};
+
+export const notifyEmergencyContactForSymptom = async (symptomName: string): Promise<void> => {
+  await notifyEmergencyContact(symptomName, true);
 };
 
 const sendPushNotification = async (allergen: string, severity: string) => {

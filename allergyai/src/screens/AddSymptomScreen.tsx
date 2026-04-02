@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Switch, Platform } from 'react-native';
 import { saveSymptom } from '../api/client';
+import { notifyEmergencyContactForSymptom } from '../utils/allergenAlertService';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
@@ -67,6 +68,11 @@ export default function AddSymptomScreen({ navigation }: { navigation: any }) {
       }
 
       await saveSymptom(symptomData);
+
+      if (severity >= 4) {
+        await notifyEmergencyContactForSymptom(description.trim());
+      }
+
       Alert.alert(t('common.success'), t('symptoms.symptomLogged'));
       setDescription('');
       setSeverity(1);
