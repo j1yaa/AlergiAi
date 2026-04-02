@@ -25,7 +25,10 @@ export default function AlertsScreen() {
   const loadAlerts = async () => {
     try {
       const response = await getAlerts();
-      setAlerts(response.items);
+      const sorted = [...response.items].sort(
+        (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+      );
+      setAlerts(sorted);
     } catch (error) {
       console.error('Failed to load alerts:', error);
     } finally {
