@@ -137,14 +137,17 @@ const notifyEmergencyContact = async (reason: string, isSymptom = false) => {
   });
 
   // Open SMS (preferred) or email composer pre-filled
-  if (contact.phone) {
-    const smsUrl = `sms:${contact.phone}${Platform.OS === 'ios' ? '&' : '?'}body=${encodeURIComponent(message)}`;
-    const canOpen = await Linking.canOpenURL(smsUrl);
-    if (canOpen) await Linking.openURL(smsUrl);
-  } else if (contact.email) {
-    const emailUrl = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-    const canOpen = await Linking.canOpenURL(emailUrl);
-    if (canOpen) await Linking.openURL(emailUrl);
+  try {
+    if (contact.phone) {
+      const sep = Platform.OS === 'ios' ? '&' : '?';
+      const smsUrl = `sms:${contact.phone}${sep}body=${encodeURIComponent(message)}`;
+      await Linking.openURL(smsUrl);
+    } else if (contact.email) {
+      const emailUrl = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
+      await Linking.openURL(emailUrl);
+    }
+  } catch (e) {
+    console.warn('Could not open SMS/email composer:', e);
   }
 };
 

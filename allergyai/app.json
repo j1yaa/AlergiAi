@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.allergyai.app"
+      "bundleIdentifier": "com.allergyai.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["sms", "mailto"]
+      }
     },
     "android": {
       "package": "com.allergyai.app",
