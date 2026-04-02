@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert as RNAlert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert as RNAlert, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
@@ -145,7 +145,7 @@ export default function AlertsScreen() {
         </View>
       </View>
 
-      <View style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
         {(['all', 'minimal', 'low', 'medium', 'moderate', 'high', 'severe'] as const).map((f) => (
           <TouchableOpacity
             key={f}
@@ -161,7 +161,7 @@ export default function AlertsScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-      </View>
+      </ScrollView>
       
       {filteredAlerts.length === 0 ? (
         <View style={styles.emptyState}>
@@ -207,7 +207,6 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: 'row',
-    gap: 8,
     marginBottom: 15,
   },
   filterButton: {
