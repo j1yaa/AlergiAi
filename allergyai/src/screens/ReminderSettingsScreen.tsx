@@ -105,22 +105,25 @@ export default function ReminderSettings() {
       )}
 
       {reminders.map(reminder => (
-        <View key={reminder.id} style={[styles.reminderCard, { backgroundColor: colors.surface }]}>
+        <View key={reminder.id} style={[styles.reminderCard, { backgroundColor: colors.surface }, reminder.enabled && { borderColor: '#2196F3', borderWidth: 1.5 }]}>
           <View style={styles.reminderHeader}>
+            <View style={[styles.iconCircle, { backgroundColor: reminder.enabled ? '#2196F320' : colors.background }]}>
+              <Ionicons name={getMealIcon(reminder.mealType)} size={26} color={reminder.enabled ? '#2196F3' : colors.icon} />
+            </View>
             <View style={styles.reminderInfo}>
-              <Ionicons name={getMealIcon(reminder.mealType)} size={28} color="#2196F3" style={styles.mealIcon} />
-              <View>
-                <Text style={[styles.mealType, { color: colors.text }]}>
-                  {t('reminders.' + reminder.mealType)}
+              <Text style={[styles.mealType, { color: colors.text }]}>
+                {t('reminders.' + reminder.mealType)}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowTimePicker(reminder.id)}
+                style={[styles.timeButton, { backgroundColor: reminder.enabled ? '#2196F315' : colors.background }]}
+              >
+                <Ionicons name="time-outline" size={16} color={reminder.enabled ? '#2196F3' : colors.icon} />
+                <Text style={[styles.timeText, { color: reminder.enabled ? '#2196F3' : colors.icon, fontWeight: '700' }]}>
+                  {formatTime12Hour(reminder.time)}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => setShowTimePicker(reminder.id)}
-                  style={styles.timeButton}
-                >
-                  <Ionicons name="time-outline" size={16} color={colors.icon} />
-                  <Text style={[styles.timeText, { color: colors.icon }]}>{formatTime12Hour(reminder.time)}</Text>
-                </TouchableOpacity>
-              </View>
+                <Ionicons name="chevron-down" size={14} color={reminder.enabled ? '#2196F3' : colors.icon} />
+              </TouchableOpacity>
             </View>
             <Switch
               value={reminder.enabled}
@@ -208,35 +211,45 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   reminderCard: {
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 15,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   reminderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 12,
+  },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   reminderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
     flex: 1,
   },
-  mealIcon: {
-    marginRight: 15,
-  },
   mealType: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontSize: 17,
+    fontWeight: '700',
+    marginBottom: 6,
   },
   timeButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
   },
   timeText: {
-    fontSize: 14,
-    marginLeft: 4,
+    fontSize: 15,
+    marginLeft: 2,
   },
   pickerContainer: {
     borderRadius: 12,
