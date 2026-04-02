@@ -170,6 +170,17 @@ export default function AddMealScreen() {
 
     setSaving(true);
     try {
+      // Run analysis if not already done
+      let analysisResult = result;
+      if (!analysisResult && description.trim()) {
+        try {
+          analysisResult = await analyzeMeal({ description });
+          setResult(analysisResult);
+        } catch (e) {
+          console.warn('Auto-analysis failed:', e);
+        }
+      }
+
       await createMeal({
         items: ing,
         note: finalName || t('addMeal.unnamedMeal')
@@ -179,10 +190,10 @@ export default function AddMealScreen() {
       let riskScore = 0;
       let riskTier = t('addMeal.lowRisk');
 
-      if (result?.allergens && result.allergens.length > 0) {
-        allergensToAlert = result.allergens;
-        riskScore = result.riskScore;
-        riskTier = result.riskScore <= 30 ? t('addMeal.lowRisk') : result.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
+      if (analysisResult?.allergens && analysisResult.allergens.length > 0) {
+        allergensToAlert = analysisResult.allergens;
+        riskScore = analysisResult.riskScore;
+        riskTier = analysisResult.riskScore <= 30 ? t('addMeal.lowRisk') : analysisResult.riskScore <= 70 ? t('addMeal.moderateRisk') : t('addMeal.highRisk');
       }
 
       if (allergensToAlert.length > 0) {
