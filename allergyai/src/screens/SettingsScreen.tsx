@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TextInput, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator,
-  KeyboardAvoidingView, Platform
+  KeyboardAvoidingView, Platform, Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../hooks/useTheme';
 import { getProfile, getUserSettings, updateUserSettings } from '../api/client';
 import { auth } from '../config/firebase';
@@ -14,6 +15,7 @@ import {
   EmailAuthProvider
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import { getAlertSettings, saveAlertSettings } from '../utils/allergenAlertService';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -30,6 +32,9 @@ export default function SettingsScreen() {
   const [originalPhone, setOriginalPhone] = useState('');
   const [originalMedicalNotes, setOriginalMedicalNotes] = useState('');
 
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+  const [originalProfileImage, setOriginalProfileImage] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -39,10 +44,15 @@ export default function SettingsScreen() {
 
   const loadData = async () => {
     try {
-      const [profile, alertSettings] = await Promise.all([
+      const [profile, alertSettings, savedImage] = await Promise.all([
         getProfile(),
-        getAlertSettings()
+        getAlertSettings(),
+        AsyncStorage.getItem('profile_picture_uri')
       ]);
+      if (savedImage) {
+        setProfileImage(savedImage);
+        setOriginalProfileImage(savedImage);
+      }
       setName(profile.name);
       setEmail(profile.email);
       setOriginalName(profile.name);
@@ -56,6 +66,51 @@ export default function SettingsScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const savePermanentImage = async (tempUri: string): Promise<string> => {
+    const fileName = 'profile_picture.jpg';
+    const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
+    await FileSystem.copyAsync({ from: tempUri, to: permanentUri });
+    return permanentUri;
+  };
+
+  const handlePickImage = () => {
+    Alert.alert('Profile Photo', 'Choose a photo source', [
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Camera access is required to take a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+          if (!result.canceled) {
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setProfileImage(permanent);
+            setImageError(false);
+          }
+        }
+      },
+      {
+        text: 'Photo Library',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Photo library access is required.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
+          if (!result.canceled) {
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setProfileImage(permanent);
+            setImageError(false);
+          }
+        }
+      },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
   };
 
   const handleSave = async () => {
@@ -94,6 +149,15 @@ export default function SettingsScreen() {
       if (medicalNotes !== originalMedicalNotes) {
         const settings = await getUserSettings();
         await updateUserSettings({...settings, medicalNotes});
+      }
+
+      if (profileImage !== originalProfileImage) {
+        if (profileImage) {
+          await AsyncStorage.setItem('profile_picture_uri', profileImage);
+        } else {
+          await AsyncStorage.removeItem('profile_picture_uri');
+        }
+        setOriginalProfileImage(profileImage);
       }
 
       setOriginalName(name);
@@ -135,7 +199,7 @@ export default function SettingsScreen() {
     );
   }
 
-  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone || medicalNotes !== originalMedicalNotes;
+  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone || medicalNotes !== originalMedicalNotes || profileImage !== originalProfileImage;
 
   return (
     <KeyboardAvoidingView
@@ -145,11 +209,24 @@ export default function SettingsScreen() {
       <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
         {/* Avatar */}
         <View style={styles.avatarSection}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {name.split(' ').map(n => n[0]).join('').toUpperCase()}
-            </Text>
-          </View>
+          <TouchableOpacity onPress={handlePickImage} style={styles.avatarWrapper}>
+            {profileImage && !imageError ? (
+              <Image
+                source={{ uri: profileImage }}
+                style={styles.avatarImage}
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.cameraIconBadge}>
+              <Ionicons name="camera" size={14} color="#fff" />
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Form */}
@@ -233,6 +310,9 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     marginTop: 10,
   },
+  avatarWrapper: {
+    position: 'relative',
+  },
   avatar: {
     width: 90,
     height: 90,
@@ -241,10 +321,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarImage: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+  },
   avatarText: {
     fontSize: 32,
     fontWeight: '700',
     color: '#fff',
+  },
+  cameraIconBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#0B63D6',
+    borderRadius: 12,
+    width: 26,
+    height: 26,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   formSection: {
     marginBottom: 20,

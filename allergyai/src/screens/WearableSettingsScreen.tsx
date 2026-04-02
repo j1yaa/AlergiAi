@@ -202,7 +202,7 @@ export default function WearableSettingsScreen() {
             </View>
 
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                <Text style={[styles.cardTitle, { color: colors.text, marginLeft: 0 }]}>
                     {t('wearable.howItWorks')}</Text>
                 <Text style={[styles.infoText, { color: colors.icon }]}>
                     {t('wearable.howItWorksDesc')}

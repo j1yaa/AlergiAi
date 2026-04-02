@@ -25,6 +25,7 @@ import SymptomCorrelationScreen from '../screens/SymptomCorrelationScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import WearableSettingsScreen from '../screens/WearableSettingsScreen';
+import EmergencyContactScreen from '../screens/EmergencyContactScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -142,7 +143,12 @@ function MainDrawer() {
       <Drawer.Screen name="WearableSettings" component={WearableSettingsScreen} options={({ navigation }) => ({
         title: 'Wearable Devices',
         drawerItemStyle: { display: 'none' },
-        header: () => <DrawerHeader navigation={{ goBack: () => navigation.goBack() }} title="WearableSettings" backButton />,
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="WearableSettings" backButton />,
+      })} />
+      <Drawer.Screen name="EmergencyContact" component={EmergencyContactScreen} options={({ navigation }) => ({
+        title: 'Emergency Contact',
+        drawerItemStyle: { display: 'none' },
+        header: () => <DrawerHeader navigation={{ toggleDrawer: () => navigation.navigate('Profile') }} title="EmergencyContact" backButton />,
       })} />
     </Drawer.Navigator>
   );

@@ -1,0 +1,19 @@
+{
+  "name": "functions",
+  "description": "AlergiAI Firebase Cloud Functions",
+  "scripts": {
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^11.0.1",
+    "firebase-functions": "^4.3.1",
+    "twilio": "^4.19.0",
+    "@sendgrid/mail": "^8.1.0"
+  },
+  "private": true
+}

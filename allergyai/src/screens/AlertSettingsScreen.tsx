@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch, TextInput, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { getAlertSettings, saveAlertSettings, AlertSettings } from '../utils/allergenAlertService';
@@ -14,8 +14,10 @@ export default function AlertSettingsScreen() {
     severityThreshold: 'low',
     notifyEmergencyContact: false,
   });
+  const [originalSettings, setOriginalSettings] = useState<AlertSettings | null>(null);
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [saving, setSaving] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -25,12 +27,27 @@ export default function AlertSettingsScreen() {
   const loadSettings = async () => {
     const saved = await getAlertSettings();
     setSettings(saved);
+    setOriginalSettings(saved);
   };
 
-  const updateSettings = async (updates: Partial<AlertSettings>) => {
-    const updated = { ...settings, ...updates };
-    setSettings(updated);
-    await saveAlertSettings(updated);
+  const updateSettings = (updates: Partial<AlertSettings>) => {
+    setSettings(prev => ({ ...prev, ...updates }));
+  };
+
+  const hasChanges = originalSettings !== null &&
+    JSON.stringify(settings) !== JSON.stringify(originalSettings);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveAlertSettings(settings);
+      setOriginalSettings(settings);
+      Alert.alert('Saved', 'Alert settings have been updated.');
+    } catch (e) {
+      Alert.alert('Error', 'Failed to save settings. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const parseTime = (timeString: string) => {
@@ -189,38 +206,24 @@ export default function AlertSettingsScreen() {
         )}
       </View>
 
-      <View style={[styles.section, { backgroundColor: colors.surface }]}>
-        <View style={styles.row}>
-          <View style={styles.labelContainer}>
-            <Text style={[styles.label, { color: colors.text }]}>{t('alertSettings.emergencyContact')}</Text>
-            <Text style={[styles.description, { color: colors.icon }]}>{t('alertSettings.emergencyContactDescription')}</Text>
-          </View>
-          <Switch
-            value={settings.notifyEmergencyContact}
-            onValueChange={(value) => updateSettings({ notifyEmergencyContact: value })}
-            trackColor={{ false: '#ddd', true: '#ffb74d' }}
-            thumbColor={settings.notifyEmergencyContact ? '#ff9800' : '#f4f3f4'}
-          />
-        </View>
-
-        {settings.notifyEmergencyContact && (
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.cardBorder, color: colors.text }]}
-            placeholder={t('alertSettings.emergencyContactPhone')}
-            placeholderTextColor={colors.icon}
-            value={settings.emergencyContactPhone}
-            onChangeText={(phone) => updateSettings({ emergencyContactPhone: phone })}
-            keyboardType="phone-pad"
-          />
-        )}
-      </View>
-
-      <View style={styles.infoBox}>
+<View style={styles.infoBox}>
         <Ionicons name="information-circle" size={20} color="#2196F3" />
         <Text style={styles.infoText}>
           {t('alertSettings.infoText')}
         </Text>
       </View>
+
+      <TouchableOpacity
+        style={[styles.saveButton, { backgroundColor: colors.primary }, !hasChanges && styles.buttonDisabled]}
+        onPress={handleSave}
+        disabled={!hasChanges || saving}
+      >
+        {saving ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.saveButtonText}>SAVE</Text>
+        )}
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -365,6 +368,22 @@ const styles = StyleSheet.create({
   doneButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  saveButton: {
+    paddingVertical: 16,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   infoBox: {
     flexDirection: 'row',

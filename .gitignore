@@ -5,3 +5,5 @@
 /.vs
 .env
 .DS_Store
+functions/.env
+functions/node_modules/

@@ -25,12 +25,27 @@ export default function AlertsScreen() {
   const loadAlerts = async () => {
     try {
       const response = await getAlerts();
-      setAlerts(response.items);
+      const sorted = [...response.items].sort(
+        (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+      );
+      setAlerts(sorted);
     } catch (error) {
       console.error('Failed to load alerts:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getAlertMessage = (item: Alert) => {
+    const severityLabel = item.severity.toUpperCase();
+    const allergenList = item.allergens.length > 0 ? item.allergens.join(', ') : '';
+    const sourceKey = item.source === 'scan' ? 'detectedInScan'
+      : item.source === 'manual' ? 'detectedInManual'
+      : 'detectedInMeal';
+    if (allergenList) {
+      return `${t('alerts.riskLabel', { severity: severityLabel, allergen: allergenList })} ${t(`alerts.${sourceKey}`)}`;
+    }
+    return item.message || '';
   };
 
   const getSeverityColor = (severity: string) => {
@@ -84,7 +99,7 @@ export default function AlertsScreen() {
   const unreadCount = alerts.filter(a => !a.read).length;
 
   const renderAlert = ({ item }: { item: Alert }) => (
-    <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderWidth: 1, borderColor: colors.primary }]}>
+    <View style={[styles.alertCard, { backgroundColor: colors.surface, borderLeftColor: getSeverityColor(item.severity) }, !item.read && { borderTopWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderTopColor: colors.primary, borderRightColor: colors.primary, borderBottomColor: colors.primary }]}>
       <View style={styles.alertHeader}>
         <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) + '20' }]}>
           <Ionicons name="warning" size={14} color={getSeverityColor(item.severity)} />
@@ -95,7 +110,7 @@ export default function AlertsScreen() {
         <Text style={[styles.date, { color: colors.icon }]}>{formatDate(item.dateISO)}</Text>
         {!item.read && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
       </View>
-      <Text style={[styles.message, { color: colors.text }]}>{item.message}</Text>
+      <Text style={[styles.message, { color: colors.text }]}>{getAlertMessage(item)}</Text>
       {item.allergens.length > 0 && (
         <View style={styles.allergenContainer}>
           {item.allergens.map((allergen, index) => (
@@ -148,7 +163,7 @@ export default function AlertsScreen() {
         </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
         {(['all', 'minimal', 'low', 'medium', 'moderate', 'high', 'severe'] as const).map((f) => (
           <TouchableOpacity
             key={f}
@@ -160,7 +175,7 @@ export default function AlertsScreen() {
             onPress={() => setFilter(f)}
           >
             <Text style={[styles.filterText, { color: colors.icon }, filter === f && styles.filterTextActive]}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {t(`alerts.filter${f.charAt(0).toUpperCase() + f.slice(1)}`)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -209,8 +224,14 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   filterRow: {
-    flexDirection: 'row',
+    flexGrow: 0,
+    flexShrink: 0,
     marginBottom: 15,
+  },
+  filterRowContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 8,
   },
   filterButton: {
     paddingHorizontal: 16,
@@ -219,6 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderWidth: 1,
     borderColor: '#ddd',
+    marginRight: 8,
   },
   filterButtonActive: {
     backgroundColor: '#2196F3',

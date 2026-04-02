@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, FlatList, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { analyzeMeal, createMeal, getMeals, deleteMeal } from '../api/client';
+import { analyzeMeal, createMeal, getMeals, deleteMeal, getAllergens } from '../api/client';
 import { AnalyzeResponse, Meal } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import { createAlert } from '../utils/allergenAlertService';
@@ -201,19 +201,33 @@ export default function AddMealScreen() {
 
         const alertSeverity = getAlertSeverityFromScore(riskScore);
 
+        // Fetch user's stored allergen severities to pass to createAlert
+        let allergensSeverity: { name: string; severity: string }[] = [];
+        try {
+          const allergenData = await getAllergens();
+          allergensSeverity = allergenData.allergensSeverity || [];
+        } catch (e) {
+          console.warn('Could not fetch allergen severities:', e);
+        }
+
         const allergenList = allergensToAlert.join(', ');
-        const riskLevel = riskScore > 70 ? 'HIGH' : riskScore > 30 ? 'MODERATE' : 'LOW';
         Alert.alert(
           t('addMeal.allergenDetected'),
           `${riskTier.toUpperCase()}: ${allergenList}\n\n${t('addMeal.riskScoreLabel')} ${riskScore}%`,
-          [{ text: t('common.ok'), style: 'default' }]
+          [{
+            text: t('common.ok'),
+            style: 'default',
+            onPress: async () => {
+              for (const allergen of allergensToAlert) {
+                const stored = allergensSeverity.find(
+                  a => a.name.toLowerCase() === allergen.toLowerCase()
+                );
+                const userAllergenSeverity = stored?.severity as any;
+                await createAlert(allergen, alertSeverity, 'meal', undefined, userAllergenSeverity);
+              }
+            }
+          }]
         );
-        
-        for (const allergen of allergensToAlert) {
-          const severity = riskScore > 70 ? 'high' : riskScore > 30 ? 'medium' : 'low';
-          console.log(`Creating alert: ${allergen} - ${alertSeverity}`);
-          await createAlert(allergen, alertSeverity, 'meal');
-        }
       } else {
         console.log('No allergens detected');
         Alert.alert(t('addMeal.saved'), t('addMeal.mealLogged'));
@@ -384,7 +398,7 @@ export default function AddMealScreen() {
           {/* Sort & Filter Bar */}
           <View style={[styles.filterBar, { borderBottomColor: colors.cardBorder }]}>
             <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.icon }]}>Sort:</Text>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>{t('addMeal.sort')}</Text>
               {(['newest', 'oldest'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
@@ -392,13 +406,13 @@ export default function AddMealScreen() {
                   onPress={() => setSortOrder(opt)}
                 >
                   <Text style={[styles.filterChipText, { color: sortOrder === opt ? '#fff' : colors.text }]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {t(`addMeal.${opt}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={styles.filterGroup}>
-              <Text style={[styles.filterLabel, { color: colors.icon }]}>Filter:</Text>
+              <Text style={[styles.filterLabel, { color: colors.icon }]}>{t('addMeal.filter')}</Text>
               {(['all', 'allergens', 'safe'] as const).map(opt => (
                 <TouchableOpacity
                   key={opt}
@@ -406,7 +420,7 @@ export default function AddMealScreen() {
                   onPress={() => setFilterBy(opt)}
                 >
                   <Text style={[styles.filterChipText, { color: filterBy === opt ? '#fff' : colors.text }]}>
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                    {opt === 'allergens' ? t('addMeal.allergens') : t(`addMeal.${opt}`)}
                   </Text>
                 </TouchableOpacity>
               ))}

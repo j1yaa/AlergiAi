@@ -6,11 +6,22 @@ export interface RiskFactors {
   sensitivity: 'mild' | 'moderate' | 'severe';
 }
 
+export interface RiskFactorData {
+  severityLabel: string;
+  severityWeight: number;
+  exposureLabel: string;
+  exposureWeight: number;
+  sensitivityLabel: string;
+  sensitivityWeight: number;
+  rawScore: number;
+}
+
 export interface RiskCalculationResult {
   rawScore: number;
   normalizedScore: number;
   riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk';
   explanation: string;
+  factorData: RiskFactorData;
 }
 
 /**
@@ -50,7 +61,16 @@ export const calculateRiskScore = (factors: RiskFactors): RiskCalculationResult 
     rawScore,
     normalizedScore,
     riskTier,
-    explanation
+    explanation,
+    factorData: {
+      severityLabel: factors.severity,
+      severityWeight,
+      exposureLabel: factors.exposure,
+      exposureWeight,
+      sensitivityLabel: factors.sensitivity,
+      sensitivityWeight,
+      rawScore,
+    },
   };
 };
 

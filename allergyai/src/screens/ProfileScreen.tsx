@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Switch, Linking, ScrollView, Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { getProfile, logout } from '../api/client';
 import { UserProfile } from '../types';
@@ -15,6 +16,8 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
     const { colors } = useTheme();
     const { language, setLanguage, t } = useLanguage();
     const [profile, setProfile] = useState<UserProfile | null>(null);
+    const [profileImage, setProfileImage] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
     const [loading, setLoading] = useState(true);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [pushEnabled, setPushEnabled] = useState(true);
@@ -22,11 +25,13 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
 
     const loadProfile = useCallback(async () => {
         try {
-            const [profileData, alertSettings] = await Promise.all([
+            const [profileData, alertSettings, savedImage] = await Promise.all([
                 getProfile(),
-                getAlertSettings()
+                getAlertSettings(),
+                AsyncStorage.getItem('profile_picture_uri')
             ]);
             setProfile(profileData);
+            setProfileImage(savedImage);
             setPushEnabled(alertSettings.enabled);
             setLoading(false);
         } catch (error) {
@@ -75,7 +80,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         try {
             await exportMedicalReport();
         } catch (error: any) {
-            Alert.alert('Export Failed', error.message || 'Could not export report. Please try again.');
+            Alert.alert(t('settings.exportFailed'), error.message || 'Could not export report. Please try again.');
         } finally {
             setExporting(false);
         }
@@ -122,11 +127,22 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
         <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Welcome Header */}
             <View style={[styles.welcomeSection, { backgroundColor: colors.surface }]}>
-                <View style={styles.profileIcon}>
-                    <Text style={styles.profileInitials}>
-                        {profile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                    </Text>
-                </View>
+                {profileImage && !imageError ? (
+                    <Image
+                        source={{ uri: profileImage }}
+                        style={styles.profileImage}
+                        onError={() => {
+                            setImageError(true);
+                            AsyncStorage.removeItem('profile_picture_uri');
+                        }}
+                    />
+                ) : (
+                    <View style={styles.profileIcon}>
+                        <Text style={styles.profileInitials}>
+                            {profile.name.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase() || '?'}
+                        </Text>
+                    </View>
+                )}
                 <View style={styles.welcomeText}>
                     <Text style={[styles.welcomeLabel, { color: colors.icon }]}>{t('settings.welcome')}</Text>
                     <Text style={[styles.welcomeName, { color: colors.text }]}>{profile.name}</Text>
@@ -167,10 +183,21 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.wearableDevices')}</Text>
                     <Ionicons name="chevron-forward" size={18} color={colors.icon} />
                 </TouchableOpacity>
+
+                <View style={[styles.divider, { backgroundColor: colors.cardBorder }]} />
+
+                <TouchableOpacity
+                    style={styles.groupItem}
+                    onPress={() => navigation.navigate('EmergencyContact')}
+                >
+                    <Ionicons name="call-outline" size={20} color={colors.primary} />
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.emergencyContact')}</Text>
+                    <Ionicons name="chevron-forward" size={18} color={colors.icon} />
+                </TouchableOpacity>
             </View>
 
             {/* Data Section */}
-            <Text style={[styles.sectionLabel, { color: colors.icon }]}>DATA</Text>
+            <Text style={[styles.sectionLabel, { color: colors.icon }]}>{t('settings.dataSection')}</Text>
             <View style={[styles.group, { backgroundColor: colors.surface }]}>
                 <TouchableOpacity
                     style={styles.groupItem}
@@ -178,7 +205,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     disabled={exporting}
                 >
                     <Ionicons name="download-outline" size={20} color={colors.primary} />
-                    <Text style={[styles.groupItemText, { color: colors.text }]}>Export Medical Report</Text>
+                    <Text style={[styles.groupItemText, { color: colors.text }]}>{t('settings.exportMedicalReport')}</Text>
                     {exporting
                         ? <ActivityIndicator size="small" color={colors.primary} />
                         : <Ionicons name="chevron-forward" size={18} color={colors.icon} />}
@@ -325,6 +352,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#0B63D6',
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    profileImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
     },
     profileInitials: {
         fontSize: 22,

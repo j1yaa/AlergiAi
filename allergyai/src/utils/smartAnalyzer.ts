@@ -1,5 +1,5 @@
 // Smart AI-powered meal analysis utilities
-import { calculateRiskScore, determineExposureLevel, RiskFactors } from './riskCalculator';
+import { calculateRiskScore, determineExposureLevel, RiskFactors, RiskFactorData } from './riskCalculator';
 import { expandAllergen } from './allergenMatcher';
 import { RISKTHRES, getRiskTier, getAlertSeverityFromScore } from './riskConstants';
 
@@ -10,6 +10,7 @@ export interface RiskScoreResult {
   riskTier: 'Low Risk' | 'Moderate Risk' | 'High Risk';
   alertSeverity: 'low' | 'medium' | 'high';
   explanation?: string;
+  factorData?: RiskFactorData;
 }
 
 export interface AllergenMatch {
@@ -38,6 +39,7 @@ export const computeRiskScore = (
   const matchedAllergens: string[] = [];
   let maxRiskScore = 0;
   let riskExplanation = '';
+  let topFactorData: RiskFactorData | undefined;
 
   // Calculate risk for each matched allergen
   allergenMatches.forEach(({ allergen, severity, sensitivity = 'moderate' }) => {
@@ -65,6 +67,7 @@ export const computeRiskScore = (
       if (riskResult.normalizedScore > maxRiskScore) {
         maxRiskScore = riskResult.normalizedScore;
         riskExplanation = riskResult.explanation;
+        topFactorData = riskResult.factorData;
       }
     }
   });
@@ -102,7 +105,8 @@ export const computeRiskScore = (
     severity,
     riskTier,
     alertSeverity: getAlertSeverityFromScore(maxRiskScore),
-    explanation: riskExplanation
+    explanation: riskExplanation,
+    factorData: topFactorData,
   };
 };
 
