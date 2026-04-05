@@ -8,6 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
 import { getEmergencyContact, saveEmergencyContact, EmergencyContact } from '../utils/emergencyContactService';
+import { functions, auth } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 export default function EmergencyContactScreen() {
   const { colors } = useTheme();
@@ -53,7 +55,26 @@ export default function EmergencyContactScreen() {
     try {
       await saveEmergencyContact(contact);
       setOriginalContact(contact);
-      Alert.alert(t('emergencyContact.saved'), t('emergencyContact.saveSuccess'));
+
+      // Send opt-in request if notifications just got enabled or contact info changed
+      const wasEnabled = originalContact?.notifyEnabled;
+      const contactChanged = originalContact?.phone !== contact.phone || originalContact?.email !== contact.email;
+      if (contact.notifyEnabled && (!wasEnabled || contactChanged)) {
+        const user = auth.currentUser;
+        const sendOptInRequest = httpsCallable(functions, 'sendOptInRequest');
+        await sendOptInRequest({
+          contactPhone: contact.phone,
+          contactEmail: contact.email,
+          contactName: [contact.firstName, contact.lastName].filter(Boolean).join(' '),
+          userName: user?.displayName || user?.email || 'A user',
+        });
+        Alert.alert(
+          t('emergencyContact.saved'),
+          'An opt-in request has been sent to your emergency contact.'
+        );
+      } else {
+        Alert.alert(t('emergencyContact.saved'), t('emergencyContact.saveSuccess'));
+      }
     } catch (e) {
       Alert.alert(t('common.error'), t('emergencyContact.saveError'));
     } finally {

@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, Firestore } from 'firebase/firestore';
 import { initializeAuth, getAuth, Auth, getReactNativePersistence } from 'firebase/auth';
+import { getFunctions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import '../utils/networkLogger';
 
@@ -40,6 +41,7 @@ export const db = initializeFirestore(app, {
     tabManager: persistentMultipleTabManager()
   })
 });
+export const functions = getFunctions(app);
 export { auth };
 
 // Log auth state changes

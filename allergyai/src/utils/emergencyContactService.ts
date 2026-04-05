@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db, auth } from '../config/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 export interface EmergencyContact {
   firstName: string;
@@ -23,4 +25,9 @@ export const getEmergencyContact = async (): Promise<EmergencyContact> => {
 
 export const saveEmergencyContact = async (contact: EmergencyContact): Promise<void> => {
   await AsyncStorage.setItem(EMERGENCY_CONTACT_KEY, JSON.stringify(contact));
+
+  const user = auth.currentUser;
+  if (user) {
+    await setDoc(doc(db, 'users', user.uid), { emergencyContact: contact }, { merge: true });
+  }
 };
