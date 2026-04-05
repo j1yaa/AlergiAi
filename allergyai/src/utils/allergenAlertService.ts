@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Linking, Platform } from 'react-native';
-import { db, auth } from '../config/firebase';
+import { db, auth, functions } from '../config/firebase';
+import { httpsCallable } from 'firebase/functions';
 import { getEmergencyContact } from './emergencyContactService';
 import { collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy, limit } from 'firebase/firestore';
 
@@ -119,35 +119,33 @@ const notifyEmergencyContact = async (reason: string, isSymptom = false) => {
 
   const user = auth.currentUser;
   const userName = user?.displayName || user?.email || 'A user';
-  const subject = isSymptom ? 'Symptom Alert' : 'Allergen Alert';
-  const message = isSymptom
-    ? `SYMPTOM ALERT: ${userName} has logged a severe symptom (${reason}). Please check in on them.`
-    : `ALLERGEN ALERT: ${userName} has logged a high-severity allergen (${reason}). Please check in on them.`;
 
   // Notify the user with a push notification confirming outreach
   const contactName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'your emergency contact';
+  const subject = isSymptom ? 'Symptom Alert' : 'Allergen Alert';
   await Notifications.scheduleNotificationAsync({
     content: {
       title: `🚨 ${subject}`,
-      body: `Notifying ${contactName} about ${reason}. Tap to send message.`,
-      data: { type: 'emergency', reason, contact, message, subject },
+      body: `Notifying ${contactName} about ${reason}.`,
+      data: { type: 'emergency', reason },
       sound: true,
     },
     trigger: null,
   });
 
-  // Open SMS (preferred) or email composer pre-filled
+  // Send via Firebase Cloud Function (Twilio SMS + SendGrid email)
   try {
-    if (contact.phone) {
-      const sep = Platform.OS === 'ios' ? '&' : '?';
-      const smsUrl = `sms:${contact.phone}${sep}body=${encodeURIComponent(message)}`;
-      await Linking.openURL(smsUrl);
-    } else if (contact.email) {
-      const emailUrl = `mailto:${contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`;
-      await Linking.openURL(emailUrl);
-    }
+    const sendEmergencyAlert = httpsCallable(functions, 'sendEmergencyAlert');
+    await sendEmergencyAlert({
+      contactPhone: contact.phone,
+      contactEmail: contact.email,
+      contactName,
+      reason,
+      userName,
+      isSymptom,
+    });
   } catch (e) {
-    console.warn('Could not open SMS/email composer:', e);
+    console.warn('Could not send emergency alert:', e);
   }
 };
 
