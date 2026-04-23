@@ -1,0 +1,22 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img">
+  <title>AlergiAI iOS app icon</title>
+  <desc>A teal shield containing a bold white A with an orange crossbar, on a white background, designed as a square iOS app icon</desc>
+
+  <!-- White background (full bleed — iOS applies rounded corners) -->
+  <rect width="1024" height="1024" fill="#FFFFFF"/>
+
+  <!-- Teal shield -->
+  <path d="M 232 112 L 792 112 Q 812 112 812 132 L 812 432 C 812 580 730 720 512 912 C 294 720 212 580 212 432 L 212 132 Q 212 112 232 112 Z"
+        fill="#0E7C86"/>
+
+  <!-- Bold A (white strokes) -->
+  <path d="M 350 780 L 512 250 L 674 780"
+        fill="none"
+        stroke="#FFFFFF"
+        stroke-width="88"
+        stroke-linejoin="round"
+        stroke-linecap="butt"/>
+
+  <!-- Orange crossbar -->
+  <rect x="375" y="580" width="274" height="50" fill="#F97316"/>
+</svg>
