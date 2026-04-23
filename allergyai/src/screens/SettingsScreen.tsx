@@ -34,6 +34,7 @@ export default function SettingsScreen() {
 
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [originalProfileImage, setOriginalProfileImage] = useState<string | null>(null);
+  const [pendingImageUri, setPendingImageUri] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,7 +70,7 @@ export default function SettingsScreen() {
   };
 
   const savePermanentImage = async (tempUri: string): Promise<string> => {
-    const fileName = 'profile_picture.jpg';
+    const fileName = `profile_picture_${Date.now()}.jpg`;
     const permanentUri = `${FileSystem.documentDirectory}${fileName}`;
     await FileSystem.copyAsync({ from: tempUri, to: permanentUri });
     return permanentUri;
@@ -87,8 +88,7 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            const permanent = await savePermanentImage(result.assets[0].uri);
-            setProfileImage(permanent);
+            setPendingImageUri(result.assets[0].uri);
             setImageError(false);
           }
         }
@@ -103,8 +103,7 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            const permanent = await savePermanentImage(result.assets[0].uri);
-            setProfileImage(permanent);
+            setPendingImageUri(result.assets[0].uri);
             setImageError(false);
           }
         }
@@ -151,7 +150,13 @@ export default function SettingsScreen() {
         await updateUserSettings({...settings, medicalNotes});
       }
 
-      if (profileImage !== originalProfileImage) {
+      if (pendingImageUri) {
+        const permanent = await savePermanentImage(pendingImageUri);
+        await AsyncStorage.setItem('profile_picture_uri', permanent);
+        setProfileImage(permanent);
+        setOriginalProfileImage(permanent);
+        setPendingImageUri(null);
+      } else if (profileImage !== originalProfileImage) {
         if (profileImage) {
           await AsyncStorage.setItem('profile_picture_uri', profileImage);
         } else {
@@ -199,7 +204,8 @@ export default function SettingsScreen() {
     );
   }
 
-  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone || medicalNotes !== originalMedicalNotes || profileImage !== originalProfileImage;
+  const displayImage = pendingImageUri || profileImage;
+  const hasChanges = name !== originalName || email !== originalEmail || phone !== originalPhone || medicalNotes !== originalMedicalNotes || profileImage !== originalProfileImage || pendingImageUri !== null;
 
   return (
     <KeyboardAvoidingView
@@ -210,9 +216,9 @@ export default function SettingsScreen() {
         {/* Avatar */}
         <View style={styles.avatarSection}>
           <TouchableOpacity onPress={handlePickImage} style={styles.avatarWrapper}>
-            {profileImage && !imageError ? (
+            {displayImage && !imageError ? (
               <Image
-                source={{ uri: profileImage }}
+                source={{ uri: displayImage }}
                 style={styles.avatarImage}
                 onError={() => setImageError(true)}
               />
