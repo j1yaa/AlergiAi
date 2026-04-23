@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { DrawerContentScrollView } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../hooks/useTheme';
@@ -31,11 +31,11 @@ export default function CustomDrawer(props: any) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.primary, borderBottomColor: colors.cardBorder }]}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="leaf" size={36} color="#FFFFFF" />
-        </View>
-        <Text style={styles.appName}>AllergyAI</Text>
-        <Text style={styles.tagline}>{t('drawer.tagline')}</Text>
+        <Image
+          source={require('../../assets/images/alergiai-app-icon.png')}
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
@@ -89,25 +89,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
     alignItems: 'center',
   },
-  logoContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  tagline: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontWeight: '500',
+  logoImage: {
+    width: 180,
+    height: 180,
   },
   menuContainer: {
     flex: 1,
