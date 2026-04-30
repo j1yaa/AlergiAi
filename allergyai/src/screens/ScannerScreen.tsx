@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { analyzeImg } from '../utils/geminiService';
@@ -23,6 +24,7 @@ type RootStackParamList = {
         productName: string;
         detectedIngredients: string[];
         allergenWarnings: string[];
+        allergensSeverity: { name: string; severity: 'minimal' | 'low' | 'moderate' | 'high' | 'severe' }[];
         safeIngredients: string[];
         isFood: boolean;
     };
@@ -44,24 +46,10 @@ export default function ScannerScreen() {
     }, []);
 
     const convertImgToBase64 = async (imageUri: string): Promise<string> => {
-        try {
-            const response = await fetch(imageUri);
-            const blob = await response.blob();
-            const reader = new FileReader();
-
-            return new Promise((resolve, reject) => {
-                reader.onloadend = () => {
-                    const base64String = reader.result as string;
-                    const base64Data = base64String.split(',')[1];
-                    resolve(base64Data);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        } catch (error) {
-            console.error('Error converting image to base64:', error);
-            throw error;
-        }
+        const base64 = await FileSystem.readAsStringAsync(imageUri, {
+            encoding: FileSystem.EncodingType.Base64,
+        });
+        return base64;
     };
 
     const processImage = async (imageUri: string) => {
@@ -74,9 +62,19 @@ export default function ScannerScreen() {
             // Analyze the image
             const geminiResult = await analyzeImg(base64Img, language);
 
+            // If quota was exceeded, warn the user before continuing
+            if ((geminiResult as any)._fallback) {
+                Alert.alert(
+                    'AI Quota Reached',
+                    'The AI scanner is temporarily unavailable (daily quota exceeded). Results may be incomplete. Add billing at aistudio.google.com to restore full functionality.',
+                    [{ text: 'Continue Anyway' }]
+                );
+            }
+
             // Get users allergens
             const allergenResponse = await getAllergens();
             const userAllergens = allergenResponse.allergens || [];
+            const allergensSeverity = allergenResponse.allergensSeverity || [];
 
             // Compare ingredients with user allergens (using category-aware matching + AI categories)
             const { matches: allergenWarnings, safe: safeIngredients } =
@@ -91,6 +89,7 @@ export default function ScannerScreen() {
                 productName: geminiResult.productName || 'Unknown Product',
                 detectedIngredients: geminiResult.detectedIngredients,
                 allergenWarnings,
+                allergensSeverity,
                 safeIngredients,
                 isFood: geminiResult.isFood,
             });

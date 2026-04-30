@@ -4,7 +4,7 @@ import { db, auth, functions } from '../config/firebase';
 import { isInQuietHours } from './quietHoursUtils';
 import { httpsCallable } from 'firebase/functions';
 import { getEmergencyContact } from './emergencyContactService';
-import { collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, updateDoc, doc, orderBy, limit, deleteDoc, writeBatch } from 'firebase/firestore';
 
 export interface AllergenAlert {
   id: string;
@@ -185,6 +185,27 @@ export const acknowledgeAlert = async (alertId: string, action?: string) => {
     acknowledged: true,
     actionTaken: action,
   });
+};
+
+export const clearAlerts = async (severity?: 'minimal' | 'low' | 'moderate' | 'high' | 'severe') => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Not authenticated');
+
+  let q;
+  if (severity) {
+    q = query(
+      collection(db, 'alerts'),
+      where('userId', '==', user.uid),
+      where('severity', '==', severity)
+    );
+  } else {
+    q = query(collection(db, 'alerts'), where('userId', '==', user.uid));
+  }
+
+  const snapshot = await getDocs(q);
+  const batch = writeBatch(db);
+  snapshot.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
 };
 
 export const getRecentExposure = async (allergen: string, days: number = 7): Promise<number> => {

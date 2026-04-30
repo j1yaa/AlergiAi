@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as FileSystem from 'expo-file-system/legacy';
 import { GEMINI_API_KEY } from '@env';
 console.log(
   '[Gemini] key prefix (from @env):',
@@ -158,10 +159,23 @@ export const analyzeImg = async (base64Img: string, language: string = 'en'): Pr
       throw new Error('Could not analyze the image. No results returned.');
     }
   } catch (error: any) {
-    console.error(
-      'Error analyzing the image with Gemini:',
-      error?.response ? error.response.data : error.message,
-    );
-    throw new Error('Failed to analyze the image with Gemini.');
+    const apiError = error?.response?.data;
+    const status = error?.response?.status;
+    console.error('Error analyzing the image with Gemini:', apiError ?? error.message);
+
+    // Quota exhausted (429) — return a graceful fallback so the app doesn't hard-crash
+    if (status === 429) {
+      console.warn('[Gemini] Quota exceeded — using offline fallback result');
+      return {
+        productName: 'Scanned Item',
+        detectedIngredients: [],
+        allergenCategories: [],
+        isFood: true,
+        _fallback: true,
+      } as any;
+    }
+
+    const detail = apiError?.error?.message ?? error.message ?? 'Unknown error';
+    throw new Error(`Gemini analysis failed: ${detail}`);
   }
 };

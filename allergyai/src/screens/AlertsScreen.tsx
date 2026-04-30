@@ -4,7 +4,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { getAlerts } from '../api/client';
 import { Alert } from '../types';
-import { markAlertRead, acknowledgeAlert } from '../utils/allergenAlertService';
+import { markAlertRead, acknowledgeAlert, clearAlerts } from '../utils/allergenAlertService';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
 
@@ -14,7 +14,7 @@ export default function AlertsScreen() {
   const navigation = useNavigation();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'minimal' | 'low' | 'medium' | 'moderate' | 'high' | 'severe'>('all');
+  const [filter, setFilter] = useState<'all' | 'minimal' | 'low' | 'moderate' | 'high' | 'severe'>('all');
 
   useFocusEffect(
     React.useCallback(() => {
@@ -53,7 +53,6 @@ export default function AlertsScreen() {
       case 'severe': return '#880E4F';
       case 'high': return '#F44336';
       case 'moderate': return '#FF9800';
-      case 'medium': return '#FF9800';
       case 'low': return '#4CAF50';
       case 'minimal': return '#8BC34A';
       default: return '#9E9E9E';
@@ -92,8 +91,32 @@ export default function AlertsScreen() {
     loadAlerts();
   };
 
-  const filteredAlerts = filter === 'all' 
-    ? alerts 
+  const handleClearAlerts = () => {
+    const isAll = filter === 'all';
+    const label = isAll ? 'all alerts' : `all ${filter} alerts`;
+    RNAlert.alert(
+      'Clear Alerts',
+      `Are you sure you want to delete ${label}? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await clearAlerts(isAll ? undefined : filter);
+              loadAlerts();
+            } catch (e) {
+              RNAlert.alert('Error', 'Could not clear alerts. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const filteredAlerts = filter === 'all'
+    ? alerts
     : alerts.filter(a => a.severity === filter);
 
   const unreadCount = alerts.filter(a => !a.read).length;
@@ -161,10 +184,21 @@ export default function AlertsScreen() {
             <Text style={[styles.unreadCount, { color: colors.error }]}>{t('alerts.unreadCount', { count: unreadCount })}</Text>
           )}
         </View>
+        {alerts.length > 0 && (
+          <TouchableOpacity
+            style={[styles.clearButton, { borderColor: colors.error + '60' }]}
+            onPress={handleClearAlerts}
+          >
+            <Ionicons name="trash-outline" size={15} color={colors.error} />
+            <Text style={[styles.clearButtonText, { color: colors.error }]}>
+              {filter === 'all' ? 'Clear All' : `Clear ${filter.charAt(0).toUpperCase() + filter.slice(1)}`}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
-        {(['all', 'minimal', 'low', 'medium', 'moderate', 'high', 'severe'] as const).map((f) => (
+        {(['all', 'minimal', 'low', 'moderate', 'high', 'severe'] as const).map((f) => (
           <TouchableOpacity
             key={f}
             style={[
@@ -219,6 +253,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#F44336',
     marginTop: 4,
+  },
+  clearButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  clearButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   settingsButton: {
     padding: 8,

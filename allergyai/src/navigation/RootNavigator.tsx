@@ -110,7 +110,7 @@ function MainDrawer() {
     >
       <Drawer.Screen name="Dashboard" component={DashboardScreen} />
       <Drawer.Screen name="AddMeal" component={AddMealScreen} options={{ title: 'Log Meal' }} />
-      <Drawer.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false }} />
+      <Drawer.Screen name="Scanner" component={ScannerStack} options={{ headerShown: false }} />
       <Drawer.Screen name="Trends" component={MealTrendsScreen} options={{ title: 'Trends & Insights' }} />
       <Drawer.Screen name="Allergens" component={AllergenScreen} options={{ title: 'My Allergens' }} />
       <Drawer.Screen name="Symptoms" component={SymptomsStack} options={{ headerShown: false }} />
@@ -118,7 +118,6 @@ function MainDrawer() {
       <Drawer.Screen name="Profile" options={{ title: 'Settings' }}>
         {(props) => <ProfileScreen {...props} onLogout={handleLogout} />}
       </Drawer.Screen>
-      <Drawer.Screen name="ScanResult" component={ScanResultScreen} options={{ headerShown: false, drawerItemStyle: { display: 'none' } }} />
       <Drawer.Screen name="ReminderSettings" component={ReminderSettingsScreen} options={({ navigation }) => ({
         title: 'Meal Reminders',
         drawerItemStyle: { display: 'none' },
@@ -155,6 +154,15 @@ function MainDrawer() {
 }
 
 
+
+function ScannerStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="ScannerMain" component={ScannerScreen} />
+      <Stack.Screen name="ScanResult" component={ScanResultScreen} />
+    </Stack.Navigator>
+  );
+}
 
 function SymptomsStack() {
   return (

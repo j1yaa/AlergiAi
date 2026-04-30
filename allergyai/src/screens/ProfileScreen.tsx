@@ -32,6 +32,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
             ]);
             setProfile(profileData);
             setProfileImage(savedImage);
+            if (savedImage) setImageError(false);
             setPushEnabled(alertSettings.enabled);
             setLoading(false);
         } catch (error) {
@@ -131,10 +132,7 @@ export default function ProfileScreen({ navigation, onLogout }: { navigation: an
                     <Image
                         source={{ uri: profileImage }}
                         style={styles.profileImage}
-                        onError={() => {
-                            setImageError(true);
-                            AsyncStorage.removeItem('profile_picture_uri');
-                        }}
+                        onError={() => setImageError(true)}
                     />
                 ) : (
                     <View style={styles.profileIcon}>

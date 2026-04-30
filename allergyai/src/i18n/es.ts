@@ -253,6 +253,10 @@ export default {
     sensitivityModerate: 'moderada',
     sensitivitySevere: 'severa',
     riskExplanation: 'Riesgo calculado a partir de: severidad de alérgeno %{severity} (%{severityWeight}), nivel de exposición %{exposure} (%{exposureWeight}), sensibilidad del usuario %{sensitivity} (%{sensitivityWeight}). Puntuación bruta: %{rawScore}/45.',
+    saveMeal: 'Guardar como Comida',
+    saveMealPrompt: 'Dale un nombre a esta comida (o conserva el sugerido):',
+    saveMealError: 'No se pudo guardar la comida. Inténtalo de nuevo.',
+    saved: '¡Guardado!',
   },
 
   // AllergenScreen
@@ -290,6 +294,8 @@ export default {
     removeWarning: 'ADVERTENCIA: Eliminar "%{name}" de tu lista de alérgenos significa que la aplicación ya no te alertará sobre este ingrediente en los productos alimenticios.\n\nEsto podría ponerte en riesgo de exposición accidental. ¿Estás absolutamente seguro de que deseas continuar?',
     allergenRemoved: '¡Alérgeno eliminado exitosamente!',
     failedToRemove: 'Error al eliminar alérgeno',
+    changeSeverity: 'Cambiar Severidad',
+    failedToUpdate: 'Error al actualizar severidad',
   },
 
   // SymptomsScreen / AddSymptomScreen
@@ -378,7 +384,6 @@ export default {
     filterAll: 'Todo',
     filterMinimal: 'Mínimo',
     filterLow: 'Bajo',
-    filterMedium: 'Medio',
     filterModerate: 'Moderado',
     filterHigh: 'Alto',
     filterSevere: 'Severo',

@@ -27,6 +27,7 @@ export default function ScanResultScreen() {
   const navigation = useNavigation();
   const route = useRoute();
   const params = route.params as RouteParams;
+  const { colors } = useTheme();
   const { t } = useLanguage();
   const {colors} = useTheme();
   const [saving, setSaving] = useState(false);
@@ -49,13 +50,14 @@ export default function ScanResultScreen() {
   } = isFood
     ? computeRiskScore(
         params.detectedIngredients ?? [],
-        params.allergenWarnings ?? [],
+        allergenMatchList,
       )
     : { riskScore: 0, matchedAllergens: [], severity: 'LOW' as const, riskTier: 'Low Risk' as const, explanation: '', factorData: undefined };
 
   const hasAllergens = matchedAllergens.length > 0;
 
   const handleDone = () => {
+    navigation.popToTop();
     navigation.navigate('Dashboard' as never);
   };
 
@@ -437,8 +439,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   bottomActions: {
-    flexDirection: 'row',
-    padding: 20,
+    padding: 16,
     paddingBottom: 35,
     backgroundColor: '#fff',
     borderTopWidth: 1,

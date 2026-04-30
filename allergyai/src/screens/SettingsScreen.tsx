@@ -88,7 +88,8 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            setPendingImageUri(result.assets[0].uri);
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setPendingImageUri(permanent);
             setImageError(false);
           }
         }
@@ -103,7 +104,8 @@ export default function SettingsScreen() {
           }
           const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.7 });
           if (!result.canceled) {
-            setPendingImageUri(result.assets[0].uri);
+            const permanent = await savePermanentImage(result.assets[0].uri);
+            setPendingImageUri(permanent);
             setImageError(false);
           }
         }

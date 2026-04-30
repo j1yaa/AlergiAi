@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
-import { getAllergens, addAllergen, removeAllergen } from '../api/client';
+import { Ionicons } from '@expo/vector-icons';
+import { getAllergens, addAllergen, removeAllergen, updateAllergenSeverity } from '../api/client';
 import {isWeb } from '../utils/platform';
 import { useTheme } from '../hooks/useTheme';
 import { useLanguage } from '../hooks/useLanguage';
@@ -60,6 +61,32 @@ export default function AllergenScreen() {
             showAlert(t('common.error'), t('allergen.failedToAdd'));
             console.error('Failed to add allergen:', error);
         }
+    };
+
+    const handleUpdateSeverity = (allergen: string, currentSeverity: string) => {
+        const levels = ['minimal', 'low', 'moderate', 'high', 'severe'] as const;
+        Alert.alert(
+            t('allergen.changeSeverity'),
+            `${allergen}`,
+            [
+                ...levels.map(level => ({
+                    text: `${level === currentSeverity ? '✓ ' : ''}${t('allergen.' + level)}`,
+                    onPress: async () => {
+                        if (level === currentSeverity) return;
+                        setAllergensSeverity(prev =>
+                            prev.map(a => a.name.toLowerCase() === allergen.toLowerCase() ? { ...a, severity: level } : a)
+                        );
+                        try {
+                            await updateAllergenSeverity(allergen, level);
+                        } catch {
+                            loadAllergens();
+                            showAlert(t('common.error'), t('allergen.failedToUpdate'));
+                        }
+                    }
+                })),
+                { text: t('common.cancel'), style: 'cancel' }
+            ]
+        );
     };
 
     const handleRemoveAllergen = async (allergen: string) => {
@@ -164,24 +191,32 @@ export default function AllergenScreen() {
                         {allergens.map((allergen: string, index: number) => {
                             const severityInfo = allergensSeverity.find((a: any) => a.name.toLowerCase() === allergen.toLowerCase());
                             const severity = severityInfo?.severity || 'moderate';
-                            const severityColors = {
-                                minimal: { bg: '#F1F8E9', border: '#DCEDC8', text: '#558B2F' },
-                                low: { bg: '#E8F5E9', border: '#C8E6C9', text: '#2E7D32' },
-                                moderate: { bg: '#FFF3E0', border: '#FFE0B2', text: '#E65100' },
-                                high: { bg: '#FFEBEE', border: '#FFCDD2', text: '#C62828' },
-                                severe: { bg: '#FCE4EC', border: '#F8BBD0', text: '#880E4F' }
+                            const SEVERITY_CONFIG = {
+                                minimal: { border: '#8BC34A', badge: '#F1F8E9', badgeBorder: '#8BC34A', text: '#33691E', icon: 'checkmark-circle' as const, label: t('allergen.minimal') },
+                                low:     { border: '#4CAF50', badge: '#E8F5E9', badgeBorder: '#4CAF50', text: '#1B5E20', icon: 'alert-circle' as const,     label: t('allergen.low') },
+                                moderate:{ border: '#FF9800', badge: '#FFF3E0', badgeBorder: '#FF9800', text: '#E65100', icon: 'warning' as const,           label: t('allergen.moderate') },
+                                high:    { border: '#F44336', badge: '#FFEBEE', badgeBorder: '#F44336', text: '#B71C1C', icon: 'flame' as const,             label: t('allergen.high') },
+                                severe:  { border: '#880E4F', badge: '#FCE4EC', badgeBorder: '#880E4F', text: '#880E4F', icon: 'nuclear' as const,           label: t('allergen.severe') },
                             };
-                            const color = severityColors[severity as keyof typeof severityColors];
+                            const cfg = SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG];
                             return (
-                                <View key={index} style={[styles.allergenItem, { backgroundColor: colors.surface }]}>
-                                    <View style={[styles.allergenPill, { backgroundColor: color.bg, borderColor: color.border }]}>
-                                        <Text style={[styles.allergenText, { color: color.text }]}>{allergen}</Text>
+                                <View key={index} style={[styles.allergenItem, { backgroundColor: colors.surface, borderLeftColor: cfg.border }]}>
+                                    <View style={styles.allergenItemLeft}>
+                                        <Text style={[styles.allergenName, { color: colors.text }]}>{allergen}</Text>
+                                        <TouchableOpacity
+                                            style={[styles.severityBadge, { backgroundColor: cfg.badge, borderColor: cfg.badgeBorder }]}
+                                            onPress={() => handleUpdateSeverity(allergen, severity)}
+                                        >
+                                            <Ionicons name={cfg.icon} size={12} color={cfg.text} />
+                                            <Text style={[styles.severityBadgeText, { color: cfg.text }]}>{cfg.label}</Text>
+                                            <Ionicons name="chevron-down" size={11} color={cfg.text} />
+                                        </TouchableOpacity>
                                     </View>
                                     <TouchableOpacity
                                         style={styles.removeButton}
                                         onPress={() => handleRemoveAllergen(allergen)}
                                     >
-                                        <Text style={styles.removeButtonText}>✕</Text>
+                                        <Ionicons name="trash-outline" size={18} color="#EF5350" />
                                     </TouchableOpacity>
                                 </View>
                             );
@@ -286,35 +321,38 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#f9f9f9',
-        padding: 12,
-        borderRadius: 8,
+        padding: 14,
+        paddingLeft: 16,
+        borderRadius: 12,
+        borderLeftWidth: 4,
     },
-    allergenPill: {
-        backgroundColor: '#FFEBEE',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+    allergenItemLeft: {
+        flex: 1,
+        gap: 6,
+    },
+    allergenName: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    severityBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 4,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: '#FFCDD2',
     },
-    allergenText: {
-        color: '#C62828',
-        fontSize: 16,
-        fontWeight: '500',
+    severityBadgeText: {
+        fontSize: 12,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 0.4,
     },
     removeButton: {
-        backgroundColor: '#FFCDD2',
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    removeButtonText: {
-        color: '#C62828',
-        fontSize: 18,
-        fontWeight: 'bold',
+        padding: 6,
+        marginLeft: 8,
     },
     emptyState: {
         alignItems: 'center',
